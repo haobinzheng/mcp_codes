@@ -16,6 +16,7 @@ GNETCH_PATH = os.environ.get(
     "GNETCH_PATH", "/usr/local/google/home/mikezh/Coding/gfiber/bin/gnetch.sh"
 )
 CURRENT_DIR = os.getcwd()
+LOG_DIR = os.environ.get("AUDIT_LOG_DIR", os.path.join(CURRENT_DIR, "audit_logs"))
 SEMAPHORE_LIMIT = int(os.environ.get("AUDIT_SEMAPHORE_LIMIT", "30"))
 
 
@@ -44,6 +45,7 @@ class AuditRun:
     total_tasks: int = 0
     completed_tasks: int = 0
     failed_tasks: int = 0
+    log_file: str | None = None
     results: dict[str, dict[str, CommandResult]] = field(default_factory=dict)
 
 
@@ -52,6 +54,10 @@ RUNS: dict[str, AuditRun] = {}
 
 def _json(data: Any) -> str:
     return json.dumps(data, indent=2, sort_keys=True)
+
+
+def _ensure_log_dir() -> None:
+    os.makedirs(LOG_DIR, exist_ok=True)
 
 
 def _parse_devices(devices: str) -> list[str]:
@@ -129,7 +135,54 @@ def _run_to_dict(run: AuditRun) -> dict[str, Any]:
         "total_tasks": run.total_tasks,
         "completed_tasks": run.completed_tasks,
         "failed_tasks": run.failed_tasks,
+        "log_file": run.log_file,
     }
+
+
+def _command_result_to_dict(result: CommandResult) -> dict[str, Any]:
+    return {
+        "command": result.command,
+        "stdout": result.stdout,
+        "stderr": result.stderr,
+        "filtered": result.filtered,
+        "exit_code": result.exit_code,
+        "duration_ms": result.duration_ms,
+        "started_at": result.started_at,
+        "completed_at": result.completed_at,
+        "facts": result.facts,
+    }
+
+
+def _full_run_to_dict(run: AuditRun) -> dict[str, Any]:
+    results = {
+        hostname: {
+            command: _command_result_to_dict(result)
+            for command, result in sorted(per_host.items())
+        }
+        for hostname, per_host in sorted(run.results.items())
+    }
+    return {
+        **_run_to_dict(run),
+        "summary": _build_summary(run),
+        "results": results,
+    }
+
+
+def _persist_run_snapshot(run: AuditRun) -> None:
+    _ensure_log_dir()
+    if not run.log_file:
+        run.log_file = os.path.join(LOG_DIR, f"audit_run_{run.run_id}.json")
+
+    with open(run.log_file, "w") as f:
+        json.dump(_full_run_to_dict(run), f, indent=2, sort_keys=True)
+
+
+def _load_run_log(run_id: str) -> dict[str, Any] | None:
+    log_file = os.path.join(LOG_DIR, f"audit_run_{run_id}.json")
+    if not os.path.exists(log_file):
+        return None
+    with open(log_file, "r") as f:
+        return json.load(f)
 
 
 async def _run_single_command(
@@ -249,13 +302,16 @@ async def _execute_run(run_id: str) -> None:
             run.completed_tasks += 1
             if result.exit_code != 0:
                 run.failed_tasks += 1
+            _persist_run_snapshot(run)
 
         run.state = "completed"
         run.completed_at = time.time()
+        _persist_run_snapshot(run)
     except Exception as exc:
         run.state = "failed"
         run.error = str(exc)
         run.completed_at = time.time()
+        _persist_run_snapshot(run)
 
 
 @mcp.tool()
@@ -280,8 +336,10 @@ async def start_audit_run(devices: str, commands: str) -> str:
         hosts=hosts,
         commands=parsed_commands,
         total_tasks=len(hosts) * len(parsed_commands),
+        log_file=os.path.join(LOG_DIR, f"audit_run_{run_id}.json"),
     )
     RUNS[run_id] = run
+    _persist_run_snapshot(run)
 
     asyncio.create_task(_execute_run(run_id))
     return _json(_run_to_dict(run))
@@ -310,6 +368,20 @@ def get_audit_run_summary(run_id: str) -> str:
     if not run:
         return _json({"error": f"Unknown run_id: {run_id}"})
     return _json(_build_summary(run))
+
+
+@mcp.tool()
+def get_audit_run_log_path(run_id: str) -> str:
+    """Return the log file path for a run."""
+    run = RUNS.get(run_id)
+    if run:
+        return _json({"run_id": run_id, "log_file": run.log_file})
+
+    logged = _load_run_log(run_id)
+    if logged:
+        return _json({"run_id": run_id, "log_file": logged.get("log_file")})
+
+    return _json({"error": f"Unknown run_id: {run_id}"})
 
 
 @mcp.tool()
@@ -387,6 +459,66 @@ def search_audit_results(run_id: str, pattern: str, command: str = "") -> str:
                 )
 
     return _json({"run_id": run_id, "pattern": pattern, "matches": matches})
+
+
+@mcp.tool()
+def list_audit_log_runs() -> str:
+    """List persisted audit run logs from disk."""
+    _ensure_log_dir()
+    runs = []
+    for name in sorted(os.listdir(LOG_DIR), reverse=True):
+        if not name.startswith("audit_run_") or not name.endswith(".json"):
+            continue
+        path = os.path.join(LOG_DIR, name)
+        try:
+            with open(path, "r") as f:
+                data = json.load(f)
+            runs.append(
+                {
+                    "run_id": data.get("run_id"),
+                    "state": data.get("state"),
+                    "created_at": data.get("created_at"),
+                    "completed_at": data.get("completed_at"),
+                    "hosts": data.get("hosts", []),
+                    "commands": data.get("commands", []),
+                    "log_file": path,
+                }
+            )
+        except Exception as exc:
+            runs.append({"log_file": path, "error": str(exc)})
+    return _json({"runs": runs})
+
+
+@mcp.tool()
+def get_audit_log_summary(run_id: str) -> str:
+    """Return the persisted summary for a prior run."""
+    data = _load_run_log(run_id)
+    if not data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+    return _json(data.get("summary", {}))
+
+
+@mcp.tool()
+def get_audit_log_host_details(run_id: str, hostname: str, include_raw: bool = False) -> str:
+    """Return host details from a persisted log."""
+    data = _load_run_log(run_id)
+    if not data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+
+    host_results = data.get("results", {}).get(hostname)
+    if not host_results:
+        return _json({"error": f"No results for host: {hostname}"})
+
+    payload = {"run_id": run_id, "hostname": hostname, "commands": {}}
+    for command, result in sorted(host_results.items()):
+        payload["commands"][command] = {
+            "exit_code": result.get("exit_code"),
+            "duration_ms": result.get("duration_ms"),
+            "stderr": result.get("stderr", ""),
+            "facts": result.get("facts", {}),
+            "output": result.get("stdout", "") if include_raw else (result.get("filtered") or result.get("stdout", "")),
+        }
+    return _json(payload)
 
 
 if __name__ == "__main__":

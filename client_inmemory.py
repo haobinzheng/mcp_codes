@@ -19,7 +19,8 @@ Use the MCP tools with this workflow:
 2. Check progress with get_audit_run_status when needed.
 3. Read compact results with get_audit_run_summary before requesting detailed outputs.
 4. Fetch host- or command-level details only when needed to support a conclusion.
-5. Do not ask the server to use local files for state exchange; the server stores audit data in memory.
+5. Use list_audit_log_runs, get_audit_log_summary, and get_audit_log_host_details when the user asks about prior runs.
+6. Do not ask the server to use local files for state exchange; the server stores audit data in memory and persists audit logs for later analysis.
 
 When the user asks for analysis over multiple commands, prefer:
 - summary first
