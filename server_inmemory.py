@@ -769,7 +769,7 @@ def get_raw_command_outputs(
     run_id: str,
     command: str,
     hosts: str = "",
-    max_chars_per_output: int = 4000,
+    max_chars_per_output: int = 4_000_000,
     max_results: int = 20,
 ) -> str:
     """Return raw outputs for a command across matching hosts."""
@@ -830,7 +830,7 @@ def get_raw_command_chunk(
     command: str,
     hostname: str,
     offset: int = 0,
-    max_chars: int = 4000,
+    max_chars: int = 4_000_000,
 ) -> str:
     """Return a deterministic chunk from a raw command output."""
     run_data = _get_run_data(run_id)
