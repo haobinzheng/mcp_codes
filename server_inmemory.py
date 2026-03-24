@@ -31,6 +31,7 @@ class CommandResult:
     started_at: float | None = None
     completed_at: float | None = None
     facts: dict[str, Any] = field(default_factory=dict)
+    components: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -81,6 +82,68 @@ def _filter_output(output: str) -> str:
     markers = ("RE-S", "SCB", "MPC", "FPC", "Chassis", "Model", "Junos:")
     lines = [line for line in output.splitlines() if any(marker in line for marker in markers)]
     return "\n".join(lines).strip()
+
+
+def _extract_components(command: str, stdout: str, filtered: str) -> list[dict[str, Any]]:
+    if "show chassis hardware" not in command.lower():
+        return []
+
+    components: list[dict[str, Any]] = []
+    text = filtered or stdout
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+
+        columns = [part.strip() for part in re.split(r"\s{2,}", stripped) if part.strip()]
+        if not columns:
+            continue
+
+        component_type = ""
+        slot = columns[0]
+        part_number = ""
+        serial_number = ""
+        description = ""
+
+        if stripped.startswith("Chassis"):
+            component_type = "chassis"
+            if len(columns) >= 3:
+                serial_number = columns[-2]
+                description = columns[-1]
+            elif len(columns) == 2:
+                description = columns[-1]
+        elif stripped.startswith("Routing Engine"):
+            component_type = "routing_engine"
+            if len(columns) >= 4:
+                part_number = columns[-3]
+                serial_number = columns[-2]
+                description = columns[-1]
+        elif stripped.startswith("CB "):
+            component_type = "control_board"
+            if len(columns) >= 5:
+                part_number = columns[-3]
+                serial_number = columns[-2]
+                description = columns[-1]
+        elif stripped.startswith("FPC "):
+            component_type = "line_card"
+            if len(columns) >= 5:
+                part_number = columns[-3]
+                serial_number = columns[-2]
+                description = columns[-1]
+
+        if component_type and description:
+            components.append(
+                {
+                    "component_type": component_type,
+                    "slot": slot,
+                    "part_number": part_number,
+                    "serial_number": serial_number,
+                    "description": description,
+                }
+            )
+
+    return components
 
 
 def _extract_facts(command: str, stdout: str, filtered: str) -> dict[str, Any]:
@@ -150,6 +213,7 @@ def _command_result_to_dict(result: CommandResult) -> dict[str, Any]:
         "started_at": result.started_at,
         "completed_at": result.completed_at,
         "facts": result.facts,
+        "components": result.components,
     }
 
 
@@ -185,6 +249,44 @@ def _load_run_log(run_id: str) -> dict[str, Any] | None:
         return json.load(f)
 
 
+def _get_run_data(run_id: str) -> dict[str, Any] | None:
+    run = RUNS.get(run_id)
+    if run:
+        return _full_run_to_dict(run)
+    return _load_run_log(run_id)
+
+
+def _match_text(value: str, query: str, match_mode: str) -> bool:
+    if match_mode == "exact":
+        return value == query
+    if match_mode == "prefix":
+        return value.startswith(query)
+    if match_mode == "contains":
+        return query in value
+    raise ValueError(f"Unsupported match_mode: {match_mode}")
+
+
+def _iter_components(
+    run_data: dict[str, Any], component_type: str = "", command: str = ""
+) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for hostname, per_host in run_data.get("results", {}).items():
+        for command_name, result in per_host.items():
+            if command and command_name != command:
+                continue
+            for component in result.get("components", []):
+                if component_type and component.get("component_type") != component_type:
+                    continue
+                items.append(
+                    {
+                        "hostname": hostname,
+                        "command": command_name,
+                        **component,
+                    }
+                )
+    return items
+
+
 async def _run_single_command(
     hostname: str, command: str, semaphore: asyncio.Semaphore
 ) -> tuple[str, str, CommandResult]:
@@ -208,6 +310,7 @@ async def _run_single_command(
             result.duration_ms = int((time.time() - start) * 1000)
             result.completed_at = time.time()
             result.facts = _extract_facts(command, result.stdout, result.filtered)
+            result.components = _extract_components(command, result.stdout, result.filtered)
         except Exception as exc:
             result.stderr = str(exc)
             result.exit_code = -1
@@ -459,6 +562,87 @@ def search_audit_results(run_id: str, pattern: str, command: str = "") -> str:
                 )
 
     return _json({"run_id": run_id, "pattern": pattern, "matches": matches})
+
+
+@mcp.tool()
+def count_components(
+    run_id: str,
+    name: str,
+    component_type: str = "",
+    match_mode: str = "exact",
+    command: str = "",
+) -> str:
+    """
+    Count components by name.
+    match_mode must be one of: exact, prefix, contains
+    component_type examples: control_board, routing_engine, line_card, chassis
+    """
+    run_data = _get_run_data(run_id)
+    if not run_data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+
+    try:
+        components = [
+            item
+            for item in _iter_components(run_data, component_type=component_type, command=command)
+            if _match_text(item["description"], name, match_mode)
+        ]
+    except ValueError as exc:
+        return _json({"error": str(exc)})
+
+    per_host: dict[str, int] = {}
+    for item in components:
+        per_host[item["hostname"]] = per_host.get(item["hostname"], 0) + 1
+
+    return _json(
+        {
+            "run_id": run_id,
+            "name": name,
+            "match_mode": match_mode,
+            "component_type": component_type,
+            "command": command,
+            "total_count": len(components),
+            "host_count": len(per_host),
+            "per_host": dict(sorted(per_host.items())),
+        }
+    )
+
+
+@mcp.tool()
+def list_components(
+    run_id: str,
+    name: str = "",
+    component_type: str = "",
+    match_mode: str = "exact",
+    command: str = "",
+) -> str:
+    """
+    List structured components.
+    If name is provided, it is matched using match_mode.
+    """
+    run_data = _get_run_data(run_id)
+    if not run_data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+
+    try:
+        components = _iter_components(run_data, component_type=component_type, command=command)
+        if name:
+            components = [
+                item for item in components if _match_text(item["description"], name, match_mode)
+            ]
+    except ValueError as exc:
+        return _json({"error": str(exc)})
+
+    return _json(
+        {
+            "run_id": run_id,
+            "name": name,
+            "match_mode": match_mode,
+            "component_type": component_type,
+            "command": command,
+            "components": components,
+        }
+    )
 
 
 @mcp.tool()

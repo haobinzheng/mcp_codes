@@ -25,14 +25,17 @@ Use the MCP tools with this workflow:
 2. Check progress with get_audit_run_status when needed.
 3. Read compact results with get_audit_run_summary before requesting detailed outputs.
 4. Fetch host- or command-level details only when needed to support a conclusion.
-5. Use list_audit_log_runs, get_audit_log_summary, and get_audit_log_host_details when the user asks about prior runs.
-6. Do not ask the server to use local files for state exchange; the server stores audit data in memory and persists audit logs for later analysis.
+5. For hardware component questions and totals, use count_components or list_components instead of reasoning from raw text.
+6. Default to exact matching for component names. Only use prefix or contains matching if the user explicitly asks for variants, prefixes, or fuzzy matches.
+7. Use list_audit_log_runs, get_audit_log_summary, and get_audit_log_host_details when the user asks about prior runs.
+8. Do not ask the server to use local files for state exchange; the server stores audit data in memory and persists audit logs for later analysis.
 
 When the user asks for analysis over multiple commands, prefer:
 - summary first
 - then targeted lookups for specific hosts, commands, failures, or anomalies
 
 When a run is still in progress, tell the user that the audit is still running and continue polling only if needed.
+For arithmetic, totals, or per-device counts, do not calculate in free text if a server tool can compute the answer.
 """
 
 
