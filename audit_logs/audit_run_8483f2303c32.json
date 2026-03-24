@@ -1,0 +1,54 @@
+{
+  "commands": [
+    "show chassis hardward"
+  ],
+  "completed_at": 1774385272.5515423,
+  "completed_tasks": 1,
+  "created_at": 1774385267.5779755,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "pr02.ord101"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_8483f2303c32.json",
+  "results": {
+    "pr02.ord101": {
+      "show chassis hardward": {
+        "command": "show chassis hardward",
+        "completed_at": 1774385272.5508955,
+        "components": [],
+        "duration_ms": 4970,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1774385267.580233,
+        "stderr": "W0324 13:47:52.434394  724534 stubby.cc:1690] Stream was closed with status: UNKNOWN: invalid status gnetch::8: http://go/gnetch-errors: http://gnetch/auditlog/f39ba7cd-5e4e-49af-b199-a5760fb03468 host=pr02.ord101 agent=/bns/jy/borg/jy/bns/gnetch/gnetch.gfiber_agent/6 fallback=False google3.net.infra.telemetry.gnetch.lib.exceptions.CmdError(8) b'error: syntax error, expecting <command>: hardward\\n'\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1470\nSend(/Gnetch2.Command) returned error UNKNOWN:\n /Gnetch2.Command to [2002:a17:91a:7dce:b0:463:2402:fbfb]:9801 : APP_ERROR(2) invalid status gnetch::8: http://go/gnetch-errors: http://gnetch/auditlog/f39ba7cd-5e4e-49af-b199-a5760fb03468 host=pr02.ord101 agent=/bns/jy/borg/jy/bns/gnetch/gnetch.gfiber_agent/6 fallback=False google3.net.infra.telemetry.gnetch.lib.exceptions.CmdError(8) b'error: syntax error, expecting <command>: hardward\\n'",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "8483f2303c32",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "8483f2303c32",
+    "state": "completed",
+    "success_hosts": [
+      "pr02.ord101"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}

@@ -1,0 +1,203 @@
+{
+  "commands": [
+    "show chassis hardware"
+  ],
+  "completed_at": 1774385355.134571,
+  "completed_tasks": 1,
+  "created_at": 1774385347.9517763,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "pr02.ord101"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_f81910cb1511.json",
+  "results": {
+    "pr02.ord101": {
+      "show chassis hardware": {
+        "command": "show chassis hardware",
+        "completed_at": 1774385355.1335661,
+        "components": [
+          {
+            "component_type": "chassis",
+            "description": "MX960",
+            "part_number": "",
+            "serial_number": "JN1250C6FAFA",
+            "slot": "Chassis"
+          },
+          {
+            "component_type": "routing_engine",
+            "description": "RE-S-2X00x6",
+            "part_number": "750-054758",
+            "serial_number": "CAPV3717",
+            "slot": "Routing Engine 0 REV 19"
+          },
+          {
+            "component_type": "routing_engine",
+            "description": "RE-S-2X00x6",
+            "part_number": "750-054758",
+            "serial_number": "CARC3036",
+            "slot": "Routing Engine 1 REV 20"
+          },
+          {
+            "component_type": "control_board",
+            "description": "Enhanced MX SCB 3",
+            "part_number": "750-070866",
+            "serial_number": "CARE5504",
+            "slot": "CB 0"
+          },
+          {
+            "component_type": "control_board",
+            "description": "Enhanced MX SCB 3",
+            "part_number": "750-070866",
+            "serial_number": "CARE5533",
+            "slot": "CB 1"
+          },
+          {
+            "component_type": "control_board",
+            "description": "Enhanced MX SCB 3",
+            "part_number": "750-070866",
+            "serial_number": "CARE5513",
+            "slot": "CB 2"
+          },
+          {
+            "component_type": "line_card",
+            "description": "MPC 3D 16x 10GE",
+            "part_number": "750-028467",
+            "serial_number": "ABCX2120",
+            "slot": "FPC 0"
+          },
+          {
+            "component_type": "line_card",
+            "description": "MPC 3D 16x 10GE",
+            "part_number": "750-028467",
+            "serial_number": "ABCX2118",
+            "slot": "FPC 1"
+          },
+          {
+            "component_type": "line_card",
+            "description": "MPC10E 3D MRATE-15xQSFPP",
+            "part_number": "750-070395",
+            "serial_number": "EBBB3071",
+            "slot": "FPC 2"
+          },
+          {
+            "component_type": "line_card",
+            "description": "MPC10E 3D MRATE-15xQSFPP",
+            "part_number": "750-070395",
+            "serial_number": "CAPY2067",
+            "slot": "FPC 5"
+          },
+          {
+            "component_type": "line_card",
+            "description": "MPC10E 3D MRATE-15xQSFPP",
+            "part_number": "750-070395",
+            "serial_number": "CAPY2063",
+            "slot": "FPC 7"
+          },
+          {
+            "component_type": "line_card",
+            "description": "MPC10E 3D MRATE-15xQSFPP",
+            "part_number": "750-070395",
+            "serial_number": "EAAP9183",
+            "slot": "FPC 8"
+          },
+          {
+            "component_type": "line_card",
+            "description": "MPC 3D 16x 10GE",
+            "part_number": "750-028467",
+            "serial_number": "ABCN1916",
+            "slot": "FPC 10"
+          },
+          {
+            "component_type": "line_card",
+            "description": "MPC 3D 16x 10GE",
+            "part_number": "750-028467",
+            "serial_number": "ABBV7521",
+            "slot": "FPC 11"
+          }
+        ],
+        "duration_ms": 7179,
+        "exit_code": 0,
+        "facts": {
+          "chassis_models": [
+            "MX960"
+          ],
+          "line_cards": [
+            "ABBV7521 MPC 3D 16x 10GE",
+            "ABCN1916 MPC 3D 16x 10GE",
+            "ABCX2118 MPC 3D 16x 10GE",
+            "ABCX2120 MPC 3D 16x 10GE",
+            "CAPY2063 MPC10E 3D MRATE-15xQSFPP",
+            "CAPY2067 MPC10E 3D MRATE-15xQSFPP",
+            "EAAP9183 MPC10E 3D MRATE-15xQSFPP",
+            "EBBB3071 MPC10E 3D MRATE-15xQSFPP"
+          ],
+          "routing_engines": [
+            "RE-S-2X00x6"
+          ]
+        },
+        "filtered": "Chassis                                JN1250C6FAFA      MX960\nRouting Engine 0 REV 19   750-054758   CAPV3717          RE-S-2X00x6\nRouting Engine 1 REV 20   750-054758   CARC3036          RE-S-2X00x6\nCB 0             REV 32   750-070866   CARE5504          Enhanced MX SCB 3\nCB 1             REV 32   750-070866   CARE5533          Enhanced MX SCB 3\nCB 2             REV 32   750-070866   CARE5513          Enhanced MX SCB 3\nFPC 0            REV 41   750-028467   ABCX2120          MPC 3D 16x 10GE\n  CPU            REV 11   711-029089   ABCP0186          AMPC PMB\nFPC 1            REV 41   750-028467   ABCX2118          MPC 3D 16x 10GE\n  CPU            REV 11   711-029089   ABCX1933          AMPC PMB\nFPC 2            REV 62   750-070395   EBBB3071          MPC10E 3D MRATE-15xQSFPP\n  CPU            REV 22   750-072571   EBAY8727          FMPC PMB\nFPC 5            REV 54   750-070395   CAPY2067          MPC10E 3D MRATE-15xQSFPP\n  CPU            REV 20   750-072571   CAPY0601          FMPC PMB\nFPC 7            REV 54   750-070395   CAPY2063          MPC10E 3D MRATE-15xQSFPP\n  CPU            REV 20   750-072571   CAPY0614          FMPC PMB\nFPC 8            REV 60   750-070395   EAAP9183          MPC10E 3D MRATE-15xQSFPP\n  CPU            REV 21   750-072571   EAAL4340          FMPC PMB\nFPC 10           REV 41   750-028467   ABCN1916          MPC 3D 16x 10GE\n  CPU            REV 11   711-029089   ABCN0531          AMPC PMB\nFPC 11           REV 33   750-028467   ABBV7521          MPC 3D 16x 10GE\n  CPU            REV 11   711-029089   ABBV6975          AMPC PMB",
+        "started_at": 1774385347.9539168,
+        "stderr": "",
+        "stdout": "Hardware inventory:\nItem             Version  Part number  Serial number     Description\nChassis                                JN1250C6FAFA      MX960\nMidplane         REV 06   750-047849   ACRE4418          Enhanced MX960 Backplane\nFPM Board        REV 03   710-014974   ABDA9653          Front Panel Display\nPDM              Rev 03   740-013110   QCS1809521Y       Power Distribution Module\nPEM 0            Rev 10   740-027760   QCS1726N00D       PS 4.1kW; 200-240V AC in\nPEM 1            Rev 01   740-063047   QCS1947N0KK       PS 4.1kW; 200-240V AC in\nPEM 2            Rev 11   740-027760   QCS1810N15V       PS 4.1kW; 200-240V AC in\nPEM 3            Rev 11   740-027760   QCS1850N00P       PS 4.1kW; 200-240V AC in\nRouting Engine 0 REV 19   750-054758   CAPV3717          RE-S-2X00x6\nRouting Engine 1 REV 20   750-054758   CARC3036          RE-S-2X00x6\nCB 0             REV 32   750-070866   CARE5504          Enhanced MX SCB 3\nCB 1             REV 32   750-070866   CARE5533          Enhanced MX SCB 3\nCB 2             REV 32   750-070866   CARE5513          Enhanced MX SCB 3\nFPC 0            REV 41   750-028467   ABCX2120          MPC 3D 16x 10GE\n  CPU            REV 11   711-029089   ABCP0186          AMPC PMB\n  PIC 0                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AWJ0QRF           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AVB0FH0           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AV209J4           DUAL-SFP+-LR/SFP-LX\n    Xcvr 3                NON-JNPR     AVG0ZLB           SFP+-10G-LR\n  PIC 1                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AVA057T           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AWM0WM4           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AW40Y4V           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     AWM125W           SFP+-10G-LR\n  PIC 2                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 1                NON-JNPR     AWL0TSK           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AQ831CR           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     AVC0MQG           SFP+-10G-LR\n  PIC 3                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AW40SEM           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AWL0SJE           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AQJ0PKU           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     AQJ0P7V           SFP+-10G-LR\nFPC 1            REV 41   750-028467   ABCX2118          MPC 3D 16x 10GE\n  CPU            REV 11   711-029089   ABCX1933          AMPC PMB\n  PIC 0                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AVF01JR           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AWL0G53           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AQJ0PPS           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     AVC039Z           SFP+-10G-LR\n  PIC 1                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AY90FDN           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AVE1623           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AWM02MS           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     AQH26QS           SFP+-10G-LR\n  PIC 2                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AVD089F           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AWL0SP2           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AQJ0PMR           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     AVC0LU2           SFP+-10G-LR\n  PIC 3                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 3                NON-JNPR     AQJ0QTF           SFP+-10G-LR\nFPC 2            REV 62   750-070395   EBBB3071          MPC10E 3D MRATE-15xQSFPP\n  CPU            REV 22   750-072571   EBAY8727          FMPC PMB\n  PIC 0                   BUILTIN      BUILTIN           MRATE-5xQSFPP\n    Xcvr 0                NON-JNPR     2425A00052        QSFP-100GBASE-LR4\n    Xcvr 1                NON-JNPR     2404A00424        QSFP-100GBASE-LR4\n    Xcvr 3                NON-JNPR     2509A00590        QSFP-100GBASE-LR4\n    Xcvr 4                NON-JNPR     2509A00589        QSFP-100GBASE-LR4\n  PIC 1                   BUILTIN      BUILTIN           MRATE-5xQSFPP\n  PIC 2                   BUILTIN      BUILTIN           MRATE-5xQSFPP\nFPC 5            REV 54   750-070395   CAPY2067          MPC10E 3D MRATE-15xQSFPP\n  CPU            REV 20   750-072571   CAPY0601          FMPC PMB\n  PIC 0                   BUILTIN      BUILTIN           MRATE-5xQSFPP\n    Xcvr 0                NON-JNPR     KBV2000467        QSFP-100GBASE-LR4\n    Xcvr 1                NON-JNPR     KBV2000399        QSFP-100GBASE-LR4\n    Xcvr 2                NON-JNPR     KBV2000764        QSFP-100GBASE-LR4\n    Xcvr 3                NON-JNPR     L722001972        QSFP-100GBASE-LR4\n    Xcvr 4                NON-JNPR     2245308505        QSFP-100GBASE-LR4\n  PIC 1                   BUILTIN      BUILTIN           MRATE-5xQSFPP\n    Xcvr 0                NON-JNPR     L732002150        QSFP-100GBASE-LR4\n    Xcvr 1                NON-JNPR     L6D2008907        QSFP-100GBASE-LR4\n    Xcvr 2                NON-JNPR     KCD2004429        QSFP-100GBASE-LR4\n    Xcvr 3                NON-JNPR     L732002153        QSFP-100GBASE-LR4\n    Xcvr 4                NON-JNPR     2245308507        QSFP-100GBASE-LR4\n  PIC 2                   BUILTIN      BUILTIN           MRATE-5xQSFPP\n    Xcvr 0                NON-JNPR     KBV2000550        QSFP-100GBASE-LR4\n    Xcvr 1                NON-JNPR     L732002148        QSFP-100GBASE-LR4\n    Xcvr 2                NON-JNPR     KBV2000698        QSFP-100GBASE-LR4\n    Xcvr 3                NON-JNPR     L6C2008460        QSFP-100GBASE-LR4\n    Xcvr 4                NON-JNPR     2245308506        QSFP-100GBASE-LR4\nFPC 7            REV 54   750-070395   CAPY2063          MPC10E 3D MRATE-15xQSFPP\n  CPU            REV 20   750-072571   CAPY0614          FMPC PMB\n  PIC 0                   BUILTIN      BUILTIN           MRATE-5xQSFPP\n    Xcvr 0                NON-JNPR     KCD2004434        QSFP-100GBASE-LR4\n    Xcvr 1                NON-JNPR     KBV2000484        QSFP-100GBASE-LR4\n    Xcvr 2                NON-JNPR     KBV2000604        QSFP-100GBASE-LR4\n    Xcvr 3                NON-JNPR     L6F2023952        QSFP-100GBASE-LR4\n    Xcvr 4                NON-JNPR     2245308419        QSFP-100GBASE-LR4\n  PIC 1                   BUILTIN      BUILTIN           MRATE-5xQSFPP\n    Xcvr 0                NON-JNPR     KBV2000917        QSFP-100GBASE-LR4\n    Xcvr 1                NON-JNPR     KBV2000729        QSFP-100GBASE-LR4\n    Xcvr 2                NON-JNPR     KBV2000444        QSFP-100GBASE-LR4\n    Xcvr 3                NON-JNPR     KCB2001242        QSFP-100GBASE-LR4\n    Xcvr 4                NON-JNPR     2245308421        QSFP-100GBASE-LR4\n  PIC 2                   BUILTIN      BUILTIN           MRATE-5xQSFPP\n    Xcvr 0                NON-JNPR     KBV2000435        QSFP-100GBASE-LR4\n    Xcvr 1                NON-JNPR     KBV2000751        QSFP-100GBASE-LR4\n    Xcvr 2                NON-JNPR     KBV2000715        QSFP-100GBASE-LR4\n    Xcvr 3                NON-JNPR     KBV2000401        QSFP-100GBASE-LR4\n    Xcvr 4                NON-JNPR     2245308420        QSFP-100GBASE-LR4\nFPC 8            REV 60   750-070395   EAAP9183          MPC10E 3D MRATE-15xQSFPP\n  CPU            REV 21   750-072571   EAAL4340          FMPC PMB\n  PIC 0                   BUILTIN      BUILTIN           MRATE-5xQSFPP\n    Xcvr 0                NON-JNPR     2309701891        QSFP-100GBASE-LR4\n    Xcvr 1                NON-JNPR     2309701892        QSFP-100GBASE-LR4\n    Xcvr 2                NON-JNPR     2309701893        QSFP-100GBASE-LR4\n    Xcvr 3                NON-JNPR     2309701894        QSFP-100GBASE-LR4\n    Xcvr 4                NON-JNPR     2309701895        QSFP-100GBASE-LR4\n  PIC 1                   BUILTIN      BUILTIN           MRATE-5xQSFPP\n    Xcvr 0                NON-JNPR     2309701889        QSFP-100GBASE-LR4\n    Xcvr 1                NON-JNPR     2309701890        QSFP-100GBASE-LR4\n    Xcvr 2                NON-JNPR     2309701227        QSFP-100GBASE-LR4\n    Xcvr 3                NON-JNPR     2309701228        QSFP-100GBASE-LR4\n    Xcvr 4                NON-JNPR     2309701231        QSFP-100GBASE-LR4\n  PIC 2                   BUILTIN      BUILTIN           MRATE-5xQSFPP\n    Xcvr 0                NON-JNPR     2309701229        QSFP-100GBASE-LR4\n    Xcvr 1                NON-JNPR     2309701230        QSFP-100GBASE-LR4\n    Xcvr 2                NON-JNPR     2309701232        QSFP-100GBASE-LR4\n    Xcvr 3                NON-JNPR     2309701226        QSFP-100GBASE-LR4\n    Xcvr 4                NON-JNPR     2309701225        QSFP-100GBASE-LR4\nFPC 10           REV 41   750-028467   ABCN1916          MPC 3D 16x 10GE\n  CPU            REV 11   711-029089   ABCN0531          AMPC PMB\n  PIC 0                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AWL0SL3           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     ANS1KPL           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AWL0SRV           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     AWL07GZ           SFP+-10G-LR\n  PIC 1                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AW40V9H           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AWK0CLX           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AWL0SRY           SFP+-10G-LR\n  PIC 2                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AWL0PEN           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AW40XYA           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AWM0WDM           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     AW80FPK           SFP+-10G-LR\n  PIC 3                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AW80F6G           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AW80F0J           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AWM0V3W           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     AWL0UFG           SFP+-10G-LR\nFPC 11           REV 33   750-028467   ABBV7521          MPC 3D 16x 10GE\n  CPU            REV 11   711-029089   ABBV6975          AMPC PMB\n  PIC 0                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AWM137R           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AW40Y01           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AWL0LGF           SFP+-10G-LR\n  PIC 1                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AWJ18BW           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AW80FK9           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     AW80J7D           SFP+-10G-LR\n  PIC 2                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 2                NON-JNPR     AWN04LJ           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     ANS1KQC           SFP+-10G-LR\n  PIC 3                   BUILTIN      BUILTIN           4x 10GE(LAN) SFP+\n    Xcvr 0                NON-JNPR     AWL0HCU           SFP+-10G-LR\n    Xcvr 1                NON-JNPR     AW1119T           SFP+-10G-LR\n    Xcvr 2                NON-JNPR     AW80KNA           SFP+-10G-LR\n    Xcvr 3                NON-JNPR     AWK0JNQ           SFP+-10G-LR\nFan Tray 0       REV 01   740-057995   ACDD2922          Enhanced Fan Tray\nFan Tray 1       REV 01   740-057995   ACDD2945          Enhanced Fan Tray",
+        "structured_data_available": true
+      }
+    }
+  },
+  "run_id": "f81910cb1511",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {
+        "MX960": [
+          "pr02.ord101"
+        ]
+      },
+      "junos_versions": {},
+      "line_cards": {
+        "ABBV7521 MPC 3D 16x 10GE": [
+          "pr02.ord101"
+        ],
+        "ABCN1916 MPC 3D 16x 10GE": [
+          "pr02.ord101"
+        ],
+        "ABCX2118 MPC 3D 16x 10GE": [
+          "pr02.ord101"
+        ],
+        "ABCX2120 MPC 3D 16x 10GE": [
+          "pr02.ord101"
+        ],
+        "CAPY2063 MPC10E 3D MRATE-15xQSFPP": [
+          "pr02.ord101"
+        ],
+        "CAPY2067 MPC10E 3D MRATE-15xQSFPP": [
+          "pr02.ord101"
+        ],
+        "EAAP9183 MPC10E 3D MRATE-15xQSFPP": [
+          "pr02.ord101"
+        ],
+        "EBBB3071 MPC10E 3D MRATE-15xQSFPP": [
+          "pr02.ord101"
+        ]
+      },
+      "routing_engines": {
+        "RE-S-2X00x6": [
+          "pr02.ord101"
+        ]
+      }
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "f81910cb1511",
+    "state": "completed",
+    "success_hosts": [
+      "pr02.ord101"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}
