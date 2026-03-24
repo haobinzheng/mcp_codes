@@ -294,102 +294,17 @@ def _make_chat(client, session):
     )
 
 
-def _make_plain_chat(client, system_instruction: str):
-    return client.aio.chats.create(
-        model=MODEL_ID,
-        config=types.GenerateContentConfig(system_instruction=system_instruction),
-    )
-
-
-async def _analyze_large_raw_output(
-    client,
-    session,
-    log_file: str,
-    session_id: str,
-    turn_id: str,
-    user_prompt: str,
-    run_id: str,
-    hostname: str,
-    command: str,
-    session_memory: dict,
-) -> str:
-    chunk_summaries: list[str] = []
-    offset = 0
-    chunk_count = 0
-
-    while chunk_count < RAW_ANALYSIS_MAX_CHUNKS:
-        result = await _call_tool_logged(
-            session,
-            log_file,
-            session_id,
-            turn_id,
-            "get_raw_command_chunk",
-            {
-                "run_id": run_id,
-                "command": command,
-                "hostname": hostname,
-                "offset": offset,
-                "max_chars": RAW_CHUNK_CHARS,
-            },
-        )
-        data = _tool_result_json(result)
-        if data.get("error"):
-            return f"Error: {data['error']}"
-
-        chunk = data.get("chunk", "")
-        if not chunk:
-            break
-
-        chunk_chat = _make_plain_chat(
-            client,
-            "You analyze one chunk of network command output. Extract only facts relevant to the user's request. "
-            "If the chunk has nothing useful, reply with NONE. Keep it concise.",
-        )
-        chunk_prompt = (
-            f"User request:\n{user_prompt}\n\n"
-            f"Host: {hostname}\n"
-            f"Command: {command}\n"
-            f"Chunk {chunk_count + 1}\n\n"
-            f"{chunk}"
-        )
-        chunk_response = await chunk_chat.send_message(chunk_prompt)
-        chunk_text = (chunk_response.text or "").strip()
-        if chunk_text and chunk_text.upper() != "NONE":
-            chunk_summaries.append(f"Chunk {chunk_count + 1}:\n{chunk_text}")
-
-        chunk_count += 1
-        if not data.get("has_more"):
-            break
-        offset = data.get("next_offset") or 0
-
-    final_chat = _make_plain_chat(
-        client,
-        "You combine chunk-level findings from a large network command output into one grounded answer. "
-        "Mention that the output was too large and was analyzed in chunks. Do not invent facts.",
-    )
-    final_prompt = (
-        f"User request:\n{user_prompt}\n\n"
-        f"Host: {hostname}\n"
-        f"Command: {command}\n"
-        f"Chunks analyzed: {chunk_count}\n\n"
-        "Chunk findings:\n"
-        + ("\n\n".join(chunk_summaries) if chunk_summaries else "No relevant facts were extracted from the chunks.")
-    )
-    final_response = await final_chat.send_message(final_prompt)
-    session_memory["last_active_raw_request"] = {
-        "run_id": run_id,
-        "hostname": hostname,
-        "command": command,
-        "chunked": True,
-    }
+def _format_large_output_requires_tool(run_id: str, hostname: str, command: str, total_chars: int) -> str:
     return (
-        "The command output was too large to send directly, so I analyzed it in chunks.\n\n"
-        + (final_response.text or "No answer was generated from the chunked analysis.")
+        f'The output for `{command}` on `{hostname}` is too large to send to the model safely '
+        f"({total_chars} characters). I am not going to pass that raw output through the model.\n\n"
+        "This command needs a dedicated server-side parser/tool first. "
+        "Please develop a tool for this command, or narrow the request to a smaller subset that can be processed deterministically.\n\n"
+        f"Run id: {run_id}"
     )
 
 
 async def _handle_single_host_raw_command(
-    client,
     session,
     log_file: str,
     session_id: str,
@@ -447,31 +362,25 @@ async def _handle_single_host_raw_command(
     session_memory["last_run_id"] = run_id
 
     if items[0].get("raw_output_complete", True):
-        return await _answer_from_raw_context(client.aio.chats.create(
-            model=MODEL_ID,
-            config=types.GenerateContentConfig(system_instruction="Answer from the provided raw command evidence."),
-        ), prompt, preview_data)
+        return (
+            f'The raw output for `{command}` on `{hostname}` is small enough to inspect, but there is no '
+            "dedicated parser/tool for this command yet. Please develop a server-side tool for it or ask a narrower question."
+        )
 
-    return await _analyze_large_raw_output(
-        client,
-        session,
-        log_file,
-        session_id,
-        turn_id,
-        prompt,
+    return _format_large_output_requires_tool(
         run_id,
         hostname,
         command,
-        session_memory,
+        items[0].get("raw_output_length", 0),
     )
 
 
 async def _handle_raw_followup_from_memory(
-    client,
-    session,
-    log_file: str,
-    session_id: str,
-    turn_id: str,
+    _client,
+    _session,
+    _log_file: str,
+    _session_id: str,
+    _turn_id: str,
     prompt: str,
     session_memory: dict,
 ) -> str | None:
@@ -481,18 +390,10 @@ async def _handle_raw_followup_from_memory(
     command = active.get("command")
     if not run_id or not hostname or not command:
         return None
-
-    return await _analyze_large_raw_output(
-        client,
-        session,
-        log_file,
-        session_id,
-        turn_id,
-        prompt,
-        run_id,
-        hostname,
-        command,
-        session_memory,
+    return (
+        f'Your follow-up refers to `{command}` on `{hostname}` from run `{run_id}`.\n\n'
+        "That command still needs a dedicated server-side parser/tool before I can answer follow-up questions reliably. "
+        "I am not sending the large raw output through the model."
     )
 
 
@@ -679,6 +580,14 @@ def _format_per_device_category_counts(results: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _is_per_device_hardware_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    return (
+        ("for each device" in lower_prompt or "per device" in lower_prompt)
+        and any(term in lower_prompt for term in ("hardware", "category", "component", "count", "tally"))
+    )
+
+
 async def _answer_from_raw_context(
     chat,
     prompt: str,
@@ -754,6 +663,42 @@ async def _handle_deterministic_hardware_count(
         )
         deterministic_state["last_run_id"] = run_id
         return _format_single_host_component_summary(hostname, components)
+
+    if _is_per_device_hardware_prompt(prompt) and deterministic_state.get("last_summary"):
+        results = []
+        for component_type, name in _flatten_summary_categories(deterministic_state["last_summary"]):
+            result = await _call_tool_logged(
+                session,
+                log_file,
+                session_id,
+                turn_id,
+                "count_components",
+                {
+                    "run_id": deterministic_state.get("last_run_id", run_id),
+                    "name": name,
+                    "component_type": component_type,
+                    "match_mode": "exact",
+                },
+            )
+            data = _tool_result_json(result)
+            if data.get("error"):
+                continue
+            _remember_tool_data(session_memory, "count_components", data)
+            results.append(
+                {
+                    "component_type": component_type,
+                    "name": name,
+                    "per_host": data.get("per_host", {}),
+                }
+            )
+        total_hosts = len({host for item in results for host in item.get("per_host", {}).keys()})
+        if total_hosts > MAX_INLINE_HOSTS:
+            return (
+                f"The full per-device tally spans {total_hosts} devices, which is too large to print in one reply "
+                "without bloating the session. I can provide a host slice such as the first 10 devices, a specific "
+                "list of hosts, or one device at a time."
+            )
+        return _format_per_device_category_counts(results)
 
     if "all the hard" in lower_prompt or "all hardware" in lower_prompt or "each category" in lower_prompt:
         result = await _call_tool_logged(
