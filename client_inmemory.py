@@ -97,12 +97,22 @@ async def _get_latest_run_id(session, log_file: str, session_id: str, turn_id: s
     data = _tool_result_json(result)
     runs = data.get("runs", [])
     if runs:
+        runs = sorted(
+            runs,
+            key=lambda item: item.get("created_at") or item.get("completed_at") or 0,
+            reverse=True,
+        )
         return runs[0].get("run_id")
 
     result = await _call_tool_logged(session, log_file, session_id, turn_id, "list_audit_log_runs", {})
     data = _tool_result_json(result)
     runs = data.get("runs", [])
     if runs:
+        runs = sorted(
+            runs,
+            key=lambda item: item.get("created_at") or item.get("completed_at") or 0,
+            reverse=True,
+        )
         return runs[0].get("run_id")
     return None
 
@@ -160,6 +170,21 @@ def _looks_like_hardware_count_prompt(prompt: str) -> bool:
     )
 
 
+def _looks_like_audit_start_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    audit_terms = (
+        "audit ",
+        "audit the",
+        "run audit",
+        "using command",
+        "based on file",
+        "device ",
+        "devices ",
+        ".txt",
+    )
+    return "audit" in lower_prompt and any(term in lower_prompt for term in audit_terms)
+
+
 def _format_component_summary(summary: dict) -> str:
     lines = ["Here is the verified component summary from the server-side structured counts:"]
     type_labels = {
@@ -181,6 +206,8 @@ async def _handle_deterministic_hardware_count(
 ) -> str | None:
     if not _looks_like_hardware_count_prompt(prompt):
         return None
+    if _looks_like_audit_start_prompt(prompt):
+        return None
 
     run_id = await _get_latest_run_id(session, log_file, session_id, turn_id)
     if not run_id:
@@ -197,7 +224,13 @@ async def _handle_deterministic_hardware_count(
             {"run_id": run_id},
         )
         data = _tool_result_json(result)
-        return _format_component_summary(data.get("summary", {}))
+        summary = data.get("summary", {})
+        if not summary:
+            return (
+                "The selected audit run does not contain structured component data yet. "
+                "Please run a fresh audit or use the normal analysis path."
+            )
+        return _format_component_summary(summary)
 
     name = _extract_component_name(prompt)
     component_type = _detect_component_type(prompt)
