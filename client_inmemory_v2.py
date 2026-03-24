@@ -17,8 +17,8 @@ MAX_TOOL_LOOPS = 20
 MAX_MEMORY_PROMPTS = 6
 MAX_MEMORY_HOSTS = 10
 MAX_MEMORY_COMMANDS = 8
-MAX_MODEL_ANSWER_CHARS = 12000
-MAX_RAW_TOOL_CHARS = 200_000
+MAX_MODEL_ANSWER_CHARS = 4_000_000
+MAX_RAW_TOOL_CHARS = 4_000_000
 SESSION_LOG_DIR = os.environ.get(
     "SESSION_LOG_DIR", os.path.join(os.getcwd(), "session_logs")
 )
@@ -260,7 +260,7 @@ _CURRENT_SESSION_MEMORY = _SessionMemoryRef()
 
 
 def _needs_compaction(response_text: str) -> bool:
-    return len(response_text) > MAX_MODEL_ANSWER_CHARS or response_text.count("\n") > 220
+    return len(response_text) > MAX_MODEL_ANSWER_CHARS
 
 
 async def run_intelligent_agent_v2() -> None:
