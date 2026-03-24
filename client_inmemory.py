@@ -185,6 +185,19 @@ def _looks_like_audit_start_prompt(prompt: str) -> bool:
     return "audit" in lower_prompt and any(term in lower_prompt for term in audit_terms)
 
 
+def _looks_like_audit_summary_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    summary_terms = (
+        "each category",
+        "hardware category",
+        "total number",
+        "total count",
+        "print out total",
+        "summary",
+    )
+    return _looks_like_audit_start_prompt(prompt) and any(term in lower_prompt for term in summary_terms)
+
+
 def _format_component_summary(summary: dict) -> str:
     lines = ["Here is the verified component summary from the server-side structured counts:"]
     type_labels = {
@@ -339,6 +352,85 @@ async def _handle_deterministic_hardware_count(
     return "\n".join(response_lines)
 
 
+async def _wait_for_run_completion(
+    session, log_file: str, session_id: str, turn_id: str, run_id: str
+) -> dict:
+    for _ in range(60):
+        result = await _call_tool_logged(
+            session,
+            log_file,
+            session_id,
+            turn_id,
+            "get_audit_run_status",
+            {"run_id": run_id},
+        )
+        data = _tool_result_json(result)
+        state = data.get("state")
+        if state in {"completed", "failed"}:
+            return data
+        await asyncio.sleep(1)
+    return {"error": f"Timed out waiting for audit run {run_id} to complete."}
+
+
+def _extract_audit_inputs(prompt: str) -> tuple[str, str] | tuple[None, None]:
+    quoted = re.findall(r'"([^"]+)"', prompt)
+    command = quoted[0].strip() if quoted else ""
+
+    file_match = re.search(r"\b([\w.\-]+\.txt)\b", prompt)
+    devices = file_match.group(1) if file_match else ""
+
+    if command and devices:
+        return devices, command
+    return None, None
+
+
+async def _handle_deterministic_audit_summary(
+    session, log_file: str, session_id: str, turn_id: str, prompt: str, deterministic_state: dict
+) -> str | None:
+    if not _looks_like_audit_summary_prompt(prompt):
+        return None
+
+    devices, command = _extract_audit_inputs(prompt)
+    if not devices or not command:
+        return None
+
+    result = await _call_tool_logged(
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        "start_audit_run",
+        {"devices": devices, "commands": command},
+    )
+    data = _tool_result_json(result)
+    run_id = data.get("run_id")
+    if not run_id:
+        return "Unable to start the audit run."
+
+    status = await _wait_for_run_completion(session, log_file, session_id, turn_id, run_id)
+    if status.get("error"):
+        return f"Error: {status['error']}"
+    if status.get("state") != "completed":
+        return f'Audit run {run_id} ended with state: {status.get("state")}.'
+
+    result = await _call_tool_logged(
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        "summarize_components",
+        {"run_id": run_id},
+    )
+    data = _tool_result_json(result)
+    summary = data.get("summary", {})
+    if not summary:
+        return "The completed audit run did not produce structured component data."
+
+    deterministic_state["last_summary"] = summary
+    deterministic_state["last_run_id"] = run_id
+    return _format_component_summary(summary)
+
+
 async def run_intelligent_agent() -> None:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
@@ -415,9 +507,13 @@ async def run_intelligent_agent() -> None:
                         },
                     )
 
-                    deterministic_response = await _handle_deterministic_hardware_count(
+                    deterministic_response = await _handle_deterministic_audit_summary(
                         session, session_log_file, session_id, turn_id, prompt, deterministic_state
                     )
+                    if deterministic_response is None:
+                        deterministic_response = await _handle_deterministic_hardware_count(
+                        session, session_log_file, session_id, turn_id, prompt, deterministic_state
+                        )
                     if deterministic_response is not None:
                         _write_session_log(
                             session_log_file,
