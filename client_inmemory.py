@@ -11,7 +11,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 
-SERVER_PATH = os.path.join(os.getcwd(), "server_inmemory.py")
+SERVER_PATH = os.path.join(os.getcwd(), "server_inmemory_v1.py")
 MODEL_ID = os.environ.get("GEMINI_MODEL_ID", "gemini-2.5-pro")
 MAX_TOOL_LOOPS = 20
 MAX_MEMORY_PROMPTS = 6
