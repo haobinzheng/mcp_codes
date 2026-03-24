@@ -645,6 +645,12 @@ def _looks_like_followup_category_prompt(prompt: str) -> bool:
         "each category",
         "for each device",
         "per device",
+        "device by device",
+        "host by host",
+        "break down",
+        "breakdown",
+        "category breakdown",
+        "per-device",
         "counts for each device",
         "print out these categories",
     )
@@ -665,8 +671,28 @@ def _format_per_device_category_counts(results: list[dict]) -> str:
 def _is_per_device_hardware_prompt(prompt: str) -> bool:
     lower_prompt = prompt.lower()
     return (
-        ("for each device" in lower_prompt or "per device" in lower_prompt)
-        and any(term in lower_prompt for term in ("hardware", "category", "component", "count", "tally"))
+        any(
+            term in lower_prompt
+            for term in (
+                "for each device",
+                "per device",
+                "device by device",
+                "host by host",
+                "per-device",
+            )
+        )
+        and any(
+            term in lower_prompt
+            for term in (
+                "hardware",
+                "category",
+                "component",
+                "count",
+                "tally",
+                "break down",
+                "breakdown",
+            )
+        )
     )
 
 
@@ -734,10 +760,22 @@ async def _handle_deterministic_hardware_count(
     deterministic_state: dict,
     session_memory: dict,
 ) -> str | None:
+    permissive_followup = (
+        deterministic_state.get("last_summary")
+        and (
+            _looks_like_followup_category_prompt(prompt)
+            or (
+                any(
+                    term in prompt.lower()
+                    for term in ("for each device", "per device", "device by device", "host by host")
+                )
+            )
+        )
+    )
     if not (
         _looks_like_hardware_count_prompt(prompt)
         or _looks_like_structured_hardware_host_prompt(prompt, deterministic_state)
-        or (deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt))
+        or permissive_followup
     ):
         return None
     if _looks_like_audit_start_prompt(prompt):
@@ -787,7 +825,10 @@ async def _handle_deterministic_hardware_count(
         deterministic_state["last_run_id"] = run_id
         return _format_single_host_component_summary(hostname, components)
 
-    if _is_per_device_hardware_prompt(prompt) and deterministic_state.get("last_summary"):
+    if permissive_followup and (
+        _is_per_device_hardware_prompt(prompt)
+        or _looks_like_followup_category_prompt(prompt)
+    ):
         results = []
         for component_type, name in _flatten_summary_categories(deterministic_state["last_summary"]):
             result = await _call_tool_logged(
@@ -843,42 +884,6 @@ async def _handle_deterministic_hardware_count(
         deterministic_state["last_run_id"] = run_id
         _remember_tool_data(session_memory, "summarize_components", data)
         return _format_component_summary(summary)
-
-    if deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt):
-        results = []
-        for component_type, name in _flatten_summary_categories(deterministic_state["last_summary"]):
-            result = await _call_tool_logged(
-                session,
-                log_file,
-                session_id,
-                turn_id,
-                "count_components",
-                {
-                    "run_id": deterministic_state.get("last_run_id", run_id),
-                    "name": name,
-                    "component_type": component_type,
-                    "match_mode": "exact",
-                },
-            )
-            data = _tool_result_json(result)
-            if data.get("error"):
-                continue
-            _remember_tool_data(session_memory, "count_components", data)
-            results.append(
-                {
-                    "component_type": component_type,
-                    "name": name,
-                    "per_host": data.get("per_host", {}),
-                }
-            )
-        total_hosts = len({host for item in results for host in item.get("per_host", {}).keys()})
-        if total_hosts > MAX_INLINE_HOSTS:
-            return (
-                f"The full per-device tally spans {total_hosts} devices, which is too large to print in one reply "
-                "without bloating the session. I can provide a host slice such as the first 10 devices, a specific "
-                "list of hosts, or one device at a time."
-            )
-        return _format_per_device_category_counts(results)
 
     name = _extract_component_name(prompt)
     component_type = _detect_component_type(prompt)
