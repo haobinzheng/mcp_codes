@@ -203,6 +203,7 @@ def _run_to_dict(run: AuditRun) -> dict[str, Any]:
 
 
 def _command_result_to_dict(result: CommandResult) -> dict[str, Any]:
+    structured_data_available = bool(result.facts or result.components)
     return {
         "command": result.command,
         "stdout": result.stdout,
@@ -214,6 +215,7 @@ def _command_result_to_dict(result: CommandResult) -> dict[str, Any]:
         "completed_at": result.completed_at,
         "facts": result.facts,
         "components": result.components,
+        "structured_data_available": structured_data_available,
     }
 
 
@@ -285,6 +287,39 @@ def _iter_components(
                     }
                 )
     return items
+
+
+def _build_best_context_for_result(
+    hostname: str,
+    command_name: str,
+    result: dict[str, Any],
+    include_raw_when_structured: bool,
+) -> dict[str, Any]:
+    structured_data_available = bool(result.get("structured_data_available"))
+    if structured_data_available:
+        payload = {
+            "mode": "structured",
+            "hostname": hostname,
+            "command": command_name,
+            "structured_data_available": True,
+            "facts": result.get("facts", {}),
+            "components": result.get("components", []),
+            "stderr": result.get("stderr", ""),
+            "exit_code": result.get("exit_code"),
+        }
+        if include_raw_when_structured:
+            payload["raw_output"] = result.get("stdout", "")
+        return payload
+
+    return {
+        "mode": "raw",
+        "hostname": hostname,
+        "command": command_name,
+        "structured_data_available": False,
+        "raw_output": result.get("stdout", ""),
+        "stderr": result.get("stderr", ""),
+        "exit_code": result.get("exit_code"),
+    }
 
 
 async def _run_single_command(
@@ -535,6 +570,59 @@ def get_audit_command_details(
         "output": result.stdout if include_raw else (result.filtered or result.stdout),
     }
     return _json(payload)
+
+
+@mcp.tool()
+def get_analysis_context(
+    run_id: str,
+    hostname: str = "",
+    command: str = "",
+    include_raw_when_structured: bool = False,
+) -> str:
+    """
+    Return the best available analysis context.
+    - If structured data exists for the matching result set, return structured context.
+    - Otherwise return raw command output.
+    """
+    run_data = _get_run_data(run_id)
+    if not run_data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+
+    results = run_data.get("results", {})
+    items = []
+    for host_name, per_host in results.items():
+        if hostname and host_name != hostname:
+            continue
+        for command_name, result in per_host.items():
+            if command and command_name != command:
+                continue
+            items.append(
+                _build_best_context_for_result(
+                    host_name,
+                    command_name,
+                    result,
+                    include_raw_when_structured,
+                )
+            )
+
+    if not items:
+        return _json(
+            {
+                "error": "No matching analysis context found.",
+                "run_id": run_id,
+                "hostname": hostname,
+                "command": command,
+            }
+        )
+
+    return _json(
+        {
+            "run_id": run_id,
+            "hostname": hostname,
+            "command": command,
+            "items": items,
+        }
+    )
 
 
 @mcp.tool()

@@ -27,8 +27,9 @@ Use the MCP tools with this workflow:
 4. Fetch host- or command-level details only when needed to support a conclusion.
 5. For hardware component questions and totals, use count_components or list_components instead of reasoning from raw text.
 6. Default to exact matching for component names. Only use prefix or contains matching if the user explicitly asks for variants, prefixes, or fuzzy matches.
-7. Use list_audit_log_runs, get_audit_log_summary, and get_audit_log_host_details when the user asks about prior runs.
-8. Do not ask the server to use local files for state exchange; the server stores audit data in memory and persists audit logs for later analysis.
+7. When you need evidence for a host or command, prefer get_analysis_context. It returns structured data when a parser exists and raw output otherwise.
+8. Use list_audit_log_runs, get_audit_log_summary, and get_audit_log_host_details when the user asks about prior runs.
+9. Do not ask the server to use local files for state exchange; the server stores audit data in memory and persists audit logs for later analysis.
 
 When the user asks for analysis over multiple commands, prefer:
 - summary first
@@ -36,6 +37,7 @@ When the user asks for analysis over multiple commands, prefer:
 
 When a run is still in progress, tell the user that the audit is still running and continue polling only if needed.
 For arithmetic, totals, or per-device counts, do not calculate in free text if a server tool can compute the answer.
+If no structured parser exists for a command, use the raw output returned by get_analysis_context and answer from that evidence.
 """
 
 
