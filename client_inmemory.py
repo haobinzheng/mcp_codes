@@ -269,19 +269,40 @@ def _looks_like_raw_followup_prompt(prompt: str, session_memory: dict) -> bool:
     active = session_memory.get("last_active_raw_request", {})
     if not active:
         return False
+    if _extract_first_quoted_command(prompt):
+        return False
+    explicit_host = _extract_specific_hostname(prompt)
+    if explicit_host and explicit_host != active.get("hostname"):
+        return False
+    if _looks_like_audit_start_prompt(prompt):
+        return False
+    return True
+
+
+def _looks_like_structured_hardware_host_prompt(prompt: str, deterministic_state: dict) -> bool:
+    hostname = _extract_specific_hostname(prompt)
+    if not hostname:
+        return False
     lower_prompt = prompt.lower()
-    followup_terms = (
-        "top ",
-        "only",
-        "utilization",
-        "neighbors",
-        "down",
-        "up",
-        "print",
-        "show me",
-        "analyze",
+    quoted_command = _extract_first_quoted_command(prompt).lower()
+    if quoted_command == "show chassis hardware":
+        return True
+    if not deterministic_state.get("last_summary"):
+        return False
+    return any(
+        term in lower_prompt
+        for term in (
+            "audit result",
+            "hardware result",
+            "hardware",
+            "component",
+            "category",
+            "count",
+            "tally",
+            "show result",
+            "print result",
+        )
     )
-    return any(term in lower_prompt for term in followup_terms)
 
 
 def _make_chat(client, session):
@@ -617,19 +638,25 @@ async def _handle_deterministic_hardware_count(
     deterministic_state: dict,
     session_memory: dict,
 ) -> str | None:
-    if not _looks_like_hardware_count_prompt(prompt) and not (
-        deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt)
+    if not (
+        _looks_like_hardware_count_prompt(prompt)
+        or _looks_like_structured_hardware_host_prompt(prompt, deterministic_state)
+        or (deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt))
     ):
         return None
     if _looks_like_audit_start_prompt(prompt):
         return None
 
-    run_id = await _get_latest_run_id(session, log_file, session_id, turn_id)
+    run_id = deterministic_state.get("last_run_id") or await _get_latest_run_id(
+        session, log_file, session_id, turn_id
+    )
     if not run_id:
         return "No audit run is available to count against."
 
     lower_prompt = prompt.lower()
-    if _looks_like_device_scoped_hardware_prompt(prompt):
+    if _looks_like_device_scoped_hardware_prompt(prompt) or _looks_like_structured_hardware_host_prompt(
+        prompt, deterministic_state
+    ):
         hostname = _extract_specific_hostname(prompt)
         result = await _call_tool_logged(
             session,
