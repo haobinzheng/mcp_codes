@@ -10,7 +10,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 
-mcp = FastMCP("GFiber-Net-InMemory-Server")
+mcp = FastMCP("GFiber-Net-InMemory-Server-v1")
 
 GNETCH_PATH = os.environ.get(
     "GNETCH_PATH", "/usr/local/google/home/mikezh/Coding/gfiber/bin/gnetch.sh"

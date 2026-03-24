@@ -795,7 +795,6 @@ def get_raw_command_outputs(
                 "command": command_name,
                 "exit_code": result.get("exit_code"),
                 "stderr": result.get("stderr", ""),
-                "raw_output_length": len(raw_output),
                 "raw_output": excerpt,
                 "raw_output_complete": len(raw_output) <= max_chars_per_output,
             }
@@ -820,48 +819,6 @@ def get_raw_command_outputs(
             "max_results": max_results,
             "truncated": truncated,
             "items": items,
-        }
-    )
-
-
-@mcp.tool()
-def get_raw_command_chunk(
-    run_id: str,
-    command: str,
-    hostname: str,
-    offset: int = 0,
-    max_chars: int = 4_000_000,
-) -> str:
-    """Return a deterministic chunk from a raw command output."""
-    run_data = _get_run_data(run_id)
-    if not run_data:
-        return _json({"error": f"Unknown run_id: {run_id}"})
-
-    for host_name, command_name, result in _iter_results(run_data, command=command, hosts={hostname}):
-        raw_output = result.get("stdout", "")
-        if offset < 0:
-            offset = 0
-        end = offset + max_chars
-        chunk = raw_output[offset:end]
-        return _json(
-            {
-                "run_id": run_id,
-                "hostname": host_name,
-                "command": command_name,
-                "offset": offset,
-                "next_offset": end if end < len(raw_output) else None,
-                "has_more": end < len(raw_output),
-                "total_chars": len(raw_output),
-                "chunk": chunk,
-                "exit_code": result.get("exit_code"),
-                "stderr": result.get("stderr", ""),
-            }
-        )
-
-    return _json(
-        {
-            "error": f"No raw command output found for host={hostname} command={command}",
-            "run_id": run_id,
         }
     )
 
@@ -1136,115 +1093,6 @@ def summarize_components(run_id: str, command: str = "") -> str:
                 component_type: dict(sorted(descriptions.items()))
                 for component_type, descriptions in sorted(summary.items())
             },
-        }
-    )
-
-
-@mcp.tool()
-def get_host_component_summary(run_id: str, hostname: str, command: str = "show chassis hardware") -> str:
-    """Return grouped component counts for one host."""
-    run_data = _get_run_data(run_id)
-    if not run_data:
-        return _json({"error": f"Unknown run_id: {run_id}"})
-
-    results = run_data.get("results", {}).get(hostname, {})
-    if not results:
-        return _json({"error": f"No results for host: {hostname}"})
-
-    summary: dict[str, dict[str, int]] = {}
-    for command_name, result in results.items():
-        if command and command_name != command:
-            continue
-        for component in result.get("components", []):
-            component_type = component.get("component_type", "unknown")
-            description = component.get("description", "")
-            if not description:
-                continue
-            summary.setdefault(component_type, {})
-            summary[component_type][description] = summary[component_type].get(description, 0) + 1
-
-    if not summary:
-        return _json(
-            {
-                "run_id": run_id,
-                "hostname": hostname,
-                "command": command,
-                "summary": {},
-                "error": "No structured component data found for this host/command.",
-            }
-        )
-
-    return _json(
-        {
-            "run_id": run_id,
-            "hostname": hostname,
-            "command": command,
-            "summary": {
-                component_type: dict(sorted(descriptions.items()))
-                for component_type, descriptions in sorted(summary.items())
-            },
-        }
-    )
-
-
-@mcp.tool()
-def compare_host_components(
-    run_id: str,
-    host_a: str,
-    host_b: str,
-    command: str = "show chassis hardware",
-) -> str:
-    """Compare exact structured component inventories between two hosts."""
-    run_data = _get_run_data(run_id)
-    if not run_data:
-        return _json({"error": f"Unknown run_id: {run_id}"})
-
-    def _host_summary(hostname: str) -> dict[str, dict[str, int]]:
-        results = run_data.get("results", {}).get(hostname, {})
-        summary: dict[str, dict[str, int]] = {}
-        for command_name, result in results.items():
-            if command and command_name != command:
-                continue
-            for component in result.get("components", []):
-                component_type = component.get("component_type", "unknown")
-                description = component.get("description", "")
-                if not description:
-                    continue
-                summary.setdefault(component_type, {})
-                summary[component_type][description] = summary[component_type].get(description, 0) + 1
-        return summary
-
-    summary_a = _host_summary(host_a)
-    summary_b = _host_summary(host_b)
-    if not summary_a:
-        return _json({"error": f"No structured component data found for host: {host_a}"})
-    if not summary_b:
-        return _json({"error": f"No structured component data found for host: {host_b}"})
-
-    all_types = sorted(set(summary_a) | set(summary_b))
-    diffs: dict[str, dict[str, dict[str, int]]] = {}
-    for component_type in all_types:
-        names = sorted(set(summary_a.get(component_type, {})) | set(summary_b.get(component_type, {})))
-        for name in names:
-            count_a = summary_a.get(component_type, {}).get(name, 0)
-            count_b = summary_b.get(component_type, {}).get(name, 0)
-            if count_a != count_b:
-                diffs.setdefault(component_type, {})
-                diffs[component_type][name] = {
-                    host_a: count_a,
-                    host_b: count_b,
-                }
-
-    return _json(
-        {
-            "run_id": run_id,
-            "command": command,
-            "host_a": host_a,
-            "host_b": host_b,
-            "exact_match": not bool(diffs),
-            "summary_a": summary_a,
-            "summary_b": summary_b,
-            "diffs": diffs,
         }
     )
 

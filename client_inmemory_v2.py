@@ -13,37 +13,38 @@ from mcp.client.stdio import stdio_client
 
 SERVER_PATH = os.path.join(os.getcwd(), "server_inmemory_v2.py")
 MODEL_ID = os.environ.get("GEMINI_MODEL_ID", "gemini-2.5-pro")
+CLIENT_VERSION = "v2"
+SERVER_VERSION = "v2"
 MAX_TOOL_LOOPS = 20
 MAX_MEMORY_PROMPTS = 6
-MAX_MEMORY_HOSTS = 10
-MAX_MEMORY_COMMANDS = 8
-MAX_MODEL_ANSWER_CHARS = 4_000_000
-MAX_RAW_TOOL_CHARS = 4_000_000
+MAX_MEMORY_HOSTS = 8
+MAX_MEMORY_COMMANDS = 6
 SESSION_LOG_DIR = os.environ.get(
     "SESSION_LOG_DIR", os.path.join(os.getcwd(), "session_logs")
 )
 
 SYSTEM_INSTRUCTION = """
-You are the GFiber Network Intelligence Agent v2.
+You are the GFiber Network Intelligence Agent.
 
-General workflow:
-1. Use MCP tools to fetch evidence before answering operational questions.
-2. Prefer structured tools when available:
-   - summarize_components
-   - count_components
-   - get_host_component_summary
-   - compare_host_components
-   - get_analysis_context
-3. For unsupported commands, use bounded raw-evidence tools:
-   - list_run_commands
-   - get_raw_analysis_context
-   - get_raw_command_outputs only for targeted small outputs
-4. Do not rely on free-text math when a tool can compute the answer.
-5. Use exact component matching by default unless the user explicitly asks for fuzzy matching.
-6. If evidence is partial or truncated, say so clearly.
-7. Keep answers concise by default. Summaries first, details on demand.
-8. Use prior session memory for follow-up questions. If the user refers to "same host", "same command", or "that run", resolve it from memory before asking for clarification.
-9. If the needed evidence is still missing, ask a short follow-up question instead of guessing.
+Use the MCP tools with this workflow:
+1. Start audits with start_audit_run.
+2. Check progress with get_audit_run_status when needed.
+3. Read compact results with get_audit_run_summary before requesting detailed outputs.
+4. Fetch host- or command-level details only when needed to support a conclusion.
+5. For hardware component questions and totals, use count_components or list_components instead of reasoning from raw text.
+6. Default to exact matching for component names. Only use prefix or contains matching if the user explicitly asks for variants, prefixes, or fuzzy matches.
+7. When you need evidence for a host or command, prefer get_analysis_context. It returns structured data when a parser exists and raw output otherwise.
+8. For commands without structured parsing, use list_run_commands and get_raw_analysis_context to retrieve raw evidence before answering.
+9. Use list_audit_log_runs, get_audit_log_summary, and get_audit_log_host_details when the user asks about prior runs.
+10. Do not ask the server to use local files for state exchange; the server stores audit data in memory and persists audit logs for later analysis.
+
+When the user asks for analysis over multiple commands, prefer:
+- summary first
+- then targeted lookups for specific hosts, commands, failures, or anomalies
+
+When a run is still in progress, tell the user that the audit is still running and continue polling only if needed.
+For arithmetic, totals, or per-device counts, do not calculate in free text if a server tool can compute the answer.
+If no structured parser exists for a command, use the raw output returned by get_analysis_context and answer from that evidence.
 """
 
 
@@ -64,7 +65,12 @@ def _tool_result_text(result) -> str:
     return str(result)
 
 
-def _limit_list(items: list[str], max_items: int) -> list[str]:
+def _tool_result_json(result) -> dict:
+    text = _tool_result_text(result)
+    return json.loads(text)
+
+
+def _limit_list(items: list, max_items: int) -> list:
     if len(items) <= max_items:
         return items
     return items[-max_items:]
@@ -72,14 +78,16 @@ def _limit_list(items: list[str], max_items: int) -> list[str]:
 
 def _extract_hosts_from_text(text: str) -> list[str]:
     pattern = r"\b[a-z]{2,}\d{2}\.[a-z]{3}\d{3}\b"
-    return sorted(set(re.findall(pattern, text.lower())))
+    hosts = re.findall(pattern, text.lower())
+    return sorted(set(hosts))
 
 
 def _extract_commands_from_text(text: str) -> list[str]:
     commands = re.findall(r'"(show[^"]+)"', text, flags=re.IGNORECASE)
     if commands:
         return [command.strip() for command in commands]
-    return [item.strip(" .,") for item in re.findall(r"\bshow\s+[a-z0-9 _/-]+", text, flags=re.IGNORECASE)[:3]]
+    commands = re.findall(r"\bshow\s+[a-z0-9 _/-]+", text, flags=re.IGNORECASE)
+    return [command.strip(" .,") for command in commands[:3]]
 
 
 def _new_session_memory() -> dict:
@@ -100,65 +108,57 @@ def _remember_user_prompt(session_memory: dict, prompt: str) -> None:
     )
     hosts = _extract_hosts_from_text(prompt)
     if hosts:
-        session_memory["last_hosts"] = _limit_list(
-            list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts)),
-            MAX_MEMORY_HOSTS,
-        )
+        merged_hosts = list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts))
+        session_memory["last_hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
     commands = _extract_commands_from_text(prompt)
     if commands:
-        session_memory["last_commands"] = _limit_list(
-            list(dict.fromkeys(session_memory.get("last_commands", []) + commands)),
-            MAX_MEMORY_COMMANDS,
-        )
+        merged_commands = list(dict.fromkeys(session_memory.get("last_commands", []) + commands))
+        session_memory["last_commands"] = merged_commands[-MAX_MEMORY_COMMANDS:]
 
 
-def _remember_tool_data(session_memory: dict, tool_name: str, payload: dict) -> None:
-    run_id = payload.get("run_id")
-    if isinstance(run_id, str) and run_id:
+def _remember_tool_data(session_memory: dict, tool_name: str, data: dict) -> None:
+    run_id = data.get("run_id")
+    if run_id:
         session_memory["last_run_id"] = run_id
 
     hosts: list[str] = []
-    if isinstance(payload.get("hostname"), str) and payload.get("hostname"):
-        hosts.append(payload["hostname"])
-    if isinstance(payload.get("host_a"), str) and payload.get("host_a"):
-        hosts.append(payload["host_a"])
-    if isinstance(payload.get("host_b"), str) and payload.get("host_b"):
-        hosts.append(payload["host_b"])
-    if isinstance(payload.get("hosts"), list):
-        hosts.extend([item for item in payload["hosts"] if isinstance(item, str)])
-    if isinstance(payload.get("items"), list):
-        for item in payload["items"]:
+    if isinstance(data.get("hostname"), str) and data.get("hostname"):
+        hosts.append(data["hostname"])
+    if isinstance(data.get("hosts"), list):
+        hosts.extend([host for host in data["hosts"] if isinstance(host, str)])
+    if isinstance(data.get("per_host"), dict):
+        hosts.extend(list(data["per_host"].keys()))
+    if isinstance(data.get("items"), list):
+        for item in data["items"]:
             if isinstance(item, dict) and isinstance(item.get("hostname"), str):
                 hosts.append(item["hostname"])
     if hosts:
-        session_memory["last_hosts"] = _limit_list(
-            list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts)),
-            MAX_MEMORY_HOSTS,
-        )
+        merged_hosts = list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts))
+        session_memory["last_hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
 
     commands: list[str] = []
-    if isinstance(payload.get("command"), str) and payload.get("command"):
-        commands.append(payload["command"])
-    if isinstance(payload.get("commands"), list):
-        commands.extend([item for item in payload["commands"] if isinstance(item, str)])
-    if isinstance(payload.get("items"), list):
-        for item in payload["items"]:
+    command_value = data.get("command")
+    if isinstance(command_value, str) and command_value:
+        commands.append(command_value)
+    if isinstance(data.get("commands"), list):
+        commands.extend([command for command in data["commands"] if isinstance(command, str)])
+    if isinstance(data.get("items"), list):
+        for item in data["items"]:
             if isinstance(item, dict) and isinstance(item.get("command"), str) and item.get("command"):
                 commands.append(item["command"])
     if commands:
-        session_memory["last_commands"] = _limit_list(
-            list(dict.fromkeys(session_memory.get("last_commands", []) + commands)),
-            MAX_MEMORY_COMMANDS,
-        )
+        merged_commands = list(dict.fromkeys(session_memory.get("last_commands", []) + commands))
+        session_memory["last_commands"] = merged_commands[-MAX_MEMORY_COMMANDS:]
 
-    if tool_name == "summarize_components" and payload.get("summary"):
-        session_memory["last_structured_summary"] = payload["summary"]
-    if tool_name == "get_raw_analysis_context" and payload.get("items"):
+    if tool_name == "summarize_components" and data.get("summary"):
+        session_memory["last_structured_summary"] = data["summary"]
+    elif tool_name == "get_raw_analysis_context" and data.get("items"):
         session_memory["last_raw_context"] = {
-            "run_id": payload.get("run_id", ""),
-            "command": payload.get("command", ""),
-            "truncated": payload.get("truncated", False),
-            "items": payload.get("items", [])[:4],
+            "run_id": data.get("run_id", ""),
+            "command": data.get("command", ""),
+            "question": data.get("question", ""),
+            "truncated": data.get("truncated", False),
+            "items": data.get("items", [])[:4],
         }
 
 
@@ -167,114 +167,475 @@ def _build_memory_context(session_memory: dict) -> str:
     if session_memory.get("last_run_id"):
         lines.append(f'- Last run id: {session_memory["last_run_id"]}')
     if session_memory.get("last_hosts"):
-        lines.append("- Recent hosts: " + ", ".join(session_memory["last_hosts"]))
-    if session_memory.get("last_commands"):
-        lines.append("- Recent commands: " + ", ".join(session_memory["last_commands"]))
-    if session_memory.get("last_structured_summary"):
-        preview = []
-        for component_type, descriptions in session_memory["last_structured_summary"].items():
-            for name in list(descriptions.keys())[:2]:
-                preview.append(f"{component_type}:{name}")
-        if preview:
-            lines.append("- Last structured categories: " + ", ".join(preview[:8]))
-    if session_memory.get("last_raw_context"):
-        raw_context = session_memory["last_raw_context"]
         lines.append(
-            "- Last raw context: "
-            f'run={raw_context.get("run_id", "")}, '
-            f'command={raw_context.get("command", "")}, '
-            f'items={len(raw_context.get("items", []))}, '
-            f'truncated={raw_context.get("truncated", False)}'
+            "- Recent hosts: " + ", ".join(session_memory["last_hosts"][-MAX_MEMORY_HOSTS:])
         )
+    if session_memory.get("last_commands"):
+        lines.append(
+            "- Recent commands: " + ", ".join(session_memory["last_commands"][-MAX_MEMORY_COMMANDS:])
+        )
+    structured_summary = session_memory.get("last_structured_summary", {})
+    if structured_summary:
+        categories = []
+        for component_type, descriptions in structured_summary.items():
+            categories.extend(f"{component_type}:{name}" for name in list(descriptions.keys())[:3])
+        if categories:
+            lines.append("- Last structured categories: " + ", ".join(categories[:8]))
+    raw_context = session_memory.get("last_raw_context", {})
+    if raw_context:
+        summary = [f'run={raw_context.get("run_id", "")}']
+        if raw_context.get("command"):
+            summary.append(f'command={raw_context["command"]}')
+        summary.append(f'items={len(raw_context.get("items", []))}')
+        if raw_context.get("truncated"):
+            summary.append("truncated=true")
+        lines.append("- Last raw evidence: " + ", ".join(summary))
     prompts = session_memory.get("recent_user_prompts", [])
     if prompts:
-        lines.append("- Recent prompts:")
+        lines.append("- Recent user intents:")
         for item in prompts[-3:]:
             lines.append(f"  - {item}")
     return "\n".join(lines)
 
 
-def _make_chat(client, session):
-    return client.aio.chats.create(
-        model=MODEL_ID,
-        config=types.GenerateContentConfig(
-            tools=[session],
-            system_instruction=SYSTEM_INSTRUCTION,
-        ),
-    )
-
-
 async def _call_tool_logged(session, log_file: str, session_id: str, turn_id: str, tool_name: str, args: dict):
-    safe_args = dict(args)
-    if tool_name == "get_raw_command_outputs":
-        safe_args["max_chars_per_output"] = min(
-            int(safe_args.get("max_chars_per_output", MAX_RAW_TOOL_CHARS)),
-            MAX_RAW_TOOL_CHARS,
-        )
-    if tool_name == "get_raw_command_chunk":
-        safe_args["max_chars"] = min(int(safe_args.get("max_chars", MAX_RAW_TOOL_CHARS)), MAX_RAW_TOOL_CHARS)
     _write_session_log(
         log_file,
         {
+            "args": args,
             "event": "tool_call",
             "session_id": session_id,
             "timestamp": time.time(),
             "tool_name": tool_name,
             "turn_id": turn_id,
-            "args": safe_args,
         },
     )
-    result = await session.call_tool(tool_name, safe_args)
+    result = await session.call_tool(tool_name, args)
     result_text = _tool_result_text(result)
     _write_session_log(
         log_file,
         {
             "event": "tool_result",
+            "result": result_text,
             "session_id": session_id,
             "timestamp": time.time(),
             "tool_name": tool_name,
             "turn_id": turn_id,
-            "result": result_text,
         },
     )
-    try:
-        payload = json.loads(result_text)
-        _remember_tool_data(session_memory=_CURRENT_SESSION_MEMORY.get(), tool_name=tool_name, payload=payload)
-    except Exception:
-        pass
     return result
 
 
-class _SessionMemoryRef:
-    def __init__(self) -> None:
-        self.value = _new_session_memory()
+async def _get_latest_run_id(session, log_file: str, session_id: str, turn_id: str) -> str | None:
+    result = await _call_tool_logged(session, log_file, session_id, turn_id, "list_audit_runs", {})
+    data = _tool_result_json(result)
+    runs = data.get("runs", [])
+    if runs:
+        runs = sorted(
+            runs,
+            key=lambda item: item.get("created_at") or item.get("completed_at") or 0,
+            reverse=True,
+        )
+        return runs[0].get("run_id")
 
-    def get(self) -> dict:
-        return self.value
+    result = await _call_tool_logged(session, log_file, session_id, turn_id, "list_audit_log_runs", {})
+    data = _tool_result_json(result)
+    runs = data.get("runs", [])
+    if runs:
+        runs = sorted(
+            runs,
+            key=lambda item: item.get("created_at") or item.get("completed_at") or 0,
+            reverse=True,
+        )
+        return runs[0].get("run_id")
+    return None
 
-    def reset(self) -> None:
-        self.value = _new_session_memory()
+
+def _extract_component_name(prompt: str) -> str:
+    quoted = re.findall(r'"([^"]+)"', prompt)
+    if quoted:
+        return quoted[-1]
+
+    patterns = [
+        r"total number of\s+([A-Za-z0-9\-\+ ]+)",
+        r"count\s+([A-Za-z0-9\-\+ ]+)",
+        r"how many\s+([A-Za-z0-9\-\+ ]+)",
+    ]
+    lower_prompt = prompt.lower()
+    for pattern in patterns:
+        match = re.search(pattern, lower_prompt)
+        if match:
+            return prompt[match.start(1):match.end(1)].strip(" .,:")
+    return ""
 
 
-_CURRENT_SESSION_MEMORY = _SessionMemoryRef()
+def _detect_component_type(prompt: str) -> str:
+    lower_prompt = prompt.lower()
+    if "routing engine" in lower_prompt or "re-s-" in lower_prompt:
+        return "routing_engine"
+    if "line card" in lower_prompt or "mpc" in lower_prompt or "fpc" in lower_prompt:
+        return "line_card"
+    if "control board" in lower_prompt or "scb" in lower_prompt:
+        return "control_board"
+    if "chassis" in lower_prompt:
+        return "chassis"
+    return ""
 
 
-def _needs_compaction(response_text: str) -> bool:
-    return len(response_text) > MAX_MODEL_ANSWER_CHARS
+def _looks_like_hardware_count_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    count_terms = ("count", "total", "how many", "calculate", "number of", "double check")
+    hardware_terms = (
+        "hardware",
+        "component",
+        "chassis",
+        "routing engine",
+        "re-s-",
+        "scb",
+        "control board",
+        "line card",
+        "mpc",
+        "mpce",
+        "mrate",
+        "fpc",
+    )
+    return any(term in lower_prompt for term in count_terms) and any(
+        term in lower_prompt for term in hardware_terms
+    )
 
 
-async def run_intelligent_agent_v2() -> None:
+def _looks_like_audit_start_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    audit_terms = (
+        "audit ",
+        "audit the",
+        "run audit",
+        "using command",
+        "based on file",
+        "device ",
+        "devices ",
+        ".txt",
+    )
+    return "audit" in lower_prompt and any(term in lower_prompt for term in audit_terms)
+
+
+def _looks_like_audit_summary_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    summary_terms = (
+        "each category",
+        "hardware category",
+        "total number",
+        "total count",
+        "print out total",
+        "summary",
+    )
+    return _looks_like_audit_start_prompt(prompt) and any(term in lower_prompt for term in summary_terms)
+
+
+def _format_component_summary(summary: dict) -> str:
+    lines = ["Here is the verified component summary from the server-side structured counts:"]
+    type_labels = {
+        "chassis": "Chassis",
+        "routing_engine": "Routing Engine",
+        "control_board": "Control Board",
+        "line_card": "Line Card",
+    }
+    for component_type, descriptions in summary.items():
+        lines.append("")
+        lines.append(f"{type_labels.get(component_type, component_type)}:")
+        for description, count in descriptions.items():
+            lines.append(f"- {description}: {count}")
+    return "\n".join(lines)
+
+
+def _flatten_summary_categories(summary: dict) -> list[tuple[str, str]]:
+    items = []
+    for component_type, descriptions in summary.items():
+        for description in descriptions.keys():
+            items.append((component_type, description))
+    return items
+
+
+def _looks_like_followup_category_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    followup_terms = (
+        "these categories",
+        "same categories",
+        "each category",
+        "for each device",
+        "per device",
+        "counts for each device",
+        "print out these categories",
+    )
+    return any(term in lower_prompt for term in followup_terms)
+
+
+def _format_per_device_category_counts(results: list[dict]) -> str:
+    lines = ["Here are the per-device counts for the requested categories:"]
+    for item in results:
+        lines.append("")
+        lines.append(f'{item["component_type"]}: {item["name"]}')
+        per_host = item.get("per_host", {})
+        for hostname, count in per_host.items():
+            lines.append(f"- {hostname}: {count}")
+    return "\n".join(lines)
+
+
+async def _answer_from_raw_context(
+    chat,
+    prompt: str,
+    raw_context: dict,
+) -> str:
+    grounded_prompt = (
+        "Answer the user's request using only the raw command evidence below.\n\n"
+        f"User request:\n{prompt}\n\n"
+        "Raw evidence context:\n"
+        f"{json.dumps(raw_context, indent=2, sort_keys=True)}\n\n"
+        "Rules:\n"
+        "- Do not invent data that is not present in the evidence.\n"
+        "- If the evidence is partial or truncated, say so.\n"
+        "- If an exact count cannot be determined from the provided evidence, say that clearly.\n"
+        "- Keep the answer concise and cite hostnames when useful.\n"
+    )
+    response = await chat.send_message(grounded_prompt)
+    return response.text or "No answer was generated from the raw evidence."
+
+
+async def _handle_deterministic_hardware_count(
+    session,
+    log_file: str,
+    session_id: str,
+    turn_id: str,
+    prompt: str,
+    deterministic_state: dict,
+    session_memory: dict,
+) -> str | None:
+    if not _looks_like_hardware_count_prompt(prompt) and not (
+        deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt)
+    ):
+        return None
+    if _looks_like_audit_start_prompt(prompt):
+        return None
+
+    run_id = await _get_latest_run_id(session, log_file, session_id, turn_id)
+    if not run_id:
+        return "No audit run is available to count against."
+
+    lower_prompt = prompt.lower()
+    if "all the hard" in lower_prompt or "all hardware" in lower_prompt or "each category" in lower_prompt:
+        result = await _call_tool_logged(
+            session,
+            log_file,
+            session_id,
+            turn_id,
+            "summarize_components",
+            {"run_id": run_id},
+        )
+        data = _tool_result_json(result)
+        summary = data.get("summary", {})
+        if not summary:
+            return (
+                "The selected audit run does not contain structured component data yet. "
+                "Please run a fresh audit or use the normal analysis path."
+            )
+        deterministic_state["last_summary"] = summary
+        deterministic_state["last_run_id"] = run_id
+        _remember_tool_data(session_memory, "summarize_components", data)
+        return _format_component_summary(summary)
+
+    if deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt):
+        results = []
+        for component_type, name in _flatten_summary_categories(deterministic_state["last_summary"]):
+            result = await _call_tool_logged(
+                session,
+                log_file,
+                session_id,
+                turn_id,
+                "count_components",
+                {
+                    "run_id": deterministic_state.get("last_run_id", run_id),
+                    "name": name,
+                    "component_type": component_type,
+                    "match_mode": "exact",
+                },
+            )
+            data = _tool_result_json(result)
+            if data.get("error"):
+                continue
+            _remember_tool_data(session_memory, "count_components", data)
+            results.append(
+                {
+                    "component_type": component_type,
+                    "name": name,
+                    "per_host": data.get("per_host", {}),
+                }
+            )
+        return _format_per_device_category_counts(results)
+
+    name = _extract_component_name(prompt)
+    component_type = _detect_component_type(prompt)
+    if not name:
+        return None
+
+    result = await _call_tool_logged(
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        "count_components",
+        {
+            "run_id": run_id,
+            "name": name,
+            "component_type": component_type,
+            "match_mode": "exact",
+        },
+    )
+    data = _tool_result_json(result)
+    if data.get("error"):
+        return f"Error: {data['error']}"
+
+    total_count = data.get("total_count", 0)
+    host_count = data.get("host_count", 0)
+    per_host = data.get("per_host", {})
+    _remember_tool_data(session_memory, "count_components", data)
+    deterministic_state["last_summary"] = {
+        component_type or "unknown": {
+            name: total_count,
+        }
+    }
+    deterministic_state["last_run_id"] = run_id
+    response_lines = [
+        f'The verified total number of "{name}" is {total_count} across {host_count} devices.'
+    ]
+    if "list" in lower_prompt or "each device" in lower_prompt or "per device" in lower_prompt:
+        response_lines.append("")
+        response_lines.append("Per-device counts:")
+        for hostname, count in per_host.items():
+            response_lines.append(f"- {hostname}: {count}")
+    return "\n".join(response_lines)
+
+
+async def _wait_for_run_completion(
+    session, log_file: str, session_id: str, turn_id: str, run_id: str
+) -> dict:
+    for _ in range(60):
+        result = await _call_tool_logged(
+            session,
+            log_file,
+            session_id,
+            turn_id,
+            "get_audit_run_status",
+            {"run_id": run_id},
+        )
+        data = _tool_result_json(result)
+        state = data.get("state")
+        if state in {"completed", "failed"}:
+            return data
+        await asyncio.sleep(1)
+    return {"error": f"Timed out waiting for audit run {run_id} to complete."}
+
+
+def _extract_audit_inputs(prompt: str) -> tuple[str, str] | tuple[None, None]:
+    quoted = re.findall(r'"([^"]+)"', prompt)
+    command = quoted[0].strip() if quoted else ""
+
+    file_match = re.search(r"\b([\w.\-]+\.txt)\b", prompt)
+    devices = file_match.group(1) if file_match else ""
+
+    if command and devices:
+        return devices, command
+    return None, None
+
+
+async def _handle_deterministic_audit_summary(
+    session,
+    chat,
+    log_file: str,
+    session_id: str,
+    turn_id: str,
+    prompt: str,
+    deterministic_state: dict,
+    session_memory: dict,
+) -> str | None:
+    if not _looks_like_audit_summary_prompt(prompt):
+        return None
+
+    devices, command = _extract_audit_inputs(prompt)
+    if not devices or not command:
+        return None
+
+    result = await _call_tool_logged(
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        "start_audit_run",
+        {"devices": devices, "commands": command},
+    )
+    data = _tool_result_json(result)
+    run_id = data.get("run_id")
+    if not run_id:
+        return "Unable to start the audit run."
+
+    status = await _wait_for_run_completion(session, log_file, session_id, turn_id, run_id)
+    if status.get("error"):
+        return f"Error: {status['error']}"
+    if status.get("state") != "completed":
+        return f'Audit run {run_id} ended with state: {status.get("state")}.'
+    _remember_tool_data(session_memory, "start_audit_run", data)
+
+    result = await _call_tool_logged(
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        "summarize_components",
+        {"run_id": run_id},
+    )
+    data = _tool_result_json(result)
+    summary = data.get("summary", {})
+    if not summary:
+        raw_result = await _call_tool_logged(
+            session,
+            log_file,
+            session_id,
+            turn_id,
+            "get_raw_analysis_context",
+            {
+                "run_id": run_id,
+                "question": prompt,
+                "command": command,
+            },
+        )
+        raw_data = _tool_result_json(raw_result)
+        if raw_data.get("error"):
+            return (
+                "The completed audit run did not produce structured component data, "
+                f"and raw evidence lookup failed: {raw_data['error']}"
+            )
+        _remember_tool_data(session_memory, "get_raw_analysis_context", raw_data)
+        deterministic_state["last_run_id"] = run_id
+        deterministic_state["last_summary"] = {}
+        return await _answer_from_raw_context(chat, prompt, raw_data)
+
+    _remember_tool_data(session_memory, "summarize_components", data)
+    deterministic_state["last_summary"] = summary
+    deterministic_state["last_run_id"] = run_id
+    return _format_component_summary(summary)
+
+
+async def run_intelligent_agent() -> None:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         print("Error: Set your GEMINI_API_KEY environment variable.")
         return
+
     if not os.path.exists(SERVER_PATH):
         print(f"Error: Server not found at {SERVER_PATH}")
         return
 
     client = genai.Client(api_key=api_key)
     params = StdioServerParameters(command="python3", args=[SERVER_PATH], env=os.environ.copy())
-
     _ensure_session_log_dir()
     session_id = uuid.uuid4().hex[:12]
     session_log_file = os.path.join(SESSION_LOG_DIR, f"session_{session_id}.jsonl")
@@ -282,30 +643,39 @@ async def run_intelligent_agent_v2() -> None:
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()
-            chat = _make_chat(client, session)
-            _CURRENT_SESSION_MEMORY.reset()
 
             print("\n" + "=" * 60)
-            print(f" GFIBER IN-MEMORY AGENT V2: {MODEL_ID}")
+            print(f" GFIBER IN-MEMORY AGENT: {MODEL_ID}")
             print(" Type 'exit' or 'quit' to end the session.")
-            print(f" Server: {SERVER_PATH}")
             print(f" Session log: {session_log_file}")
             print("=" * 60)
 
             _write_session_log(
                 session_log_file,
                 {
+                    "client_version": CLIENT_VERSION,
                     "event": "session_started",
                     "model_id": MODEL_ID,
                     "server_path": SERVER_PATH,
+                    "server_version": SERVER_VERSION,
                     "session_id": session_id,
                     "timestamp": time.time(),
                 },
             )
 
+            chat = client.aio.chats.create(
+                model=MODEL_ID,
+                config=types.GenerateContentConfig(
+                    tools=[session],
+                    system_instruction=SYSTEM_INSTRUCTION,
+                ),
+            )
+            deterministic_state: dict = {}
+            session_memory = _new_session_memory()
+
             while True:
                 prompt = input("\n[USER]: ").strip()
-                if prompt.lower() in {"exit", "quit", "bye", "goodbye"}:
+                if prompt.lower() in ["exit", "quit", "goodbye", "bye"]:
                     _write_session_log(
                         session_log_file,
                         {
@@ -332,8 +702,41 @@ async def run_intelligent_agent_v2() -> None:
                             "turn_id": turn_id,
                         },
                     )
-                    session_memory = _CURRENT_SESSION_MEMORY.get()
                     _remember_user_prompt(session_memory, prompt)
+
+                    deterministic_response = await _handle_deterministic_audit_summary(
+                        session,
+                        chat,
+                        session_log_file,
+                        session_id,
+                        turn_id,
+                        prompt,
+                        deterministic_state,
+                        session_memory,
+                    )
+                    if deterministic_response is None:
+                        deterministic_response = await _handle_deterministic_hardware_count(
+                            session,
+                            session_log_file,
+                            session_id,
+                            turn_id,
+                            prompt,
+                            deterministic_state,
+                            session_memory,
+                        )
+                    if deterministic_response is not None:
+                        _write_session_log(
+                            session_log_file,
+                            {
+                                "event": "model_answer",
+                                "response": deterministic_response,
+                                "session_id": session_id,
+                                "timestamp": time.time(),
+                                "turn_id": turn_id,
+                            },
+                        )
+                        print(f"\n[AI]: {deterministic_response}")
+                        continue
 
                     enriched_prompt = (
                         f"{_build_memory_context(session_memory)}\n\n"
@@ -344,9 +747,11 @@ async def run_intelligent_agent_v2() -> None:
                     for _ in range(MAX_TOOL_LOOPS):
                         if not response.candidates or not response.candidates[0].content:
                             break
+
                         parts = response.candidates[0].content.parts
                         if not parts:
                             break
+
                         tool_calls = [part.function_call for part in parts if part.function_call]
                         if not tool_calls:
                             break
@@ -362,10 +767,15 @@ async def run_intelligent_agent_v2() -> None:
                                 call.name,
                                 dict(call.args),
                             )
+                            result_text = _tool_result_text(result)
+                            try:
+                                _remember_tool_data(session_memory, call.name, json.loads(result_text))
+                            except Exception:
+                                pass
                             tool_responses.append(
                                 types.Part.from_function_response(
                                     name=call.name,
-                                    response={"result": _tool_result_text(result)},
+                                    response={"result": result_text},
                                 )
                             )
 
@@ -383,50 +793,25 @@ async def run_intelligent_agent_v2() -> None:
                         )
                         print("\n[!] Stopped after too many consecutive tool loops.")
 
-                    answer = response.text or "No answer returned."
-                    if _needs_compaction(answer):
-                        chat = _make_chat(client, session)
+                    if response.text:
                         _write_session_log(
                             session_log_file,
                             {
-                                "event": "chat_reset",
-                                "reason": "large_model_answer",
+                                "event": "model_answer",
+                                "response": response.text,
                                 "session_id": session_id,
                                 "timestamp": time.time(),
                                 "turn_id": turn_id,
                             },
                         )
-                    _write_session_log(
-                        session_log_file,
-                        {
-                            "event": "model_answer",
-                            "response": answer,
-                            "session_id": session_id,
-                            "timestamp": time.time(),
-                            "turn_id": turn_id,
-                        },
-                    )
-                    print(f"\n[AI]: {answer}")
+                        print(f"\n[AI]: {response.text}")
 
                 except Exception as exc:
-                    error_text = str(exc)
-                    if "maximum number of tokens" in error_text or "input token count exceeds" in error_text:
-                        chat = _make_chat(client, session)
-                        _write_session_log(
-                            session_log_file,
-                            {
-                                "event": "chat_reset",
-                                "reason": "token_limit_error",
-                                "session_id": session_id,
-                                "timestamp": time.time(),
-                                "turn_id": turn_id if "turn_id" in locals() else None,
-                            },
-                        )
                     _write_session_log(
                         session_log_file,
                         {
+                            "error": str(exc),
                             "event": "turn_error",
-                            "error": error_text,
                             "session_id": session_id,
                             "timestamp": time.time(),
                             "turn_id": turn_id if "turn_id" in locals() else None,
@@ -437,6 +822,6 @@ async def run_intelligent_agent_v2() -> None:
 
 if __name__ == "__main__":
     try:
-        asyncio.run(run_intelligent_agent_v2())
+        asyncio.run(run_intelligent_agent())
     except KeyboardInterrupt:
         print("\n[*] Interrupted by user. Exiting...")

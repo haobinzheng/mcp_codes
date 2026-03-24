@@ -13,6 +13,8 @@ from mcp.client.stdio import stdio_client
 
 SERVER_PATH = os.path.join(os.getcwd(), "server_inmemory_v1.py")
 MODEL_ID = os.environ.get("GEMINI_MODEL_ID", "gemini-2.5-pro")
+CLIENT_VERSION = "v1"
+SERVER_VERSION = "v1"
 MAX_TOOL_LOOPS = 20
 MAX_MEMORY_PROMPTS = 6
 MAX_MEMORY_HOSTS = 8
@@ -651,9 +653,11 @@ async def run_intelligent_agent() -> None:
             _write_session_log(
                 session_log_file,
                 {
+                    "client_version": CLIENT_VERSION,
                     "event": "session_started",
                     "model_id": MODEL_ID,
                     "server_path": SERVER_PATH,
+                    "server_version": SERVER_VERSION,
                     "session_id": session_id,
                     "timestamp": time.time(),
                 },
