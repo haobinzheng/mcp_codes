@@ -20,6 +20,7 @@ MAX_MEMORY_COMMANDS = 6
 MAX_INLINE_HOSTS = 12
 MAX_MODEL_ANSWER_CHARS = 12000
 RAW_CHUNK_CHARS = 4_000_000
+MAX_DIRECT_RAW_MODEL_CHARS = 200_000
 RAW_ANALYSIS_MAX_CHUNKS = 24
 SESSION_LOG_DIR = os.environ.get(
     "SESSION_LOG_DIR", os.path.join(os.getcwd(), "session_logs")
@@ -384,6 +385,26 @@ async def _handle_single_host_raw_command(
     session_memory["last_run_id"] = run_id
 
     if items[0].get("raw_output_complete", True):
+        if items[0].get("raw_output_length", 0) > MAX_DIRECT_RAW_MODEL_CHARS:
+            raw_result = await _call_tool_logged(
+                session,
+                log_file,
+                session_id,
+                turn_id,
+                "get_raw_analysis_context",
+                {
+                    "run_id": run_id,
+                    "question": prompt,
+                    "command": command,
+                    "hosts": hostname,
+                    "max_hosts": 1,
+                    "max_chars_per_host": 12000,
+                },
+            )
+            raw_data = _tool_result_json(raw_result)
+            _remember_tool_data(session_memory, "get_raw_analysis_context", raw_data)
+            session_memory["last_raw_context"] = raw_data
+            return await _answer_from_raw_context(chat, prompt, raw_data)
         _remember_tool_data(session_memory, "get_raw_command_outputs", preview_data)
         session_memory["last_raw_context"] = preview_data
         return await _answer_from_raw_context(chat, prompt, preview_data)
@@ -427,6 +448,27 @@ async def _handle_raw_followup_from_memory(
             },
         )
         raw_data = _tool_result_json(raw_result)
+        items = raw_data.get("items", [])
+        if items and items[0].get("raw_output_length", 0) > MAX_DIRECT_RAW_MODEL_CHARS:
+            bounded_result = await _call_tool_logged(
+                session,
+                log_file,
+                session_id,
+                turn_id,
+                "get_raw_analysis_context",
+                {
+                    "run_id": run_id,
+                    "question": prompt,
+                    "command": command,
+                    "hosts": hostname,
+                    "max_hosts": 1,
+                    "max_chars_per_host": 12000,
+                },
+            )
+            bounded_data = _tool_result_json(bounded_result)
+            _remember_tool_data(session_memory, "get_raw_analysis_context", bounded_data)
+            session_memory["last_raw_context"] = bounded_data
+            return await _answer_from_raw_context(chat, prompt, bounded_data)
         _remember_tool_data(session_memory, "get_raw_command_outputs", raw_data)
         session_memory["last_raw_context"] = raw_data
         return await _answer_from_raw_context(chat, prompt, raw_data)
@@ -633,11 +675,46 @@ async def _answer_from_raw_context(
     prompt: str,
     raw_context: dict,
 ) -> str:
+    def _format_raw_context(context: dict) -> str:
+        lines = []
+        if context.get("run_id"):
+            lines.append(f'Run id: {context["run_id"]}')
+        if context.get("command"):
+            lines.append(f'Command: {context["command"]}')
+        if context.get("question"):
+            lines.append(f'Question hint: {context["question"]}')
+        if context.get("truncated"):
+            lines.append("Context truncated: true")
+
+        for item in context.get("items", []):
+            lines.append("")
+            lines.append(f'Host: {item.get("hostname", "")}')
+            lines.append(f'Command: {item.get("command", "")}')
+            if "raw_output_length" in item:
+                lines.append(f'Raw output length: {item.get("raw_output_length")}')
+            if "raw_output_complete" in item:
+                lines.append(f'Raw output complete: {item.get("raw_output_complete")}')
+            body = item.get("raw_output") or item.get("excerpt") or ""
+            if body:
+                lines.append("Evidence:")
+                lines.append(body)
+
+        for match in context.get("matches", []):
+            lines.append("")
+            lines.append(f'Match host: {match.get("hostname", "")}')
+            lines.append(f'Match command: {match.get("command", "")}')
+            excerpt = match.get("excerpt", "")
+            if excerpt:
+                lines.append("Excerpt:")
+                lines.append(excerpt)
+
+        return "\n".join(lines).strip()
+
     grounded_prompt = (
         "Answer the user's request using only the raw command evidence below.\n\n"
         f"User request:\n{prompt}\n\n"
         "Raw evidence context:\n"
-        f"{json.dumps(raw_context, indent=2, sort_keys=True)}\n\n"
+        f"{_format_raw_context(raw_context)}\n\n"
         "Rules:\n"
         "- Do not invent data that is not present in the evidence.\n"
         "- If the evidence is partial or truncated, say so.\n"
