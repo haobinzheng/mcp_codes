@@ -1,0 +1,54 @@
+{
+  "commands": [
+    "show bgp summary"
+  ],
+  "completed_at": 1774383020.5662565,
+  "completed_tasks": 1,
+  "created_at": 1774383013.85475,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "sar01.oma102"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_09f4e93a6d91.json",
+  "results": {
+    "sar01.oma102": {
+      "show bgp summary": {
+        "command": "show bgp summary",
+        "completed_at": 1774383020.5656416,
+        "components": [],
+        "duration_ms": 6708,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1774383013.8567317,
+        "stderr": "",
+        "stdout": "Threading mode: BGP I/O\nDefault eBGP mode: advertise - accept, receive - accept\nGroups: 4 Peers: 5 Down peers: 0\nTable          Tot Paths  Act Paths Suppressed    History Damp State    Pending\ninet.0               \n                 2132655    1066189          0          0          0          0\ninet6.0              \n                  491777     245888          0          0          0          0\nbgp.l3vpn.0          \n                       0          0          0          0          0          0\nbgp.mvpn.0           \n                       0          0          0          0          0          0\nPeer                     AS      InPkt     OutPkt    OutQ   Flaps Last Up/Dwn State|#Active/Received/Accepted/Damped...\n172.30.0.55           16591       1148       2036       0      23  3d 4:23:01 Establ\n  inet.0: 0/0/0/0\n192.119.16.76         16591    5438576      14386       0       3 4d 12:57:46 Establ\n  inet.0: 1066188/1066327/1066327/0\n  inet6.0: 245887/245888/245888/0\n  bgp.l3vpn.0: 0/0/0/0\n  bgp.mvpn.0: 0/0/0/0\n192.119.16.77         16591   16087275      42839       0       5 1w6d 12:38:15 Establ\n  inet.0: 0/1066327/1066327/0\n  inet6.0: 0/245888/245888/0\n  bgp.l3vpn.0: 0/0/0/0\n  bgp.mvpn.0: 0/0/0/0\n192.200.234.17        19165    1425564  141791236       0       1 70w4d 23:39:32 Establ\n  inet.0: 1/1/1/0\n2605:a600:201::105       19165    1425564  117790424       0       0 70w4d 23:39:49 Establ\n  inet6.0: 1/1/1/0",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "09f4e93a6d91",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "09f4e93a6d91",
+    "state": "completed",
+    "success_hosts": [
+      "sar01.oma102"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}
