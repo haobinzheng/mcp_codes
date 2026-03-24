@@ -1,0 +1,54 @@
+{
+  "commands": [
+    "show bgp summary"
+  ],
+  "completed_at": 1774376856.6086278,
+  "completed_tasks": 1,
+  "created_at": 1774376849.874985,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "sar01.oma103"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_925063353b68.json",
+  "results": {
+    "sar01.oma103": {
+      "show bgp summary": {
+        "command": "show bgp summary",
+        "completed_at": 1774376856.6079671,
+        "components": [],
+        "duration_ms": 6730,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1774376849.8772695,
+        "stderr": "",
+        "stdout": "Threading mode: BGP I/O\nDefault eBGP mode: advertise - accept, receive - accept\nGroups: 5 Peers: 7 Down peers: 0\nTable          Tot Paths  Act Paths Suppressed    History Damp State    Pending\ninet.0               \n                 2132845    1066285          0          0          0          0\ninet6.0              \n                  491781     245888          0          0          0          0\nbgp.l3vpn.0          \n                     232        116          0          0          0          0\nbgp.mvpn.0           \n                       0          0          0          0          0          0\nPeer                     AS      InPkt     OutPkt    OutQ   Flaps Last Up/Dwn State|#Active/Received/Accepted/Damped...\n136.42.34.166         16591    9406522   10405323       0       0 77w5d 10:05:43 Establ\n  inet.0: 2/2/2/0\n136.42.34.167         16591    9406489   10405317       0       0 77w5d 10:05:43 Establ\n  inet.0: 2/2/2/0\n172.30.0.55           16591       1123       3454       0      18  3d 2:40:18 Establ\n  inet.0: 0/0/0/0\n192.119.16.76         16591    5342484      16453       0       3 4d 11:15:02 Establ\n  inet.0: 1066281/1066420/1066420/0\n  inet6.0: 245888/245890/245890/0\n  bgp.l3vpn.0: 116/116/116/0\n  bgp.mvpn.0: 0/0/0/0\n  SERVER_DRAC_VPN.inet.0: 17/52/52/0\n  SERVER_MGMT_VPN.inet.0: 17/64/64/0\n192.119.16.77         16591   15993780      47629       0       4 1w6d 10:55:31 Establ\n  inet.0: 0/1066420/1066420/0\n  inet6.0: 0/245890/245890/0\n  bgp.l3vpn.0: 0/116/116/0\n  bgp.mvpn.0: 0/0/0/0\n  SERVER_DRAC_VPN.inet.0: 0/52/52/0\n  SERVER_MGMT_VPN.inet.0: 0/64/64/0\n192.200.234.19        19165          7          4       0   45564        1:02 Establ\n  inet.0: 0/1/0/0\n2605:a600:201::107       19165          6          3       0   42674          54 Establ\n  inet6.0: 0/1/0/0",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "925063353b68",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "925063353b68",
+    "state": "completed",
+    "success_hosts": [
+      "sar01.oma103"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}
