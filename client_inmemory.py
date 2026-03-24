@@ -1003,7 +1003,6 @@ async def run_intelligent_agent() -> None:
                         )
                     if deterministic_response is None and _looks_like_single_host_command_prompt(prompt):
                         deterministic_response = await _handle_single_host_raw_command(
-                            client,
                             session,
                             session_log_file,
                             session_id,
