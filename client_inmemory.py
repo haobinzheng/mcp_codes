@@ -14,6 +14,9 @@ from mcp.client.stdio import stdio_client
 SERVER_PATH = os.path.join(os.getcwd(), "server_inmemory.py")
 MODEL_ID = os.environ.get("GEMINI_MODEL_ID", "gemini-2.5-pro")
 MAX_TOOL_LOOPS = 20
+MAX_MEMORY_PROMPTS = 6
+MAX_MEMORY_HOSTS = 8
+MAX_MEMORY_COMMANDS = 6
 SESSION_LOG_DIR = os.environ.get(
     "SESSION_LOG_DIR", os.path.join(os.getcwd(), "session_logs")
 )
@@ -63,6 +66,134 @@ def _tool_result_text(result) -> str:
 def _tool_result_json(result) -> dict:
     text = _tool_result_text(result)
     return json.loads(text)
+
+
+def _limit_list(items: list, max_items: int) -> list:
+    if len(items) <= max_items:
+        return items
+    return items[-max_items:]
+
+
+def _extract_hosts_from_text(text: str) -> list[str]:
+    pattern = r"\b[a-z]{2,}\d{2}\.[a-z]{3}\d{3}\b"
+    hosts = re.findall(pattern, text.lower())
+    return sorted(set(hosts))
+
+
+def _extract_commands_from_text(text: str) -> list[str]:
+    commands = re.findall(r'"(show[^"]+)"', text, flags=re.IGNORECASE)
+    if commands:
+        return [command.strip() for command in commands]
+    commands = re.findall(r"\bshow\s+[a-z0-9 _/-]+", text, flags=re.IGNORECASE)
+    return [command.strip(" .,") for command in commands[:3]]
+
+
+def _new_session_memory() -> dict:
+    return {
+        "last_run_id": "",
+        "last_hosts": [],
+        "last_commands": [],
+        "last_structured_summary": {},
+        "last_raw_context": {},
+        "recent_user_prompts": [],
+    }
+
+
+def _remember_user_prompt(session_memory: dict, prompt: str) -> None:
+    session_memory["recent_user_prompts"] = _limit_list(
+        session_memory.get("recent_user_prompts", []) + [prompt],
+        MAX_MEMORY_PROMPTS,
+    )
+    hosts = _extract_hosts_from_text(prompt)
+    if hosts:
+        merged_hosts = list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts))
+        session_memory["last_hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
+    commands = _extract_commands_from_text(prompt)
+    if commands:
+        merged_commands = list(dict.fromkeys(session_memory.get("last_commands", []) + commands))
+        session_memory["last_commands"] = merged_commands[-MAX_MEMORY_COMMANDS:]
+
+
+def _remember_tool_data(session_memory: dict, tool_name: str, data: dict) -> None:
+    run_id = data.get("run_id")
+    if run_id:
+        session_memory["last_run_id"] = run_id
+
+    hosts: list[str] = []
+    if isinstance(data.get("hostname"), str) and data.get("hostname"):
+        hosts.append(data["hostname"])
+    if isinstance(data.get("hosts"), list):
+        hosts.extend([host for host in data["hosts"] if isinstance(host, str)])
+    if isinstance(data.get("per_host"), dict):
+        hosts.extend(list(data["per_host"].keys()))
+    if isinstance(data.get("items"), list):
+        for item in data["items"]:
+            if isinstance(item, dict) and isinstance(item.get("hostname"), str):
+                hosts.append(item["hostname"])
+    if hosts:
+        merged_hosts = list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts))
+        session_memory["last_hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
+
+    commands: list[str] = []
+    command_value = data.get("command")
+    if isinstance(command_value, str) and command_value:
+        commands.append(command_value)
+    if isinstance(data.get("commands"), list):
+        commands.extend([command for command in data["commands"] if isinstance(command, str)])
+    if isinstance(data.get("items"), list):
+        for item in data["items"]:
+            if isinstance(item, dict) and isinstance(item.get("command"), str) and item.get("command"):
+                commands.append(item["command"])
+    if commands:
+        merged_commands = list(dict.fromkeys(session_memory.get("last_commands", []) + commands))
+        session_memory["last_commands"] = merged_commands[-MAX_MEMORY_COMMANDS:]
+
+    if tool_name == "summarize_components" and data.get("summary"):
+        session_memory["last_structured_summary"] = data["summary"]
+    elif tool_name == "get_raw_analysis_context" and data.get("items"):
+        session_memory["last_raw_context"] = {
+            "run_id": data.get("run_id", ""),
+            "command": data.get("command", ""),
+            "question": data.get("question", ""),
+            "truncated": data.get("truncated", False),
+            "items": data.get("items", [])[:4],
+        }
+
+
+def _build_memory_context(session_memory: dict) -> str:
+    lines = ["Session memory:"]
+    if session_memory.get("last_run_id"):
+        lines.append(f'- Last run id: {session_memory["last_run_id"]}')
+    if session_memory.get("last_hosts"):
+        lines.append(
+            "- Recent hosts: " + ", ".join(session_memory["last_hosts"][-MAX_MEMORY_HOSTS:])
+        )
+    if session_memory.get("last_commands"):
+        lines.append(
+            "- Recent commands: " + ", ".join(session_memory["last_commands"][-MAX_MEMORY_COMMANDS:])
+        )
+    structured_summary = session_memory.get("last_structured_summary", {})
+    if structured_summary:
+        categories = []
+        for component_type, descriptions in structured_summary.items():
+            categories.extend(f"{component_type}:{name}" for name in list(descriptions.keys())[:3])
+        if categories:
+            lines.append("- Last structured categories: " + ", ".join(categories[:8]))
+    raw_context = session_memory.get("last_raw_context", {})
+    if raw_context:
+        summary = [f'run={raw_context.get("run_id", "")}']
+        if raw_context.get("command"):
+            summary.append(f'command={raw_context["command"]}')
+        summary.append(f'items={len(raw_context.get("items", []))}')
+        if raw_context.get("truncated"):
+            summary.append("truncated=true")
+        lines.append("- Last raw evidence: " + ", ".join(summary))
+    prompts = session_memory.get("recent_user_prompts", [])
+    if prompts:
+        lines.append("- Recent user intents:")
+        for item in prompts[-3:]:
+            lines.append(f"  - {item}")
+    return "\n".join(lines)
 
 
 async def _call_tool_logged(session, log_file: str, session_id: str, turn_id: str, tool_name: str, args: dict):
@@ -269,7 +400,13 @@ async def _answer_from_raw_context(
 
 
 async def _handle_deterministic_hardware_count(
-    session, log_file: str, session_id: str, turn_id: str, prompt: str, deterministic_state: dict
+    session,
+    log_file: str,
+    session_id: str,
+    turn_id: str,
+    prompt: str,
+    deterministic_state: dict,
+    session_memory: dict,
 ) -> str | None:
     if not _looks_like_hardware_count_prompt(prompt) and not (
         deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt)
@@ -301,6 +438,7 @@ async def _handle_deterministic_hardware_count(
             )
         deterministic_state["last_summary"] = summary
         deterministic_state["last_run_id"] = run_id
+        _remember_tool_data(session_memory, "summarize_components", data)
         return _format_component_summary(summary)
 
     if deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt):
@@ -322,6 +460,7 @@ async def _handle_deterministic_hardware_count(
             data = _tool_result_json(result)
             if data.get("error"):
                 continue
+            _remember_tool_data(session_memory, "count_components", data)
             results.append(
                 {
                     "component_type": component_type,
@@ -356,6 +495,7 @@ async def _handle_deterministic_hardware_count(
     total_count = data.get("total_count", 0)
     host_count = data.get("host_count", 0)
     per_host = data.get("per_host", {})
+    _remember_tool_data(session_memory, "count_components", data)
     deterministic_state["last_summary"] = {
         component_type or "unknown": {
             name: total_count,
@@ -413,6 +553,7 @@ async def _handle_deterministic_audit_summary(
     turn_id: str,
     prompt: str,
     deterministic_state: dict,
+    session_memory: dict,
 ) -> str | None:
     if not _looks_like_audit_summary_prompt(prompt):
         return None
@@ -439,6 +580,7 @@ async def _handle_deterministic_audit_summary(
         return f"Error: {status['error']}"
     if status.get("state") != "completed":
         return f'Audit run {run_id} ended with state: {status.get("state")}.'
+    _remember_tool_data(session_memory, "start_audit_run", data)
 
     result = await _call_tool_logged(
         session,
@@ -469,10 +611,12 @@ async def _handle_deterministic_audit_summary(
                 "The completed audit run did not produce structured component data, "
                 f"and raw evidence lookup failed: {raw_data['error']}"
             )
+        _remember_tool_data(session_memory, "get_raw_analysis_context", raw_data)
         deterministic_state["last_run_id"] = run_id
         deterministic_state["last_summary"] = {}
         return await _answer_from_raw_context(chat, prompt, raw_data)
 
+    _remember_tool_data(session_memory, "summarize_components", data)
     deterministic_state["last_summary"] = summary
     deterministic_state["last_run_id"] = run_id
     return _format_component_summary(summary)
@@ -523,6 +667,7 @@ async def run_intelligent_agent() -> None:
                 ),
             )
             deterministic_state: dict = {}
+            session_memory = _new_session_memory()
 
             while True:
                 prompt = input("\n[USER]: ").strip()
@@ -553,6 +698,7 @@ async def run_intelligent_agent() -> None:
                             "turn_id": turn_id,
                         },
                     )
+                    _remember_user_prompt(session_memory, prompt)
 
                     deterministic_response = await _handle_deterministic_audit_summary(
                         session,
@@ -562,10 +708,17 @@ async def run_intelligent_agent() -> None:
                         turn_id,
                         prompt,
                         deterministic_state,
+                        session_memory,
                     )
                     if deterministic_response is None:
                         deterministic_response = await _handle_deterministic_hardware_count(
-                        session, session_log_file, session_id, turn_id, prompt, deterministic_state
+                            session,
+                            session_log_file,
+                            session_id,
+                            turn_id,
+                            prompt,
+                            deterministic_state,
+                            session_memory,
                         )
                     if deterministic_response is not None:
                         _write_session_log(
@@ -581,7 +734,11 @@ async def run_intelligent_agent() -> None:
                         print(f"\n[AI]: {deterministic_response}")
                         continue
 
-                    response = await chat.send_message(prompt)
+                    enriched_prompt = (
+                        f"{_build_memory_context(session_memory)}\n\n"
+                        f"Current user request:\n{prompt}"
+                    )
+                    response = await chat.send_message(enriched_prompt)
 
                     for _ in range(MAX_TOOL_LOOPS):
                         if not response.candidates or not response.candidates[0].content:
@@ -607,6 +764,10 @@ async def run_intelligent_agent() -> None:
                                 dict(call.args),
                             )
                             result_text = _tool_result_text(result)
+                            try:
+                                _remember_tool_data(session_memory, call.name, json.loads(result_text))
+                            except Exception:
+                                pass
                             tool_responses.append(
                                 types.Part.from_function_response(
                                     name=call.name,
