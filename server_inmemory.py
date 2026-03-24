@@ -795,6 +795,7 @@ def get_raw_command_outputs(
                 "command": command_name,
                 "exit_code": result.get("exit_code"),
                 "stderr": result.get("stderr", ""),
+                "raw_output_length": len(raw_output),
                 "raw_output": excerpt,
                 "raw_output_complete": len(raw_output) <= max_chars_per_output,
             }
@@ -819,6 +820,48 @@ def get_raw_command_outputs(
             "max_results": max_results,
             "truncated": truncated,
             "items": items,
+        }
+    )
+
+
+@mcp.tool()
+def get_raw_command_chunk(
+    run_id: str,
+    command: str,
+    hostname: str,
+    offset: int = 0,
+    max_chars: int = 4000,
+) -> str:
+    """Return a deterministic chunk from a raw command output."""
+    run_data = _get_run_data(run_id)
+    if not run_data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+
+    for host_name, command_name, result in _iter_results(run_data, command=command, hosts={hostname}):
+        raw_output = result.get("stdout", "")
+        if offset < 0:
+            offset = 0
+        end = offset + max_chars
+        chunk = raw_output[offset:end]
+        return _json(
+            {
+                "run_id": run_id,
+                "hostname": host_name,
+                "command": command_name,
+                "offset": offset,
+                "next_offset": end if end < len(raw_output) else None,
+                "has_more": end < len(raw_output),
+                "total_chars": len(raw_output),
+                "chunk": chunk,
+                "exit_code": result.get("exit_code"),
+                "stderr": result.get("stderr", ""),
+            }
+        )
+
+    return _json(
+        {
+            "error": f"No raw command output found for host={hostname} command={command}",
+            "run_id": run_id,
         }
     )
 

@@ -19,6 +19,8 @@ MAX_MEMORY_HOSTS = 8
 MAX_MEMORY_COMMANDS = 6
 MAX_INLINE_HOSTS = 12
 MAX_MODEL_ANSWER_CHARS = 12000
+RAW_CHUNK_CHARS = 4000
+RAW_ANALYSIS_MAX_CHUNKS = 24
 SESSION_LOG_DIR = os.environ.get(
     "SESSION_LOG_DIR", os.path.join(os.getcwd(), "session_logs")
 )
@@ -97,6 +99,7 @@ def _new_session_memory() -> dict:
         "last_commands": [],
         "last_structured_summary": {},
         "last_raw_context": {},
+        "last_active_raw_request": {},
         "recent_user_prompts": [],
     }
 
@@ -190,6 +193,16 @@ def _build_memory_context(session_memory: dict) -> str:
         if raw_context.get("truncated"):
             summary.append("truncated=true")
         lines.append("- Last raw evidence: " + ", ".join(summary))
+    active_raw = session_memory.get("last_active_raw_request", {})
+    if active_raw:
+        parts = [f'run={active_raw.get("run_id", "")}']
+        if active_raw.get("hostname"):
+            parts.append(f'host={active_raw["hostname"]}')
+        if active_raw.get("command"):
+            parts.append(f'command={active_raw["command"]}')
+        if active_raw.get("chunked"):
+            parts.append("chunked=true")
+        lines.append("- Last active raw request: " + ", ".join(parts))
     prompts = session_memory.get("recent_user_prompts", [])
     if prompts:
         lines.append("- Recent user intents:")
@@ -201,6 +214,14 @@ def _build_memory_context(session_memory: dict) -> str:
 def _extract_specific_hostname(prompt: str) -> str:
     hosts = _extract_hosts_from_text(prompt)
     return hosts[0] if hosts else ""
+
+
+def _extract_first_quoted_command(prompt: str) -> str:
+    quoted = re.findall(r'"([^"]+)"', prompt)
+    for item in quoted:
+        if item.lower().startswith("show "):
+            return item.strip()
+    return ""
 
 
 def _looks_like_device_scoped_hardware_prompt(prompt: str) -> bool:
@@ -240,6 +261,29 @@ def _needs_compaction(response_text: str) -> bool:
     return len(response_text) > MAX_MODEL_ANSWER_CHARS or response_text.count("\n") > 220
 
 
+def _looks_like_single_host_command_prompt(prompt: str) -> bool:
+    return bool(_extract_specific_hostname(prompt) and _extract_first_quoted_command(prompt))
+
+
+def _looks_like_raw_followup_prompt(prompt: str, session_memory: dict) -> bool:
+    active = session_memory.get("last_active_raw_request", {})
+    if not active:
+        return False
+    lower_prompt = prompt.lower()
+    followup_terms = (
+        "top ",
+        "only",
+        "utilization",
+        "neighbors",
+        "down",
+        "up",
+        "print",
+        "show me",
+        "analyze",
+    )
+    return any(term in lower_prompt for term in followup_terms)
+
+
 def _make_chat(client, session):
     return client.aio.chats.create(
         model=MODEL_ID,
@@ -247,6 +291,208 @@ def _make_chat(client, session):
             tools=[session],
             system_instruction=SYSTEM_INSTRUCTION,
         ),
+    )
+
+
+def _make_plain_chat(client, system_instruction: str):
+    return client.aio.chats.create(
+        model=MODEL_ID,
+        config=types.GenerateContentConfig(system_instruction=system_instruction),
+    )
+
+
+async def _analyze_large_raw_output(
+    client,
+    session,
+    log_file: str,
+    session_id: str,
+    turn_id: str,
+    user_prompt: str,
+    run_id: str,
+    hostname: str,
+    command: str,
+    session_memory: dict,
+) -> str:
+    chunk_summaries: list[str] = []
+    offset = 0
+    chunk_count = 0
+
+    while chunk_count < RAW_ANALYSIS_MAX_CHUNKS:
+        result = await _call_tool_logged(
+            session,
+            log_file,
+            session_id,
+            turn_id,
+            "get_raw_command_chunk",
+            {
+                "run_id": run_id,
+                "command": command,
+                "hostname": hostname,
+                "offset": offset,
+                "max_chars": RAW_CHUNK_CHARS,
+            },
+        )
+        data = _tool_result_json(result)
+        if data.get("error"):
+            return f"Error: {data['error']}"
+
+        chunk = data.get("chunk", "")
+        if not chunk:
+            break
+
+        chunk_chat = _make_plain_chat(
+            client,
+            "You analyze one chunk of network command output. Extract only facts relevant to the user's request. "
+            "If the chunk has nothing useful, reply with NONE. Keep it concise.",
+        )
+        chunk_prompt = (
+            f"User request:\n{user_prompt}\n\n"
+            f"Host: {hostname}\n"
+            f"Command: {command}\n"
+            f"Chunk {chunk_count + 1}\n\n"
+            f"{chunk}"
+        )
+        chunk_response = await chunk_chat.send_message(chunk_prompt)
+        chunk_text = (chunk_response.text or "").strip()
+        if chunk_text and chunk_text.upper() != "NONE":
+            chunk_summaries.append(f"Chunk {chunk_count + 1}:\n{chunk_text}")
+
+        chunk_count += 1
+        if not data.get("has_more"):
+            break
+        offset = data.get("next_offset") or 0
+
+    final_chat = _make_plain_chat(
+        client,
+        "You combine chunk-level findings from a large network command output into one grounded answer. "
+        "Mention that the output was too large and was analyzed in chunks. Do not invent facts.",
+    )
+    final_prompt = (
+        f"User request:\n{user_prompt}\n\n"
+        f"Host: {hostname}\n"
+        f"Command: {command}\n"
+        f"Chunks analyzed: {chunk_count}\n\n"
+        "Chunk findings:\n"
+        + ("\n\n".join(chunk_summaries) if chunk_summaries else "No relevant facts were extracted from the chunks.")
+    )
+    final_response = await final_chat.send_message(final_prompt)
+    session_memory["last_active_raw_request"] = {
+        "run_id": run_id,
+        "hostname": hostname,
+        "command": command,
+        "chunked": True,
+    }
+    return (
+        "The command output was too large to send directly, so I analyzed it in chunks.\n\n"
+        + (final_response.text or "No answer was generated from the chunked analysis.")
+    )
+
+
+async def _handle_single_host_raw_command(
+    client,
+    session,
+    log_file: str,
+    session_id: str,
+    turn_id: str,
+    prompt: str,
+    session_memory: dict,
+) -> str | None:
+    hostname = _extract_specific_hostname(prompt)
+    command = _extract_first_quoted_command(prompt)
+    if not hostname or not command:
+        return None
+
+    result = await _call_tool_logged(
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        "start_audit_run",
+        {"devices": hostname, "commands": command},
+    )
+    data = _tool_result_json(result)
+    run_id = data.get("run_id")
+    if not run_id:
+        return "Unable to start the command run."
+
+    status = await _wait_for_run_completion(session, log_file, session_id, turn_id, run_id)
+    if status.get("error"):
+        return f"Error: {status['error']}"
+
+    preview_result = await _call_tool_logged(
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        "get_raw_command_outputs",
+        {
+            "run_id": run_id,
+            "command": command,
+            "hosts": hostname,
+            "max_chars_per_output": RAW_CHUNK_CHARS,
+            "max_results": 1,
+        },
+    )
+    preview_data = _tool_result_json(preview_result)
+    items = preview_data.get("items", [])
+    if not items:
+        return f"No raw output was found for {hostname} {command}."
+
+    session_memory["last_active_raw_request"] = {
+        "run_id": run_id,
+        "hostname": hostname,
+        "command": command,
+        "chunked": not items[0].get("raw_output_complete", True),
+    }
+    session_memory["last_run_id"] = run_id
+
+    if items[0].get("raw_output_complete", True):
+        return await _answer_from_raw_context(client.aio.chats.create(
+            model=MODEL_ID,
+            config=types.GenerateContentConfig(system_instruction="Answer from the provided raw command evidence."),
+        ), prompt, preview_data)
+
+    return await _analyze_large_raw_output(
+        client,
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        prompt,
+        run_id,
+        hostname,
+        command,
+        session_memory,
+    )
+
+
+async def _handle_raw_followup_from_memory(
+    client,
+    session,
+    log_file: str,
+    session_id: str,
+    turn_id: str,
+    prompt: str,
+    session_memory: dict,
+) -> str | None:
+    active = session_memory.get("last_active_raw_request", {})
+    run_id = active.get("run_id")
+    hostname = active.get("hostname")
+    command = active.get("command")
+    if not run_id or not hostname or not command:
+        return None
+
+    return await _analyze_large_raw_output(
+        client,
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        prompt,
+        run_id,
+        hostname,
+        command,
+        session_memory,
     )
 
 
@@ -808,6 +1054,26 @@ async def run_intelligent_agent() -> None:
                             turn_id,
                             prompt,
                             deterministic_state,
+                            session_memory,
+                        )
+                    if deterministic_response is None and _looks_like_single_host_command_prompt(prompt):
+                        deterministic_response = await _handle_single_host_raw_command(
+                            client,
+                            session,
+                            session_log_file,
+                            session_id,
+                            turn_id,
+                            prompt,
+                            session_memory,
+                        )
+                    if deterministic_response is None and _looks_like_raw_followup_prompt(prompt, session_memory):
+                        deterministic_response = await _handle_raw_followup_from_memory(
+                            client,
+                            session,
+                            session_log_file,
+                            session_id,
+                            turn_id,
+                            prompt,
                             session_memory,
                         )
                     if deterministic_response is not None:
