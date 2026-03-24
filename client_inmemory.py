@@ -201,10 +201,45 @@ def _format_component_summary(summary: dict) -> str:
     return "\n".join(lines)
 
 
+def _flatten_summary_categories(summary: dict) -> list[tuple[str, str]]:
+    items = []
+    for component_type, descriptions in summary.items():
+        for description in descriptions.keys():
+            items.append((component_type, description))
+    return items
+
+
+def _looks_like_followup_category_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    followup_terms = (
+        "these categories",
+        "same categories",
+        "each category",
+        "for each device",
+        "per device",
+        "counts for each device",
+        "print out these categories",
+    )
+    return any(term in lower_prompt for term in followup_terms)
+
+
+def _format_per_device_category_counts(results: list[dict]) -> str:
+    lines = ["Here are the per-device counts for the requested categories:"]
+    for item in results:
+        lines.append("")
+        lines.append(f'{item["component_type"]}: {item["name"]}')
+        per_host = item.get("per_host", {})
+        for hostname, count in per_host.items():
+            lines.append(f"- {hostname}: {count}")
+    return "\n".join(lines)
+
+
 async def _handle_deterministic_hardware_count(
-    session, log_file: str, session_id: str, turn_id: str, prompt: str
+    session, log_file: str, session_id: str, turn_id: str, prompt: str, deterministic_state: dict
 ) -> str | None:
-    if not _looks_like_hardware_count_prompt(prompt):
+    if not _looks_like_hardware_count_prompt(prompt) and not (
+        deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt)
+    ):
         return None
     if _looks_like_audit_start_prompt(prompt):
         return None
@@ -230,7 +265,37 @@ async def _handle_deterministic_hardware_count(
                 "The selected audit run does not contain structured component data yet. "
                 "Please run a fresh audit or use the normal analysis path."
             )
+        deterministic_state["last_summary"] = summary
+        deterministic_state["last_run_id"] = run_id
         return _format_component_summary(summary)
+
+    if deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt):
+        results = []
+        for component_type, name in _flatten_summary_categories(deterministic_state["last_summary"]):
+            result = await _call_tool_logged(
+                session,
+                log_file,
+                session_id,
+                turn_id,
+                "count_components",
+                {
+                    "run_id": deterministic_state.get("last_run_id", run_id),
+                    "name": name,
+                    "component_type": component_type,
+                    "match_mode": "exact",
+                },
+            )
+            data = _tool_result_json(result)
+            if data.get("error"):
+                continue
+            results.append(
+                {
+                    "component_type": component_type,
+                    "name": name,
+                    "per_host": data.get("per_host", {}),
+                }
+            )
+        return _format_per_device_category_counts(results)
 
     name = _extract_component_name(prompt)
     component_type = _detect_component_type(prompt)
@@ -257,6 +322,12 @@ async def _handle_deterministic_hardware_count(
     total_count = data.get("total_count", 0)
     host_count = data.get("host_count", 0)
     per_host = data.get("per_host", {})
+    deterministic_state["last_summary"] = {
+        component_type or "unknown": {
+            name: total_count,
+        }
+    }
+    deterministic_state["last_run_id"] = run_id
     response_lines = [
         f'The verified total number of "{name}" is {total_count} across {host_count} devices.'
     ]
@@ -312,6 +383,7 @@ async def run_intelligent_agent() -> None:
                     system_instruction=SYSTEM_INSTRUCTION,
                 ),
             )
+            deterministic_state: dict = {}
 
             while True:
                 prompt = input("\n[USER]: ").strip()
@@ -344,7 +416,7 @@ async def run_intelligent_agent() -> None:
                     )
 
                     deterministic_response = await _handle_deterministic_hardware_count(
-                        session, session_log_file, session_id, turn_id, prompt
+                        session, session_log_file, session_id, turn_id, prompt, deterministic_state
                     )
                     if deterministic_response is not None:
                         _write_session_log(
