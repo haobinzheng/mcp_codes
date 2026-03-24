@@ -326,6 +326,7 @@ def _format_large_output_requires_tool(run_id: str, hostname: str, command: str,
 
 
 async def _handle_single_host_raw_command(
+    chat,
     session,
     log_file: str,
     session_id: str,
@@ -383,10 +384,9 @@ async def _handle_single_host_raw_command(
     session_memory["last_run_id"] = run_id
 
     if items[0].get("raw_output_complete", True):
-        return (
-            f'The raw output for `{command}` on `{hostname}` is small enough to inspect, but there is no '
-            "dedicated parser/tool for this command yet. Please develop a server-side tool for it or ask a narrower question."
-        )
+        _remember_tool_data(session_memory, "get_raw_command_outputs", preview_data)
+        session_memory["last_raw_context"] = preview_data
+        return await _answer_from_raw_context(chat, prompt, preview_data)
 
     return _format_large_output_requires_tool(
         run_id,
@@ -397,11 +397,11 @@ async def _handle_single_host_raw_command(
 
 
 async def _handle_raw_followup_from_memory(
-    _client,
-    _session,
-    _log_file: str,
-    _session_id: str,
-    _turn_id: str,
+    chat,
+    session,
+    log_file: str,
+    session_id: str,
+    turn_id: str,
     prompt: str,
     session_memory: dict,
 ) -> str | None:
@@ -411,6 +411,25 @@ async def _handle_raw_followup_from_memory(
     command = active.get("command")
     if not run_id or not hostname or not command:
         return None
+    if not active.get("chunked", False):
+        raw_result = await _call_tool_logged(
+            session,
+            log_file,
+            session_id,
+            turn_id,
+            "get_raw_command_outputs",
+            {
+                "run_id": run_id,
+                "command": command,
+                "hosts": hostname,
+                "max_chars_per_output": RAW_CHUNK_CHARS,
+                "max_results": 1,
+            },
+        )
+        raw_data = _tool_result_json(raw_result)
+        _remember_tool_data(session_memory, "get_raw_command_outputs", raw_data)
+        session_memory["last_raw_context"] = raw_data
+        return await _answer_from_raw_context(chat, prompt, raw_data)
     return (
         f'Your follow-up refers to `{command}` on `{hostname}` from run `{run_id}`.\n\n'
         "That command still needs a dedicated server-side parser/tool before I can answer follow-up questions reliably. "
@@ -1030,6 +1049,7 @@ async def run_intelligent_agent() -> None:
                         )
                     if deterministic_response is None and _looks_like_single_host_command_prompt(prompt):
                         deterministic_response = await _handle_single_host_raw_command(
+                            chat,
                             session,
                             session_log_file,
                             session_id,
@@ -1039,7 +1059,7 @@ async def run_intelligent_agent() -> None:
                         )
                     if deterministic_response is None and _looks_like_raw_followup_prompt(prompt, session_memory):
                         deterministic_response = await _handle_raw_followup_from_memory(
-                            client,
+                            chat,
                             session,
                             session_log_file,
                             session_id,
