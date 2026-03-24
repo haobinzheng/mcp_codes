@@ -17,6 +17,8 @@ MAX_TOOL_LOOPS = 20
 MAX_MEMORY_PROMPTS = 6
 MAX_MEMORY_HOSTS = 8
 MAX_MEMORY_COMMANDS = 6
+MAX_INLINE_HOSTS = 12
+MAX_MODEL_ANSWER_CHARS = 12000
 SESSION_LOG_DIR = os.environ.get(
     "SESSION_LOG_DIR", os.path.join(os.getcwd(), "session_logs")
 )
@@ -194,6 +196,58 @@ def _build_memory_context(session_memory: dict) -> str:
         for item in prompts[-3:]:
             lines.append(f"  - {item}")
     return "\n".join(lines)
+
+
+def _extract_specific_hostname(prompt: str) -> str:
+    hosts = _extract_hosts_from_text(prompt)
+    return hosts[0] if hosts else ""
+
+
+def _looks_like_device_scoped_hardware_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    return (
+        bool(_extract_specific_hostname(prompt))
+        and any(term in lower_prompt for term in ("hardware", "category", "component", "tally", "count"))
+    )
+
+
+def _format_single_host_component_summary(hostname: str, components: list[dict]) -> str:
+    grouped: dict[str, dict[str, int]] = {}
+    for component in components:
+        component_type = component.get("component_type", "unknown")
+        description = component.get("description", "")
+        if not description:
+            continue
+        grouped.setdefault(component_type, {})
+        grouped[component_type][description] = grouped[component_type].get(description, 0) + 1
+
+    type_labels = {
+        "chassis": "Chassis",
+        "routing_engine": "Routing Engine",
+        "control_board": "Control Board",
+        "line_card": "Line Card",
+    }
+    lines = [f"Here is the hardware category tally for device {hostname}:"]
+    for component_type, descriptions in sorted(grouped.items()):
+        lines.append("")
+        lines.append(f"{type_labels.get(component_type, component_type)}:")
+        for description, count in sorted(descriptions.items()):
+            lines.append(f"- {description}: {count}")
+    return "\n".join(lines)
+
+
+def _needs_compaction(response_text: str) -> bool:
+    return len(response_text) > MAX_MODEL_ANSWER_CHARS or response_text.count("\n") > 220
+
+
+def _make_chat(client, session):
+    return client.aio.chats.create(
+        model=MODEL_ID,
+        config=types.GenerateContentConfig(
+            tools=[session],
+            system_instruction=SYSTEM_INSTRUCTION,
+        ),
+    )
 
 
 async def _call_tool_logged(session, log_file: str, session_id: str, turn_id: str, tool_name: str, args: dict):
@@ -420,6 +474,41 @@ async def _handle_deterministic_hardware_count(
         return "No audit run is available to count against."
 
     lower_prompt = prompt.lower()
+    if _looks_like_device_scoped_hardware_prompt(prompt):
+        hostname = _extract_specific_hostname(prompt)
+        result = await _call_tool_logged(
+            session,
+            log_file,
+            session_id,
+            turn_id,
+            "get_analysis_context",
+            {
+                "run_id": run_id,
+                "hostname": hostname,
+                "command": "show chassis hardware",
+            },
+        )
+        data = _tool_result_json(result)
+        items = data.get("items", [])
+        if not items:
+            return f"No structured chassis hardware data was found for {hostname}."
+        first_item = items[0]
+        components = first_item.get("components", [])
+        if not components:
+            return f"No structured chassis hardware data was found for {hostname}."
+        _remember_tool_data(
+            session_memory,
+            "get_analysis_context",
+            {
+                "run_id": run_id,
+                "hostname": hostname,
+                "command": "show chassis hardware",
+                "items": items,
+            },
+        )
+        deterministic_state["last_run_id"] = run_id
+        return _format_single_host_component_summary(hostname, components)
+
     if "all the hard" in lower_prompt or "all hardware" in lower_prompt or "each category" in lower_prompt:
         result = await _call_tool_logged(
             session,
@@ -467,6 +556,13 @@ async def _handle_deterministic_hardware_count(
                     "name": name,
                     "per_host": data.get("per_host", {}),
                 }
+            )
+        total_hosts = len({host for item in results for host in item.get("per_host", {}).keys()})
+        if total_hosts > MAX_INLINE_HOSTS:
+            return (
+                f"The full per-device tally spans {total_hosts} devices, which is too large to print in one reply "
+                "without bloating the session. I can provide a host slice such as the first 10 devices, a specific "
+                "list of hosts, or one device at a time."
             )
         return _format_per_device_category_counts(results)
 
@@ -659,13 +755,7 @@ async def run_intelligent_agent() -> None:
                 },
             )
 
-            chat = client.aio.chats.create(
-                model=MODEL_ID,
-                config=types.GenerateContentConfig(
-                    tools=[session],
-                    system_instruction=SYSTEM_INSTRUCTION,
-                ),
-            )
+            chat = _make_chat(client, session)
             deterministic_state: dict = {}
             session_memory = _new_session_memory()
 
@@ -790,6 +880,18 @@ async def run_intelligent_agent() -> None:
                         print("\n[!] Stopped after too many consecutive tool loops.")
 
                     if response.text:
+                        if _needs_compaction(response.text):
+                            chat = _make_chat(client, session)
+                            _write_session_log(
+                                session_log_file,
+                                {
+                                    "event": "chat_reset",
+                                    "reason": "large_model_answer",
+                                    "session_id": session_id,
+                                    "timestamp": time.time(),
+                                    "turn_id": turn_id,
+                                },
+                            )
                         _write_session_log(
                             session_log_file,
                             {
@@ -803,10 +905,23 @@ async def run_intelligent_agent() -> None:
                         print(f"\n[AI]: {response.text}")
 
                 except Exception as exc:
+                    error_text = str(exc)
+                    if "maximum number of tokens" in error_text or "input token count exceeds" in error_text:
+                        chat = _make_chat(client, session)
+                        _write_session_log(
+                            session_log_file,
+                            {
+                                "event": "chat_reset",
+                                "reason": "token_limit_error",
+                                "session_id": session_id,
+                                "timestamp": time.time(),
+                                "turn_id": turn_id if "turn_id" in locals() else None,
+                            },
+                        )
                     _write_session_log(
                         session_log_file,
                         {
-                            "error": str(exc),
+                            "error": error_text,
                             "event": "turn_error",
                             "session_id": session_id,
                             "timestamp": time.time(),
