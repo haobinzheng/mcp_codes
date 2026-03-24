@@ -268,6 +268,26 @@ def _match_text(value: str, query: str, match_mode: str) -> bool:
     raise ValueError(f"Unsupported match_mode: {match_mode}")
 
 
+def _parse_host_filter(hosts: str) -> set[str]:
+    if not hosts.strip():
+        return set()
+    return {item.strip() for item in re.split(r"[,\s]+", hosts) if item.strip()}
+
+
+def _iter_results(
+    run_data: dict[str, Any], command: str = "", hosts: set[str] | None = None
+) -> list[tuple[str, str, dict[str, Any]]]:
+    items: list[tuple[str, str, dict[str, Any]]] = []
+    for hostname, per_host in sorted(run_data.get("results", {}).items()):
+        if hosts and hostname not in hosts:
+            continue
+        for command_name, result in sorted(per_host.items()):
+            if command and command_name != command:
+                continue
+            items.append((hostname, command_name, result))
+    return items
+
+
 def _iter_components(
     run_data: dict[str, Any], component_type: str = "", command: str = ""
 ) -> list[dict[str, Any]]:
@@ -287,6 +307,116 @@ def _iter_components(
                     }
                 )
     return items
+
+
+def _list_run_commands(run_data: dict[str, Any]) -> list[str]:
+    commands = set()
+    for _, per_host in run_data.get("results", {}).items():
+        commands.update(per_host.keys())
+    if commands:
+        return sorted(commands)
+    return sorted(run_data.get("commands", []))
+
+
+def _normalize_question_terms(question: str) -> list[str]:
+    tokens = re.findall(r"[a-z0-9][a-z0-9._/-]*", question.lower())
+    stop_words = {
+        "a",
+        "an",
+        "and",
+        "are",
+        "audit",
+        "based",
+        "be",
+        "by",
+        "command",
+        "count",
+        "device",
+        "devices",
+        "does",
+        "each",
+        "for",
+        "from",
+        "how",
+        "i",
+        "if",
+        "in",
+        "is",
+        "it",
+        "me",
+        "of",
+        "on",
+        "or",
+        "out",
+        "print",
+        "show",
+        "tell",
+        "that",
+        "the",
+        "these",
+        "this",
+        "to",
+        "total",
+        "use",
+        "using",
+        "what",
+        "which",
+        "with",
+    }
+    return [token for token in tokens if token not in stop_words and len(token) > 1]
+
+
+def _score_raw_result(hostname: str, command_name: str, result: dict[str, Any], question: str) -> int:
+    score = 0
+    lowered_question = question.lower()
+    lowered_command = command_name.lower()
+    lowered_host = hostname.lower()
+    haystack = "\n".join(
+        [
+            result.get("filtered", ""),
+            result.get("stdout", ""),
+            result.get("stderr", ""),
+        ]
+    ).lower()
+
+    if lowered_command and lowered_command in lowered_question:
+        score += 10
+    if lowered_host and lowered_host in lowered_question:
+        score += 8
+
+    for term in _normalize_question_terms(question):
+        hits = haystack.count(term)
+        if hits:
+            score += min(hits, 5)
+        if term in lowered_command:
+            score += 3
+        if term in lowered_host:
+            score += 2
+
+    if result.get("exit_code") not in (None, 0):
+        score += 1
+
+    return score
+
+
+def _excerpt_text(text: str, question: str, max_chars: int) -> str:
+    text = text.strip()
+    if len(text) <= max_chars:
+        return text
+
+    terms = _normalize_question_terms(question)
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        lowered_line = line.lower()
+        if any(term in lowered_line for term in terms):
+            start = max(0, index - 3)
+            end = min(len(lines), index + 4)
+            excerpt = "\n".join(lines[start:end]).strip()
+            if len(excerpt) <= max_chars:
+                return excerpt
+            return excerpt[: max_chars - 15].rstrip() + "\n...[truncated]"
+
+    return text[: max_chars - 15].rstrip() + "\n...[truncated]"
 
 
 def _build_best_context_for_result(
@@ -620,6 +750,214 @@ def get_analysis_context(
             "run_id": run_id,
             "hostname": hostname,
             "command": command,
+            "items": items,
+        }
+    )
+
+
+@mcp.tool()
+def list_run_commands(run_id: str) -> str:
+    """List the commands captured for a run."""
+    run_data = _get_run_data(run_id)
+    if not run_data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+    return _json({"run_id": run_id, "commands": _list_run_commands(run_data)})
+
+
+@mcp.tool()
+def get_raw_command_outputs(
+    run_id: str,
+    command: str,
+    hosts: str = "",
+    max_chars_per_output: int = 4000,
+    max_results: int = 20,
+) -> str:
+    """Return raw outputs for a command across matching hosts."""
+    run_data = _get_run_data(run_id)
+    if not run_data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+
+    host_filter = _parse_host_filter(hosts)
+    items = []
+    truncated = False
+    for hostname, command_name, result in _iter_results(run_data, command=command, hosts=host_filter):
+        raw_output = (result.get("stdout") or "").strip()
+        if len(items) >= max_results:
+            truncated = True
+            break
+        excerpt = raw_output[:max_chars_per_output]
+        if len(raw_output) > max_chars_per_output:
+            excerpt = excerpt.rstrip() + "\n...[truncated]"
+            truncated = True
+        items.append(
+            {
+                "hostname": hostname,
+                "command": command_name,
+                "exit_code": result.get("exit_code"),
+                "stderr": result.get("stderr", ""),
+                "raw_output": excerpt,
+                "raw_output_complete": len(raw_output) <= max_chars_per_output,
+            }
+        )
+
+    if not items:
+        return _json(
+            {
+                "error": "No matching raw command outputs found.",
+                "run_id": run_id,
+                "command": command,
+                "hosts": sorted(host_filter),
+            }
+        )
+
+    return _json(
+        {
+            "run_id": run_id,
+            "command": command,
+            "hosts": sorted(host_filter),
+            "max_chars_per_output": max_chars_per_output,
+            "max_results": max_results,
+            "truncated": truncated,
+            "items": items,
+        }
+    )
+
+
+@mcp.tool()
+def search_raw_command_outputs(
+    run_id: str,
+    command: str,
+    query: str,
+    hosts: str = "",
+    max_matches: int = 20,
+    excerpt_chars: int = 1200,
+) -> str:
+    """Search raw outputs for a command and return matching excerpts."""
+    run_data = _get_run_data(run_id)
+    if not run_data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+
+    host_filter = _parse_host_filter(hosts)
+    terms = _normalize_question_terms(query)
+    if not terms:
+        terms = [query.lower()]
+
+    matches = []
+    truncated = False
+    for hostname, command_name, result in _iter_results(run_data, command=command, hosts=host_filter):
+        raw_output = result.get("stdout", "")
+        lowered = raw_output.lower()
+        if not any(term in lowered for term in terms):
+            continue
+        if len(matches) >= max_matches:
+            truncated = True
+            break
+        matches.append(
+            {
+                "hostname": hostname,
+                "command": command_name,
+                "exit_code": result.get("exit_code"),
+                "stderr": result.get("stderr", ""),
+                "excerpt": _excerpt_text(raw_output, query, excerpt_chars),
+            }
+        )
+
+    return _json(
+        {
+            "run_id": run_id,
+            "command": command,
+            "query": query,
+            "hosts": sorted(host_filter),
+            "max_matches": max_matches,
+            "truncated": truncated,
+            "matches": matches,
+        }
+    )
+
+
+@mcp.tool()
+def get_raw_analysis_context(
+    run_id: str,
+    question: str,
+    command: str = "",
+    hosts: str = "",
+    max_hosts: int = 8,
+    max_chars_per_host: int = 2500,
+) -> str:
+    """
+    Return the most relevant raw evidence for a question.
+    This is intended for commands without structured parsers.
+    """
+    run_data = _get_run_data(run_id)
+    if not run_data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+
+    host_filter = _parse_host_filter(hosts)
+    commands = _list_run_commands(run_data)
+    chosen_command = command
+    if not chosen_command:
+        if len(commands) == 1:
+            chosen_command = commands[0]
+        else:
+            lowered_question = question.lower()
+            for command_name in commands:
+                if command_name.lower() in lowered_question:
+                    chosen_command = command_name
+                    break
+
+    candidates = []
+    for hostname, command_name, result in _iter_results(run_data, command=chosen_command, hosts=host_filter):
+        if result.get("structured_data_available"):
+            continue
+        score = _score_raw_result(hostname, command_name, result, question)
+        candidates.append((score, hostname, command_name, result))
+
+    if not candidates and chosen_command:
+        for hostname, command_name, result in _iter_results(run_data, command=chosen_command, hosts=host_filter):
+            score = _score_raw_result(hostname, command_name, result, question)
+            candidates.append((score, hostname, command_name, result))
+
+    if not candidates:
+        return _json(
+            {
+                "error": "No raw analysis context found.",
+                "run_id": run_id,
+                "question": question,
+                "command": chosen_command,
+                "available_commands": commands,
+            }
+        )
+
+    candidates.sort(key=lambda item: (item[0], item[1], item[2]), reverse=True)
+    selected = candidates[:max_hosts]
+    items = []
+    truncated = len(candidates) > max_hosts
+    for score, hostname, command_name, result in selected:
+        raw_output = result.get("stdout", "")
+        excerpt = _excerpt_text(raw_output, question, max_chars_per_host)
+        if len(raw_output) > len(excerpt):
+            truncated = True
+        items.append(
+            {
+                "hostname": hostname,
+                "command": command_name,
+                "score": score,
+                "exit_code": result.get("exit_code"),
+                "stderr": result.get("stderr", ""),
+                "raw_excerpt": excerpt,
+            }
+        )
+
+    return _json(
+        {
+            "run_id": run_id,
+            "question": question,
+            "command": chosen_command,
+            "available_commands": commands,
+            "hosts": sorted(host_filter),
+            "max_hosts": max_hosts,
+            "max_chars_per_host": max_chars_per_host,
+            "truncated": truncated,
             "items": items,
         }
     )

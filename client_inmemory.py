@@ -29,8 +29,9 @@ Use the MCP tools with this workflow:
 5. For hardware component questions and totals, use count_components or list_components instead of reasoning from raw text.
 6. Default to exact matching for component names. Only use prefix or contains matching if the user explicitly asks for variants, prefixes, or fuzzy matches.
 7. When you need evidence for a host or command, prefer get_analysis_context. It returns structured data when a parser exists and raw output otherwise.
-8. Use list_audit_log_runs, get_audit_log_summary, and get_audit_log_host_details when the user asks about prior runs.
-9. Do not ask the server to use local files for state exchange; the server stores audit data in memory and persists audit logs for later analysis.
+8. For commands without structured parsing, use list_run_commands and get_raw_analysis_context to retrieve raw evidence before answering.
+9. Use list_audit_log_runs, get_audit_log_summary, and get_audit_log_host_details when the user asks about prior runs.
+10. Do not ask the server to use local files for state exchange; the server stores audit data in memory and persists audit logs for later analysis.
 
 When the user asks for analysis over multiple commands, prefer:
 - summary first
@@ -247,6 +248,26 @@ def _format_per_device_category_counts(results: list[dict]) -> str:
     return "\n".join(lines)
 
 
+async def _answer_from_raw_context(
+    chat,
+    prompt: str,
+    raw_context: dict,
+) -> str:
+    grounded_prompt = (
+        "Answer the user's request using only the raw command evidence below.\n\n"
+        f"User request:\n{prompt}\n\n"
+        "Raw evidence context:\n"
+        f"{json.dumps(raw_context, indent=2, sort_keys=True)}\n\n"
+        "Rules:\n"
+        "- Do not invent data that is not present in the evidence.\n"
+        "- If the evidence is partial or truncated, say so.\n"
+        "- If an exact count cannot be determined from the provided evidence, say that clearly.\n"
+        "- Keep the answer concise and cite hostnames when useful.\n"
+    )
+    response = await chat.send_message(grounded_prompt)
+    return response.text or "No answer was generated from the raw evidence."
+
+
 async def _handle_deterministic_hardware_count(
     session, log_file: str, session_id: str, turn_id: str, prompt: str, deterministic_state: dict
 ) -> str | None:
@@ -385,7 +406,13 @@ def _extract_audit_inputs(prompt: str) -> tuple[str, str] | tuple[None, None]:
 
 
 async def _handle_deterministic_audit_summary(
-    session, log_file: str, session_id: str, turn_id: str, prompt: str, deterministic_state: dict
+    session,
+    chat,
+    log_file: str,
+    session_id: str,
+    turn_id: str,
+    prompt: str,
+    deterministic_state: dict,
 ) -> str | None:
     if not _looks_like_audit_summary_prompt(prompt):
         return None
@@ -424,7 +451,27 @@ async def _handle_deterministic_audit_summary(
     data = _tool_result_json(result)
     summary = data.get("summary", {})
     if not summary:
-        return "The completed audit run did not produce structured component data."
+        raw_result = await _call_tool_logged(
+            session,
+            log_file,
+            session_id,
+            turn_id,
+            "get_raw_analysis_context",
+            {
+                "run_id": run_id,
+                "question": prompt,
+                "command": command,
+            },
+        )
+        raw_data = _tool_result_json(raw_result)
+        if raw_data.get("error"):
+            return (
+                "The completed audit run did not produce structured component data, "
+                f"and raw evidence lookup failed: {raw_data['error']}"
+            )
+        deterministic_state["last_run_id"] = run_id
+        deterministic_state["last_summary"] = {}
+        return await _answer_from_raw_context(chat, prompt, raw_data)
 
     deterministic_state["last_summary"] = summary
     deterministic_state["last_run_id"] = run_id
@@ -508,7 +555,13 @@ async def run_intelligent_agent() -> None:
                     )
 
                     deterministic_response = await _handle_deterministic_audit_summary(
-                        session, session_log_file, session_id, turn_id, prompt, deterministic_state
+                        session,
+                        chat,
+                        session_log_file,
+                        session_id,
+                        turn_id,
+                        prompt,
+                        deterministic_state,
                     )
                     if deterministic_response is None:
                         deterministic_response = await _handle_deterministic_hardware_count(
