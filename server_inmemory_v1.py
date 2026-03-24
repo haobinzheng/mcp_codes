@@ -769,7 +769,7 @@ def get_raw_command_outputs(
     run_id: str,
     command: str,
     hosts: str = "",
-    max_chars_per_output: int = 4000,
+    max_chars_per_output: int = 4_000_000,
     max_results: int = 20,
 ) -> str:
     """Return raw outputs for a command across matching hosts."""
