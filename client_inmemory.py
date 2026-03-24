@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import re
 import time
 import uuid
 
@@ -48,6 +49,190 @@ def _ensure_session_log_dir() -> None:
 def _write_session_log(log_file: str, event: dict) -> None:
     with open(log_file, "a") as f:
         f.write(json.dumps(event, sort_keys=True) + "\n")
+
+
+def _tool_result_text(result) -> str:
+    if hasattr(result, "content") and result.content:
+        texts = [getattr(item, "text", "") for item in result.content if getattr(item, "text", "")]
+        if texts:
+            return "\n".join(texts)
+    return str(result)
+
+
+def _tool_result_json(result) -> dict:
+    text = _tool_result_text(result)
+    return json.loads(text)
+
+
+async def _call_tool_logged(session, log_file: str, session_id: str, turn_id: str, tool_name: str, args: dict):
+    _write_session_log(
+        log_file,
+        {
+            "args": args,
+            "event": "tool_call",
+            "session_id": session_id,
+            "timestamp": time.time(),
+            "tool_name": tool_name,
+            "turn_id": turn_id,
+        },
+    )
+    result = await session.call_tool(tool_name, args)
+    result_text = _tool_result_text(result)
+    _write_session_log(
+        log_file,
+        {
+            "event": "tool_result",
+            "result": result_text,
+            "session_id": session_id,
+            "timestamp": time.time(),
+            "tool_name": tool_name,
+            "turn_id": turn_id,
+        },
+    )
+    return result
+
+
+async def _get_latest_run_id(session, log_file: str, session_id: str, turn_id: str) -> str | None:
+    result = await _call_tool_logged(session, log_file, session_id, turn_id, "list_audit_runs", {})
+    data = _tool_result_json(result)
+    runs = data.get("runs", [])
+    if runs:
+        return runs[0].get("run_id")
+
+    result = await _call_tool_logged(session, log_file, session_id, turn_id, "list_audit_log_runs", {})
+    data = _tool_result_json(result)
+    runs = data.get("runs", [])
+    if runs:
+        return runs[0].get("run_id")
+    return None
+
+
+def _extract_component_name(prompt: str) -> str:
+    quoted = re.findall(r'"([^"]+)"', prompt)
+    if quoted:
+        return quoted[-1]
+
+    patterns = [
+        r"total number of\s+([A-Za-z0-9\-\+ ]+)",
+        r"count\s+([A-Za-z0-9\-\+ ]+)",
+        r"how many\s+([A-Za-z0-9\-\+ ]+)",
+    ]
+    lower_prompt = prompt.lower()
+    for pattern in patterns:
+        match = re.search(pattern, lower_prompt)
+        if match:
+            return prompt[match.start(1):match.end(1)].strip(" .,:")
+    return ""
+
+
+def _detect_component_type(prompt: str) -> str:
+    lower_prompt = prompt.lower()
+    if "routing engine" in lower_prompt or "re-s-" in lower_prompt:
+        return "routing_engine"
+    if "line card" in lower_prompt or "mpc" in lower_prompt or "fpc" in lower_prompt:
+        return "line_card"
+    if "control board" in lower_prompt or "scb" in lower_prompt:
+        return "control_board"
+    if "chassis" in lower_prompt:
+        return "chassis"
+    return ""
+
+
+def _looks_like_hardware_count_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    count_terms = ("count", "total", "how many", "calculate", "number of", "double check")
+    hardware_terms = (
+        "hardware",
+        "component",
+        "chassis",
+        "routing engine",
+        "re-s-",
+        "scb",
+        "control board",
+        "line card",
+        "mpc",
+        "mpce",
+        "mrate",
+        "fpc",
+    )
+    return any(term in lower_prompt for term in count_terms) and any(
+        term in lower_prompt for term in hardware_terms
+    )
+
+
+def _format_component_summary(summary: dict) -> str:
+    lines = ["Here is the verified component summary from the server-side structured counts:"]
+    type_labels = {
+        "chassis": "Chassis",
+        "routing_engine": "Routing Engine",
+        "control_board": "Control Board",
+        "line_card": "Line Card",
+    }
+    for component_type, descriptions in summary.items():
+        lines.append("")
+        lines.append(f"{type_labels.get(component_type, component_type)}:")
+        for description, count in descriptions.items():
+            lines.append(f"- {description}: {count}")
+    return "\n".join(lines)
+
+
+async def _handle_deterministic_hardware_count(
+    session, log_file: str, session_id: str, turn_id: str, prompt: str
+) -> str | None:
+    if not _looks_like_hardware_count_prompt(prompt):
+        return None
+
+    run_id = await _get_latest_run_id(session, log_file, session_id, turn_id)
+    if not run_id:
+        return "No audit run is available to count against."
+
+    lower_prompt = prompt.lower()
+    if "all the hard" in lower_prompt or "all hardware" in lower_prompt or "each category" in lower_prompt:
+        result = await _call_tool_logged(
+            session,
+            log_file,
+            session_id,
+            turn_id,
+            "summarize_components",
+            {"run_id": run_id},
+        )
+        data = _tool_result_json(result)
+        return _format_component_summary(data.get("summary", {}))
+
+    name = _extract_component_name(prompt)
+    component_type = _detect_component_type(prompt)
+    if not name:
+        return None
+
+    result = await _call_tool_logged(
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        "count_components",
+        {
+            "run_id": run_id,
+            "name": name,
+            "component_type": component_type,
+            "match_mode": "exact",
+        },
+    )
+    data = _tool_result_json(result)
+    if data.get("error"):
+        return f"Error: {data['error']}"
+
+    total_count = data.get("total_count", 0)
+    host_count = data.get("host_count", 0)
+    per_host = data.get("per_host", {})
+    response_lines = [
+        f'The verified total number of "{name}" is {total_count} across {host_count} devices.'
+    ]
+    if "list" in lower_prompt or "each device" in lower_prompt or "per device" in lower_prompt:
+        response_lines.append("")
+        response_lines.append("Per-device counts:")
+        for hostname, count in per_host.items():
+            response_lines.append(f"- {hostname}: {count}")
+    return "\n".join(response_lines)
 
 
 async def run_intelligent_agent() -> None:
@@ -125,6 +310,23 @@ async def run_intelligent_agent() -> None:
                         },
                     )
 
+                    deterministic_response = await _handle_deterministic_hardware_count(
+                        session, session_log_file, session_id, turn_id, prompt
+                    )
+                    if deterministic_response is not None:
+                        _write_session_log(
+                            session_log_file,
+                            {
+                                "event": "model_answer",
+                                "response": deterministic_response,
+                                "session_id": session_id,
+                                "timestamp": time.time(),
+                                "turn_id": turn_id,
+                            },
+                        )
+                        print(f"\n[AI]: {deterministic_response}")
+                        continue
+
                     response = await chat.send_message(prompt)
 
                     for _ in range(MAX_TOOL_LOOPS):
@@ -142,30 +344,15 @@ async def run_intelligent_agent() -> None:
                         tool_responses = []
                         for call in tool_calls:
                             print(f"[*] Server executing: {call.name}...")
-                            _write_session_log(
+                            result = await _call_tool_logged(
+                                session,
                                 session_log_file,
-                                {
-                                    "args": dict(call.args),
-                                    "event": "tool_call",
-                                    "session_id": session_id,
-                                    "timestamp": time.time(),
-                                    "tool_name": call.name,
-                                    "turn_id": turn_id,
-                                },
+                                session_id,
+                                turn_id,
+                                call.name,
+                                dict(call.args),
                             )
-                            result = await session.call_tool(call.name, call.args)
-                            result_text = str(result)
-                            _write_session_log(
-                                session_log_file,
-                                {
-                                    "event": "tool_result",
-                                    "result": result_text,
-                                    "session_id": session_id,
-                                    "timestamp": time.time(),
-                                    "tool_name": call.name,
-                                    "turn_id": turn_id,
-                                },
-                            )
+                            result_text = _tool_result_text(result)
                             tool_responses.append(
                                 types.Part.from_function_response(
                                     name=call.name,

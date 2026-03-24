@@ -734,6 +734,32 @@ def list_components(
 
 
 @mcp.tool()
+def summarize_components(run_id: str, command: str = "") -> str:
+    """Summarize all structured components by type and exact description."""
+    run_data = _get_run_data(run_id)
+    if not run_data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+
+    summary: dict[str, dict[str, int]] = {}
+    for item in _iter_components(run_data, command=command):
+        component_type = item["component_type"]
+        description = item["description"]
+        summary.setdefault(component_type, {})
+        summary[component_type][description] = summary[component_type].get(description, 0) + 1
+
+    return _json(
+        {
+            "run_id": run_id,
+            "command": command,
+            "summary": {
+                component_type: dict(sorted(descriptions.items()))
+                for component_type, descriptions in sorted(summary.items())
+            },
+        }
+    )
+
+
+@mcp.tool()
 def list_audit_log_runs() -> str:
     """List persisted audit run logs from disk."""
     _ensure_log_dir()
