@@ -1,0 +1,54 @@
+{
+  "commands": [
+    "show bgp summary"
+  ],
+  "completed_at": 1774395588.4714386,
+  "completed_tasks": 1,
+  "created_at": 1774395583.6356025,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "dr01.aus121"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_80d42f0a4497.json",
+  "results": {
+    "dr01.aus121": {
+      "show bgp summary": {
+        "command": "show bgp summary",
+        "completed_at": 1774395588.4707794,
+        "components": [],
+        "duration_ms": 4832,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1774395583.6378448,
+        "stderr": "",
+        "stdout": "Threading mode: BGP I/O\nDefault eBGP mode: advertise - accept, receive - accept\nGroups: 16 Peers: 26 Down peers: 7\nTable          Tot Paths  Act Paths Suppressed    History Damp State    Pending\ninet.0               \n                 2132211    1066034          0          0          0          0\ninet6.0              \n                  491770     245886          0          0          0          0\nbgp.l3vpn.0          \n                     104         52          0          0          0          0\nbgp.mvpn.0           \n                       0          0          0          0          0          0\nPeer                     AS      InPkt     OutPkt    OutQ   Flaps Last Up/Dwn State|#Active/Received/Accepted/Damped...\n23.228.131.144        63293         93        136       0    1584       45:01 Establ\n  inet.0: 0/0/0/0\n107.188.128.5         31128    9463585   10463977       0       3 46w6d 14:19:09 Establ\n  inet.0: 1/1/1/0\n107.188.136.25        40027      77678      73084       0      31 3w2d 14:21:33 Establ\n  inet.0: 0/0/0/0\n107.188.136.45        40027      71097      66903       0      10 3w0d 14:28:47 Establ\n  inet.0: 0/0/0/0\n107.188.255.205       36040     419191     450791       0       2 20w5d 13:14:40 Establ\n  inet.0: 1/1/1/0\n172.30.0.55           16591          0          0       0       0 3w4d 5:19:56 Active\n192.119.16.27         16591   18183654      48719       0       3 2w1d 16:39:29 Establ\n  inet.0: 1064866/1066034/1066034/0\n  inet6.0: 245086/245877/245877/0\n  bgp.l3vpn.0: 52/52/52/0\n  bgp.mvpn.0: 0/0/0/0\n  SERVER_DRAC_VPN.inet.0: 17/52/52/0\n192.119.16.32         16591   18217060      48862       0       4 2w1d 17:46:05 Establ\n  inet.0: 1009/1066015/1066015/0\n  inet6.0: 782/245875/245875/0\n  bgp.l3vpn.0: 0/52/52/0\n  bgp.mvpn.0: 0/0/0/0\n  SERVER_DRAC_VPN.inet.0: 0/52/52/0\n192.119.20.196        16591          0          0       0       0 99w6d 16:26:51 Active\n192.119.20.197        16591          0          0       0       0 99w6d 16:26:51 Active\n192.119.20.198        16591          0          0       0       0 99w6d 16:26:51 Active\n192.119.23.20         16591          0          0       0       0 99w6d 16:26:51 Active\n192.119.23.21         16591          0          0       0       0 99w6d 16:26:51 Active\n192.119.23.22         16591    2274338    2525614       0       6 18w5d 15:12:46 Establ\n  inet.0: 1/1/1/0\n192.119.23.23         16591          0          0       0       0 99w6d 16:26:51 Active\n216.21.171.19         19165    2226891  214918832       0       1 99w0d 6:49:33 Establ\n  inet.0: 1/1/1/0\n216.21.171.171        36040     413554     444730       0       1 20w3d 14:16:15 Establ\n  inet.0: 1/1/1/0\n216.21.171.221         6922     130450     110453       0      25 5w0d 15:54:30 Establ\n  inet.0: 154/157/154/0\n2605:a600:201::1b        6922     104310     110445       0      20 5w0d 15:54:23 Establ\n  inet6.0: 14/14/14/0\n2605:a600:201::5f       19165     700917   51425839       0       4 31w1d 6:25:56 Establ\n  inet6.0: 1/1/1/0\n2605:a600:201::a5       36040     413554     444734       0       1 20w3d 14:15:59 Establ\n  inet6.0: 1/1/1/0\n2605:a600:1000:ff00::d       36040     419191     450796       0       2 20w5d 13:14:24 Establ\n  inet6.0: 1/1/1/0\n2605:a600:1001::5       31128    9463584   10463893       0       3 46w6d 14:19:07 Establ\n  inet6.0: 1/1/1/0\n2605:a600:1002::19       40027      77695      73079       0      31 3w2d 14:21:32 Establ\n  inet6.0: 0/0/0/0\n2605:a600:1002::45       40027      71093      66902       0      10 3w0d 14:28:48 Establ\n  inet6.0: 0/0/0/0\n2605:a601:f4ff:4::10       63293         93        113       0    1906       45:01 Establ\n  inet6.0: 0/0/0/0",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "80d42f0a4497",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "80d42f0a4497",
+    "state": "completed",
+    "success_hosts": [
+      "dr01.aus121"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}
