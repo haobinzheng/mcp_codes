@@ -1,0 +1,107 @@
+A:bng02.jef102# /configure port 1/1/c4 connector breakout c1-100g 
+*A:bng02.jef102# /configure port 1/1/c4 shutdown 
+*A:bng02.jef102# /configure port 1/1/c4/1 ethernet mode network 
+*A:bng02.jef102# /configure port 1/1/c4 no shutdown 
+*A:bng02.jef102# /configure port 1/1/c4/1 description "[R=SAR02.JEF102][I=AE1][A=LAG-1][S=ACTIVE][U=CORE]"
+*A:bng02.jef102# /configure port 1/1/c4/1 ethernet egress-scheduler-policy "network-port-sched"
+*A:bng02.jef102# /configure port 1/1/c4/1 ethernet crc-monitor sd-threshold 6 
+*A:bng02.jef102# /configure port 1/1/c4/1 ethernet network queue-policy "gf-network-q"
+*A:bng02.jef102# /configure port 1/1/c4/1 ethernet lldp dest-mac nearest-bridge admin-status tx-rx 
+*A:bng02.jef102# /configure port 1/1/c4/1 ethernet lldp dest-mac nearest-bridge tx-tlvs port-desc sys-name sys-desc sys-cap 
+*A:bng02.jef102# /configure port 1/1/c4/1 ethernet lldp dest-mac nearest-bridge tx-mgmt-address system 
+*A:bng02.jef102# /configure port 1/1/c4/1 ethernet lldp dest-mac nearest-bridge port-id-subtype tx-if-name 
+*A:bng02.jef102# 
+*A:bng02.jef102# /configure port 2/2/c1 connector breakout c1-100g 
+*A:bng02.jef102# /configure port 2/2/c1 shutdown 
+*A:bng02.jef102# /configure port 2/2/c1/1 ethernet mode network 
+*A:bng02.jef102# /configure port 2/2/c1 no shutdown 
+*A:bng02.jef102# /configure port 2/2/c1/1 description "[R=SAR01.JEF102][I=AE1][A=LAG-1][S=ACTIVE][U=CORE]"
+*A:bng02.jef102# /configure port 2/2/c1/1 ethernet egress-scheduler-policy "network-port-sched"
+*A:bng02.jef102# /configure port 2/2/c1/1 ethernet crc-monitor sd-threshold 6 
+*A:bng02.jef102# /configure port 2/2/c1/1 ethernet network queue-policy "gf-network-q"
+*A:bng02.jef102# /configure port 2/2/c1/1 ethernet lldp dest-mac nearest-bridge admin-status tx-rx 
+*A:bng02.jef102# /configure port 2/2/c1/1 ethernet lldp dest-mac nearest-bridge tx-tlvs port-desc sys-name sys-desc sys-cap 
+*A:bng02.jef102# /configure port 2/2/c1/1 ethernet lldp dest-mac nearest-bridge tx-mgmt-address system 
+*A:bng02.jef102# /configure port 2/2/c1/1 ethernet lldp dest-mac nearest-bridge port-id-subtype tx-if-name 
+*A:bng02.jef102# 
+*A:bng02.jef102# /configure lag 3 port 1/1/c4/1 
+MINOR: CLI Could not add port "1/1/c4/1" to LAG "3".
+MINOR: LAGMGR #1009 Mismatch in mode of port member and LAG port - LAG Port Mode: access, Port Mem Port Mode: network
+*A:bng02.jef102# /configure lag 3 port 2/2/c1/1 
+MINOR: CLI Could not add port "2/2/c1/1" to LAG "3".
+MINOR: LAGMGR #1009 Mismatch in mode of port member and LAG port - LAG Port Mode: access, Port Mem Port Mode: network
+*A:bng02.jef102# /configure lag 3 description "[R=SAR02.JEF102][I=LAG-1][S=ACTIVE][U=CORE]"
+*A:bng02.jef102# ###configure lag 3 lacp active  
+*A:bng02.jef102# 
+*A:bng02.jef102# /configure  router Base interface "ae3" address 23.255.224.148/31 
+*A:bng02.jef102# /configure  router Base interface "ae3" description "[R=SAR02.JEF102][I=ae1][S=TESTING][U=CORE]"
+*A:bng02.jef102# /configure  router Base interface "ae3" port lag-3 
+MINOR: CLI Invalid port number or encapsulation value: "lag-3".
+*A:bng02.jef102# /configure  router Base interface "ae3" qos 10 
+*A:bng02.jef102# /configure  router Base interface "ae3" no shutdown 
+*A:bng02.jef102# /configure  router Base isis 0 interface "ae3" level-capability level-2 
+*A:bng02.jef102# /configure  router Base isis 0 interface "ae3" csnp-interval 65535 
+*A:bng02.jef102# /configure  router Base isis 0 interface "ae3" interface-type point-to-point 
+*A:bng02.jef102# /configure  router Base isis 0 interface "ae3" level 2 hello-interval 1 
+*A:bng02.jef102# /configure  router Base isis 0 interface "ae3" level 2 metric 100 
+*A:bng02.jef102# /configure  router Base isis 0 interface "ae3" no shutdown 
+*A:bng02.jef102# /configure  router Base mpls interface "ae3" no shutdown 
+*A:bng02.jef102# /configure  router Base rsvp interface "ae3" refresh-reduction reliable-delivery 
+*A:bng02.jef102# /configure  router Base rsvp interface "ae3" no shutdown 
+*A:bng02.jef102# /configure  router Base ldp interface-parameters interface "ae3" dual-stack ipv4 transport-address system 
+*A:bng02.jef102# /configure  router Base ldp interface-parameters interface "ae3" dual-stack ipv4 no shutdown 
+*A:bng02.jef102# /configure  router Base ldp interface-parameters interface "ae3" dual-stack no shutdown 
+*A:bng02.jef102# 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-1" to 192.119.16.122 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-1" egress-statistics collect-stats 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-1" egress-statistics accounting-policy 10 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-1" egress-statistics no shutdown 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-1" path-computation-method local-cspf 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-1" adspec 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-1" fast-reroute facility 
+*A:bng02.jef102>config>router>mpls>lsp>frr# exit  
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-1" primary "default" adaptive 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-1" primary "default" priority 6 6 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-1" no shutdown 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-2" to 192.119.16.122 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-2" egress-statistics collect-stats 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-2" egress-statistics accounting-policy 10 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-2" egress-statistics no shutdown 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-2" path-computation-method local-cspf 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-2" adspec 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-2" fast-reroute facility 
+*A:bng02.jef102>config>router>mpls>lsp>frr# exit   
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-2" primary "default" adaptive 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-2" primary "default" priority 6 6 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR01JEF102-HSD-2" no shutdown 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-1" to 192.119.16.123 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-1" egress-statistics collect-stats 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-1" egress-statistics accounting-policy 10 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-1" egress-statistics no shutdown 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-1" path-computation-method local-cspf 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-1" adspec 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-1" fast-reroute facility 
+*A:bng02.jef102>config>router>mpls>lsp>frr# exit   
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-1" primary "default" adaptive 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-1" primary "default" priority 6 6 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-1" no shutdown 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-2" to 192.119.16.123 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-2" egress-statistics collect-stats 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-2" egress-statistics accounting-policy 10 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-2" egress-statistics no shutdown 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-2" path-computation-method local-cspf 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-2" adspec 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-2" fast-reroute facility 
+*A:bng02.jef102>config>router>mpls>lsp>frr# exit  
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-2" primary "default" adaptive 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-2" primary "default" priority 6 6 
+*A:bng02.jef102# /configure  router Base mpls lsp "BNG02JEF102-SAR02JEF102-HSD-2" no shutdown 
+*A:bng02.jef102# 
+*A:bng02.jef102# /configure  router Base ldp targeted-session peer 192.119.16.122 tunneling lsp "BNG02JEF102-SAR01JEF102-HSD-1"  
+*A:bng02.jef102# /configure  router Base ldp targeted-session peer 192.119.16.122 tunneling lsp "BNG02JEF102-SAR01JEF102-HSD-2"                                          
+*A:bng02.jef102# /configure  router Base ldp targeted-session peer 192.119.16.122 no shutdown                                                                                    
+*A:bng02.jef102#  
+*A:bng02.jef102# /configure  router Base ldp targeted-session peer 192.119.16.123 no shutdown                                                                                    
+*A:bng02.jef102# /configure  router Base ldp targeted-session peer 192.119.16.123 tunneling lsp "BNG02JEF102-SAR02JEF102-HSD-1"          
+*A:bng02.jef102# /configure  router Base ldp targeted-session peer 192.119.16.123 tunneling lsp "BNG02JEF102-SAR02JEF102-HSD-2" 
+*A:bng02.jef102# 
