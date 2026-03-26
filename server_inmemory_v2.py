@@ -662,15 +662,13 @@ async def ping_device(hostname: str, count: int = 4, timeout_sec: int = 2) -> st
     """
     safe_count = max(1, min(count, 20))
     safe_timeout = max(1, min(timeout_sec, 10))
+    command = f"ping -c {safe_count} -W {safe_timeout}"
 
     start = time.time()
     try:
         proc = await asyncio.create_subprocess_exec(
-            "ping",
-            "-c",
-            str(safe_count),
-            "-W",
-            str(safe_timeout),
+            GNETCH_PATH,
+            command,
             hostname,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
