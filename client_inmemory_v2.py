@@ -19,6 +19,8 @@ MAX_TOOL_LOOPS = 20
 MAX_MEMORY_PROMPTS = 6
 MAX_MEMORY_HOSTS = 8
 MAX_MEMORY_COMMANDS = 6
+MAX_MEMORY_SELECTIONS = 12
+MAX_SELECTION_PREVIEW_ITEMS = 5
 SESSION_LOG_DIR = os.environ.get(
     "SESSION_LOG_DIR", os.path.join(os.getcwd(), "session_logs")
 )
@@ -94,15 +96,130 @@ def _extract_commands_from_text(text: str) -> list[str]:
     return [command.strip(" .,") for command in commands[:3]]
 
 
+def _selection_key(item) -> str:
+    if isinstance(item, dict):
+        return json.dumps(item, sort_keys=True)
+    return str(item)
+
+
+def _normalize_selection_items(items: list) -> list:
+    seen = set()
+    normalized = []
+    for item in items:
+        if item in (None, "", []):
+            continue
+        key = _selection_key(item)
+        if key in seen:
+            continue
+        seen.add(key)
+        normalized.append(item)
+    return normalized
+
+
+def _remember_selection(
+    session_memory: dict,
+    selection_type: str,
+    items: list,
+    *,
+    source_run_id: str = "",
+    source_command: str = "",
+    source_hosts: list[str] | None = None,
+    label: str = "",
+) -> None:
+    normalized_items = _normalize_selection_items(items)
+    if not selection_type or not normalized_items:
+        return
+
+    selection = {
+        "id": uuid.uuid4().hex[:12],
+        "type": selection_type,
+        "items": normalized_items,
+        "source_run_id": source_run_id,
+        "source_command": source_command,
+        "source_hosts": list(source_hosts or []),
+        "label": label,
+        "created_at": time.time(),
+    }
+
+    existing = []
+    for item in session_memory.get("recent_selections", []):
+        same_type = item.get("type") == selection_type
+        same_items = _normalize_selection_items(item.get("items", [])) == normalized_items
+        if same_type and same_items:
+            continue
+        existing.append(item)
+    session_memory["recent_selections"] = _limit_list(
+        existing + [selection],
+        MAX_MEMORY_SELECTIONS,
+    )
+
+
+def _latest_selection(session_memory: dict, selection_type: str | None = None) -> dict | None:
+    selections = session_memory.get("recent_selections", [])
+    for selection in reversed(selections):
+        if selection_type and selection.get("type") != selection_type:
+            continue
+        return selection
+    return None
+
+
+def _prompt_refers_to_previous_selection(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    return any(
+        term in lower_prompt
+        for term in (
+            "same ",
+            "above",
+            "those",
+            "that list",
+            "previous",
+            "following",
+            "same format",
+        )
+    )
+
+
+def _resolve_selection(
+    session_memory: dict,
+    prompt: str,
+    preferred_types: list[str] | None = None,
+) -> dict | None:
+    selections = session_memory.get("recent_selections", [])
+    if not selections:
+        return None
+    if not _prompt_refers_to_previous_selection(prompt):
+        return None
+
+    preferred = set(preferred_types or [])
+    for selection in reversed(selections):
+        if preferred and selection.get("type") not in preferred:
+            continue
+        return selection
+    return None
+
+
+def _selection_summary_line(selection: dict) -> str:
+    items = selection.get("items", [])
+    preview = ", ".join(str(item) for item in items[:MAX_SELECTION_PREVIEW_ITEMS])
+    if len(items) > MAX_SELECTION_PREVIEW_ITEMS:
+        preview += f", ... ({len(items)} total)"
+    parts = [f'{selection.get("type", "unknown")}: {preview}']
+    if selection.get("source_command"):
+        parts.append(f'command={selection["source_command"]}')
+    if selection.get("label"):
+        parts.append(f'label={selection["label"]}')
+    return " | ".join(parts)
+
+
 def _new_session_memory() -> dict:
     return {
         "last_run_id": "",
         "last_hosts": [],
-        "last_selected_hosts": [],
         "last_commands": [],
         "last_structured_summary": {},
         "last_raw_context": {},
         "recent_user_prompts": [],
+        "recent_selections": [],
     }
 
 
@@ -115,20 +232,29 @@ def _remember_user_prompt(session_memory: dict, prompt: str) -> None:
     if hosts:
         merged_hosts = list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts))
         session_memory["last_hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
-        lower_prompt = prompt.lower()
-        if "ping " not in lower_prompt and (
-            len(hosts) > 1
-            or "show me the result" in lower_prompt
-            or "for each device" in lower_prompt
-            or "above" in lower_prompt
-            or "following" in lower_prompt
-            or "these devices" in lower_prompt
-        ):
-            session_memory["last_selected_hosts"] = hosts[-MAX_MEMORY_HOSTS:]
+        _remember_selection(
+            session_memory,
+            "hosts",
+            hosts[-MAX_MEMORY_HOSTS:],
+            source_run_id=session_memory.get("last_run_id", ""),
+            source_command=session_memory.get("last_commands", [""])[-1]
+            if session_memory.get("last_commands")
+            else "",
+            label="hosts from prompt",
+        )
     commands = _extract_commands_from_text(prompt)
     if commands:
         merged_commands = list(dict.fromkeys(session_memory.get("last_commands", []) + commands))
         session_memory["last_commands"] = merged_commands[-MAX_MEMORY_COMMANDS:]
+    ping_target = _extract_ping_target(prompt)
+    if ping_target:
+        _remember_selection(
+            session_memory,
+            "destinations",
+            [ping_target],
+            source_run_id=session_memory.get("last_run_id", ""),
+            label="ping target from prompt",
+        )
 
 
 def _remember_tool_data(session_memory: dict, tool_name: str, data: dict) -> None:
@@ -150,11 +276,30 @@ def _remember_tool_data(session_memory: dict, tool_name: str, data: dict) -> Non
     if hosts:
         merged_hosts = list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts))
         session_memory["last_hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
-    if tool_name == "get_host_component_summary" and data.get("hosts"):
-        session_memory["last_selected_hosts"] = _limit_list(
+    if data.get("hosts"):
+        _remember_selection(
+            session_memory,
+            "hosts",
             [host for host in data["hosts"] if isinstance(host, str)],
-            MAX_MEMORY_HOSTS,
+            source_run_id=data.get("run_id", ""),
+            source_command=data.get("command", ""),
+            label=f"hosts from {tool_name}",
         )
+    if tool_name == "ping_from_device":
+        if data.get("source_hostname"):
+            _remember_selection(
+                session_memory,
+                "hosts",
+                [data["source_hostname"]],
+                label="ping source",
+            )
+        if data.get("target_hostname"):
+            _remember_selection(
+                session_memory,
+                "destinations",
+                [data["target_hostname"]],
+                label="ping destination",
+            )
 
     commands: list[str] = []
     command_value = data.get("command")
@@ -190,11 +335,6 @@ def _build_memory_context(session_memory: dict) -> str:
         lines.append(
             "- Recent hosts: " + ", ".join(session_memory["last_hosts"][-MAX_MEMORY_HOSTS:])
         )
-    if session_memory.get("last_selected_hosts"):
-        lines.append(
-            "- Selected hosts: "
-            + ", ".join(session_memory["last_selected_hosts"][-MAX_MEMORY_HOSTS:])
-        )
     if session_memory.get("last_commands"):
         lines.append(
             "- Recent commands: " + ", ".join(session_memory["last_commands"][-MAX_MEMORY_COMMANDS:])
@@ -215,6 +355,11 @@ def _build_memory_context(session_memory: dict) -> str:
         if raw_context.get("truncated"):
             summary.append("truncated=true")
         lines.append("- Last raw evidence: " + ", ".join(summary))
+    selections = session_memory.get("recent_selections", [])
+    if selections:
+        lines.append("- Recent selections:")
+        for selection in selections[-4:]:
+            lines.append("  - " + _selection_summary_line(selection))
     prompts = session_memory.get("recent_user_prompts", [])
     if prompts:
         lines.append("- Recent user intents:")
@@ -470,8 +615,9 @@ def _format_ping_result(data: dict, highlight_longest: bool) -> str:
     average = data.get("average_latency_ms")
     packet_loss = data.get("packet_loss_percent")
     exit_code = data.get("exit_code")
+    packets_received = data.get("packets_received")
 
-    if exit_code != 0 or stderr:
+    if exit_code != 0 or stderr or packets_received == 0 or packet_loss == 100.0:
         detail = stderr or "Ping failed."
         if raw_output:
             detail = f"{detail}\n\n```\n{raw_output}\n```"
@@ -506,6 +652,12 @@ async def _handle_deterministic_ping(
 
     target = _extract_ping_target(prompt)
     source_hosts = _extract_ping_sources(prompt)
+    if not source_hosts:
+        selection = _resolve_selection(session_memory, prompt, preferred_types=["hosts"])
+        if selection:
+            source_hosts = [
+                item for item in selection.get("items", []) if isinstance(item, str)
+            ][:MAX_MEMORY_HOSTS]
     if not target:
         return None
     if not source_hosts:
@@ -573,7 +725,19 @@ async def _handle_deterministic_hardware_count(
         return "No audit run is available to count against."
 
     lower_prompt = prompt.lower()
-    selected_hosts = session_memory.get("last_selected_hosts", [])
+    selection = _resolve_selection(session_memory, prompt, preferred_types=["hosts"])
+    if not selection and (
+        "for each device" in lower_prompt
+        or "per device" in lower_prompt
+        or "device by device" in lower_prompt
+        or "host by host" in lower_prompt
+        or "same format" in lower_prompt
+        or "all hardware summary for each device" in lower_prompt
+    ):
+        selection = _latest_selection(session_memory, "hosts")
+    selected_hosts = [
+        item for item in (selection or {}).get("items", []) if isinstance(item, str)
+    ][:MAX_MEMORY_HOSTS]
 
     if selected_hosts and (
         "for each device" in lower_prompt
