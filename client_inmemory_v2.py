@@ -98,6 +98,7 @@ def _new_session_memory() -> dict:
     return {
         "last_run_id": "",
         "last_hosts": [],
+        "last_selected_hosts": [],
         "last_commands": [],
         "last_structured_summary": {},
         "last_raw_context": {},
@@ -114,6 +115,16 @@ def _remember_user_prompt(session_memory: dict, prompt: str) -> None:
     if hosts:
         merged_hosts = list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts))
         session_memory["last_hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
+        lower_prompt = prompt.lower()
+        if "ping " not in lower_prompt and (
+            len(hosts) > 1
+            or "show me the result" in lower_prompt
+            or "for each device" in lower_prompt
+            or "above" in lower_prompt
+            or "following" in lower_prompt
+            or "these devices" in lower_prompt
+        ):
+            session_memory["last_selected_hosts"] = hosts[-MAX_MEMORY_HOSTS:]
     commands = _extract_commands_from_text(prompt)
     if commands:
         merged_commands = list(dict.fromkeys(session_memory.get("last_commands", []) + commands))
@@ -139,6 +150,11 @@ def _remember_tool_data(session_memory: dict, tool_name: str, data: dict) -> Non
     if hosts:
         merged_hosts = list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts))
         session_memory["last_hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
+    if tool_name == "get_host_component_summary" and data.get("hosts"):
+        session_memory["last_selected_hosts"] = _limit_list(
+            [host for host in data["hosts"] if isinstance(host, str)],
+            MAX_MEMORY_HOSTS,
+        )
 
     commands: list[str] = []
     command_value = data.get("command")
@@ -173,6 +189,11 @@ def _build_memory_context(session_memory: dict) -> str:
     if session_memory.get("last_hosts"):
         lines.append(
             "- Recent hosts: " + ", ".join(session_memory["last_hosts"][-MAX_MEMORY_HOSTS:])
+        )
+    if session_memory.get("last_selected_hosts"):
+        lines.append(
+            "- Selected hosts: "
+            + ", ".join(session_memory["last_selected_hosts"][-MAX_MEMORY_HOSTS:])
         )
     if session_memory.get("last_commands"):
         lines.append(
@@ -368,8 +389,13 @@ def _looks_like_followup_category_prompt(prompt: str) -> bool:
         "each category",
         "for each device",
         "per device",
+        "device by device",
+        "host by host",
         "counts for each device",
         "print out these categories",
+        "same format",
+        "break down",
+        "breakdown",
     )
     return any(term in lower_prompt for term in followup_terms)
 
@@ -383,6 +409,127 @@ def _format_per_device_category_counts(results: list[dict]) -> str:
         for hostname, count in per_host.items():
             lines.append(f"- {hostname}: {count}")
     return "\n".join(lines)
+
+
+def _format_host_component_summary(per_host: dict) -> str:
+    lines = ["Here is the hardware summary for each selected device:"]
+    type_labels = {
+        "chassis": "Chassis",
+        "routing_engine": "Routing Engines",
+        "control_board": "Control Boards",
+        "line_card": "Line Cards",
+    }
+    for hostname, component_map in per_host.items():
+        lines.append("")
+        lines.append(f"**{hostname}**")
+        for component_type, descriptions in component_map.items():
+            label = type_labels.get(component_type, component_type)
+            if len(descriptions) == 1 and component_type != "line_card":
+                name, count = next(iter(descriptions.items()))
+                lines.append(f"- {label}: {count}x {name}")
+                continue
+            lines.append(f"- {label}:")
+            for name, count in descriptions.items():
+                lines.append(f"  - {count}x {name}")
+    return "\n".join(lines)
+
+
+def _extract_ping_target(prompt: str) -> str:
+    match = re.search(r"\bping\s+([A-Za-z0-9._:-]+)", prompt, flags=re.IGNORECASE)
+    if not match:
+        return ""
+    return match.group(1).strip(" ,.")
+
+
+def _extract_ping_sources(prompt: str) -> list[str]:
+    lower_prompt = prompt.lower()
+    source_text = ""
+    if " from " in lower_prompt:
+        source_text = prompt[lower_prompt.rfind(" from ") + 6 :]
+    elif lower_prompt.startswith("from "):
+        ping_index = lower_prompt.find(", ping ")
+        if ping_index == -1:
+            ping_index = lower_prompt.find(" ping ")
+        if ping_index != -1:
+            source_text = prompt[5:ping_index]
+    if not source_text:
+        return []
+    return _extract_hosts_from_text(source_text)
+
+
+def _looks_like_ping_prompt(prompt: str) -> bool:
+    return "ping " in prompt.lower() or prompt.lower().startswith("ping")
+
+
+def _format_ping_result(data: dict, highlight_longest: bool) -> str:
+    source = data.get("source_hostname", "")
+    target = data.get("target_hostname", "")
+    stderr = data.get("stderr", "")
+    raw_output = data.get("raw_output", "").strip()
+    latencies = [value for value in data.get("latencies_ms", []) if isinstance(value, (int, float))]
+    average = data.get("average_latency_ms")
+    packet_loss = data.get("packet_loss_percent")
+    exit_code = data.get("exit_code")
+
+    if exit_code != 0 or stderr:
+        detail = stderr or "Ping failed."
+        if raw_output:
+            detail = f"{detail}\n\n```\n{raw_output}\n```"
+        return f'The ping from `{source}` to `{target}` failed.\n\n{detail}'
+
+    lines = [f"The ping from `{source}` to `{target}` was successful."]
+    if average is not None:
+        lines.append(f"- Average latency: {average:.3f} ms")
+    if packet_loss is not None:
+        lines.append(f"- Packet loss: {packet_loss}%")
+    if highlight_longest and latencies:
+        lines.append(f"- Longest latency: {max(latencies):.3f} ms")
+    if raw_output:
+        lines.append("")
+        lines.append("Raw output:")
+        lines.append("```")
+        lines.append(raw_output)
+        lines.append("```")
+    return "\n".join(lines)
+
+
+async def _handle_deterministic_ping(
+    session,
+    log_file: str,
+    session_id: str,
+    turn_id: str,
+    prompt: str,
+    session_memory: dict,
+) -> str | None:
+    if not _looks_like_ping_prompt(prompt):
+        return None
+
+    target = _extract_ping_target(prompt)
+    source_hosts = _extract_ping_sources(prompt)
+    if not target:
+        return None
+    if not source_hosts:
+        return f"Where should I run the ping from for `{target}`?"
+
+    highlight_longest = "longest latency" in prompt.lower() or "highlight" in prompt.lower()
+    results = []
+    for source in source_hosts:
+        result = await _call_tool_logged(
+            session,
+            log_file,
+            session_id,
+            turn_id,
+            "ping_from_device",
+            {
+                "source_hostname": source,
+                "target_hostname": target,
+            },
+        )
+        data = _tool_result_json(result)
+        _remember_tool_data(session_memory, "ping_from_device", data)
+        results.append(_format_ping_result(data, highlight_longest))
+
+    return "\n\n".join(results)
 
 
 async def _answer_from_raw_context(
@@ -426,6 +573,35 @@ async def _handle_deterministic_hardware_count(
         return "No audit run is available to count against."
 
     lower_prompt = prompt.lower()
+    selected_hosts = session_memory.get("last_selected_hosts", [])
+
+    if selected_hosts and (
+        "for each device" in lower_prompt
+        or "per device" in lower_prompt
+        or "device by device" in lower_prompt
+        or "host by host" in lower_prompt
+        or "same format" in lower_prompt
+        or "all hardware summary for each device" in lower_prompt
+    ):
+        result = await _call_tool_logged(
+            session,
+            log_file,
+            session_id,
+            turn_id,
+            "get_host_component_summary",
+            {
+                "run_id": run_id,
+                "hosts": ",".join(selected_hosts),
+            },
+        )
+        data = _tool_result_json(result)
+        per_host = data.get("per_host", {})
+        if not per_host:
+            return "No structured component data was found for the selected hosts."
+        _remember_tool_data(session_memory, "get_host_component_summary", data)
+        deterministic_state["last_run_id"] = run_id
+        return _format_host_component_summary(per_host)
+
     if "all the hard" in lower_prompt or "all hardware" in lower_prompt or "each category" in lower_prompt:
         result = await _call_tool_logged(
             session,
@@ -433,7 +609,10 @@ async def _handle_deterministic_hardware_count(
             session_id,
             turn_id,
             "summarize_components",
-            {"run_id": run_id},
+            {
+                "run_id": run_id,
+                "hosts": ",".join(selected_hosts) if selected_hosts else "",
+            },
         )
         data = _tool_result_json(result)
         summary = data.get("summary", {})
@@ -461,6 +640,7 @@ async def _handle_deterministic_hardware_count(
                     "name": name,
                     "component_type": component_type,
                     "match_mode": "exact",
+                    "hosts": ",".join(selected_hosts) if selected_hosts else "",
                 },
             )
             data = _tool_result_json(result)
@@ -488,11 +668,12 @@ async def _handle_deterministic_hardware_count(
         turn_id,
         "count_components",
         {
-            "run_id": run_id,
-            "name": name,
-            "component_type": component_type,
-            "match_mode": "exact",
-        },
+                    "run_id": run_id,
+                    "name": name,
+                    "component_type": component_type,
+                    "match_mode": "exact",
+                    "hosts": ",".join(selected_hosts) if selected_hosts else "",
+                },
     )
     data = _tool_result_json(result)
     if data.get("error"):
@@ -718,6 +899,15 @@ async def run_intelligent_agent() -> None:
                         deterministic_state,
                         session_memory,
                     )
+                    if deterministic_response is None:
+                        deterministic_response = await _handle_deterministic_ping(
+                            session,
+                            session_log_file,
+                            session_id,
+                            turn_id,
+                            prompt,
+                            session_memory,
+                        )
                     if deterministic_response is None:
                         deterministic_response = await _handle_deterministic_hardware_count(
                             session,

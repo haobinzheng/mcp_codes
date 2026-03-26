@@ -328,10 +328,15 @@ def _iter_results(
 
 
 def _iter_components(
-    run_data: dict[str, Any], component_type: str = "", command: str = ""
+    run_data: dict[str, Any],
+    component_type: str = "",
+    command: str = "",
+    hosts: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
     for hostname, per_host in run_data.get("results", {}).items():
+        if hosts and hostname not in hosts:
+            continue
         for command_name, result in per_host.items():
             if command and command_name != command:
                 continue
@@ -1119,6 +1124,7 @@ def count_components(
     component_type: str = "",
     match_mode: str = "exact",
     command: str = "",
+    hosts: str = "",
 ) -> str:
     """
     Count components by name.
@@ -1128,11 +1134,17 @@ def count_components(
     run_data = _get_run_data(run_id)
     if not run_data:
         return _json({"error": f"Unknown run_id: {run_id}"})
+    host_filter = _parse_host_filter(hosts)
 
     try:
         components = [
             item
-            for item in _iter_components(run_data, component_type=component_type, command=command)
+            for item in _iter_components(
+                run_data,
+                component_type=component_type,
+                command=command,
+                hosts=host_filter,
+            )
             if _match_text(item["description"], name, match_mode)
         ]
     except ValueError as exc:
@@ -1149,6 +1161,7 @@ def count_components(
             "match_mode": match_mode,
             "component_type": component_type,
             "command": command,
+            "hosts": sorted(host_filter),
             "total_count": len(components),
             "host_count": len(per_host),
             "per_host": dict(sorted(per_host.items())),
@@ -1163,6 +1176,7 @@ def list_components(
     component_type: str = "",
     match_mode: str = "exact",
     command: str = "",
+    hosts: str = "",
 ) -> str:
     """
     List structured components.
@@ -1171,9 +1185,15 @@ def list_components(
     run_data = _get_run_data(run_id)
     if not run_data:
         return _json({"error": f"Unknown run_id: {run_id}"})
+    host_filter = _parse_host_filter(hosts)
 
     try:
-        components = _iter_components(run_data, component_type=component_type, command=command)
+        components = _iter_components(
+            run_data,
+            component_type=component_type,
+            command=command,
+            hosts=host_filter,
+        )
         if name:
             components = [
                 item for item in components if _match_text(item["description"], name, match_mode)
@@ -1188,20 +1208,22 @@ def list_components(
             "match_mode": match_mode,
             "component_type": component_type,
             "command": command,
+            "hosts": sorted(host_filter),
             "components": components,
         }
     )
 
 
 @mcp.tool()
-def summarize_components(run_id: str, command: str = "") -> str:
+def summarize_components(run_id: str, command: str = "", hosts: str = "") -> str:
     """Summarize all structured components by type and exact description."""
     run_data = _get_run_data(run_id)
     if not run_data:
         return _json({"error": f"Unknown run_id: {run_id}"})
+    host_filter = _parse_host_filter(hosts)
 
     summary: dict[str, dict[str, int]] = {}
-    for item in _iter_components(run_data, command=command):
+    for item in _iter_components(run_data, command=command, hosts=host_filter):
         component_type = item["component_type"]
         description = item["description"]
         summary.setdefault(component_type, {})
@@ -1211,9 +1233,45 @@ def summarize_components(run_id: str, command: str = "") -> str:
         {
             "run_id": run_id,
             "command": command,
+            "hosts": sorted(host_filter),
             "summary": {
                 component_type: dict(sorted(descriptions.items()))
                 for component_type, descriptions in sorted(summary.items())
+            },
+        }
+    )
+
+
+@mcp.tool()
+def get_host_component_summary(run_id: str, hosts: str = "", command: str = "") -> str:
+    """Return structured component summaries grouped by host."""
+    run_data = _get_run_data(run_id)
+    if not run_data:
+        return _json({"error": f"Unknown run_id: {run_id}"})
+
+    host_filter = _parse_host_filter(hosts)
+    per_host: dict[str, dict[str, dict[str, int]]] = {}
+    for item in _iter_components(run_data, command=command, hosts=host_filter):
+        hostname = item["hostname"]
+        component_type = item["component_type"]
+        description = item["description"]
+        per_host.setdefault(hostname, {})
+        per_host[hostname].setdefault(component_type, {})
+        per_host[hostname][component_type][description] = (
+            per_host[hostname][component_type].get(description, 0) + 1
+        )
+
+    return _json(
+        {
+            "run_id": run_id,
+            "command": command,
+            "hosts": sorted(host_filter) if host_filter else sorted(per_host.keys()),
+            "per_host": {
+                hostname: {
+                    component_type: dict(sorted(descriptions.items()))
+                    for component_type, descriptions in sorted(component_map.items())
+                }
+                for hostname, component_map in sorted(per_host.items())
             },
         }
     )
