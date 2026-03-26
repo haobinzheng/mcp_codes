@@ -31,6 +31,7 @@ Use the MCP tools with this workflow:
 2. Check progress with get_audit_run_status when needed.
 3. Read compact results with get_audit_run_summary before requesting detailed outputs.
 4. Fetch host- or command-level details only when needed to support a conclusion.
+4a. If the user asks to ping a device, use ping_device and report the raw output plus the average latency.
 5. For hardware component questions and totals, use count_components or list_components instead of reasoning from raw text.
 6. Default to exact matching for component names. Only use prefix or contains matching if the user explicitly asks for variants, prefixes, or fuzzy matches.
 7. When you need evidence for a host or command, prefer get_analysis_context. It returns structured data when a parser exists and raw output otherwise.

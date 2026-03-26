@@ -61,6 +61,45 @@ def _ensure_log_dir() -> None:
     os.makedirs(LOG_DIR, exist_ok=True)
 
 
+def _parse_ping_stats(output: str) -> dict[str, Any]:
+    transmitted = None
+    received = None
+    packet_loss = None
+    latencies_ms: list[float] = []
+    average_latency_ms = None
+
+    packet_match = re.search(
+        r"(\d+)\s+packets transmitted,\s+(\d+)(?:\s+packets?)?\s+received.*?(\d+(?:\.\d+)?)%\s+packet loss",
+        output,
+        flags=re.IGNORECASE,
+    )
+    if packet_match:
+        transmitted = int(packet_match.group(1))
+        received = int(packet_match.group(2))
+        packet_loss = float(packet_match.group(3))
+
+    for match in re.finditer(r"time[=<]([0-9]+(?:\.[0-9]+)?)\s*ms", output, flags=re.IGNORECASE):
+        latencies_ms.append(float(match.group(1)))
+
+    rtt_match = re.search(
+        r"(?:round-trip|rtt).*?=\s*([0-9]+(?:\.[0-9]+)?)/([0-9]+(?:\.[0-9]+)?)/([0-9]+(?:\.[0-9]+)?)(?:/([0-9]+(?:\.[0-9]+)?))?\s*ms",
+        output,
+        flags=re.IGNORECASE,
+    )
+    if rtt_match:
+        average_latency_ms = float(rtt_match.group(2))
+    elif latencies_ms:
+        average_latency_ms = round(sum(latencies_ms) / len(latencies_ms), 3)
+
+    return {
+        "packets_transmitted": transmitted,
+        "packets_received": received,
+        "packet_loss_percent": packet_loss,
+        "latencies_ms": latencies_ms,
+        "average_latency_ms": average_latency_ms,
+    }
+
+
 def _parse_devices(devices: str) -> list[str]:
     candidate = os.path.join(CURRENT_DIR, devices)
     if os.path.exists(candidate):
@@ -611,6 +650,64 @@ async def start_audit_run(devices: str, commands: str) -> str:
 
     asyncio.create_task(_execute_run(run_id))
     return _json(_run_to_dict(run))
+
+
+@mcp.tool()
+async def ping_device(hostname: str, count: int = 4, timeout_sec: int = 2) -> str:
+    """
+    Ping a single device and return raw output plus parsed latency stats.
+    - hostname: device to ping
+    - count: number of echo requests to send
+    - timeout_sec: per-packet timeout in seconds
+    """
+    safe_count = max(1, min(count, 20))
+    safe_timeout = max(1, min(timeout_sec, 10))
+
+    start = time.time()
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "ping",
+            "-c",
+            str(safe_count),
+            "-W",
+            str(safe_timeout),
+            hostname,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+        raw_output = stdout.decode(errors="replace").strip()
+        stderr_text = stderr.decode(errors="replace").strip()
+        stats = _parse_ping_stats(raw_output)
+        return _json(
+            {
+                "hostname": hostname,
+                "count": safe_count,
+                "timeout_sec": safe_timeout,
+                "exit_code": proc.returncode,
+                "duration_ms": int((time.time() - start) * 1000),
+                "raw_output": raw_output,
+                "stderr": stderr_text,
+                **stats,
+            }
+        )
+    except Exception as exc:
+        return _json(
+            {
+                "hostname": hostname,
+                "count": safe_count,
+                "timeout_sec": safe_timeout,
+                "exit_code": -1,
+                "duration_ms": int((time.time() - start) * 1000),
+                "raw_output": "",
+                "stderr": str(exc),
+                "packets_transmitted": None,
+                "packets_received": None,
+                "packet_loss_percent": None,
+                "latencies_ms": [],
+                "average_latency_ms": None,
+            }
+        )
 
 
 @mcp.tool()
