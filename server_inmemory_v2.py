@@ -668,7 +668,7 @@ async def ping_from_device(
     """
     safe_count = max(1, min(count, 20))
     safe_timeout = max(1, min(timeout_sec, 10))
-    command = f"ping -c {safe_count} -W {safe_timeout} {target_hostname}"
+    command = f"ping {target_hostname}"
 
     start = time.time()
     try:
