@@ -653,23 +653,29 @@ async def start_audit_run(devices: str, commands: str) -> str:
 
 
 @mcp.tool()
-async def ping_device(hostname: str, count: int = 4, timeout_sec: int = 2) -> str:
+async def ping_from_device(
+    source_hostname: str,
+    target_hostname: str,
+    count: int = 4,
+    timeout_sec: int = 2,
+) -> str:
     """
-    Ping a single device and return raw output plus parsed latency stats.
-    - hostname: device to ping
+    Execute ping from one device to another via gnetch and return raw output plus parsed latency stats.
+    - source_hostname: device where the ping command should run
+    - target_hostname: destination to ping from the source device
     - count: number of echo requests to send
     - timeout_sec: per-packet timeout in seconds
     """
     safe_count = max(1, min(count, 20))
     safe_timeout = max(1, min(timeout_sec, 10))
-    command = f"ping -c {safe_count} -W {safe_timeout}"
+    command = f"ping -c {safe_count} -W {safe_timeout} {target_hostname}"
 
     start = time.time()
     try:
         proc = await asyncio.create_subprocess_exec(
             GNETCH_PATH,
             command,
-            hostname,
+            source_hostname,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -679,7 +685,8 @@ async def ping_device(hostname: str, count: int = 4, timeout_sec: int = 2) -> st
         stats = _parse_ping_stats(raw_output)
         return _json(
             {
-                "hostname": hostname,
+                "source_hostname": source_hostname,
+                "target_hostname": target_hostname,
                 "count": safe_count,
                 "timeout_sec": safe_timeout,
                 "exit_code": proc.returncode,
@@ -692,7 +699,8 @@ async def ping_device(hostname: str, count: int = 4, timeout_sec: int = 2) -> st
     except Exception as exc:
         return _json(
             {
-                "hostname": hostname,
+                "source_hostname": source_hostname,
+                "target_hostname": target_hostname,
                 "count": safe_count,
                 "timeout_sec": safe_timeout,
                 "exit_code": -1,
@@ -706,6 +714,25 @@ async def ping_device(hostname: str, count: int = 4, timeout_sec: int = 2) -> st
                 "average_latency_ms": None,
             }
         )
+
+
+@mcp.tool()
+async def ping_device(hostname: str, count: int = 4, timeout_sec: int = 2) -> str:
+    """
+    Compatibility wrapper for older prompt/tool behavior.
+    This tool now requires the user to specify a source device explicitly.
+    """
+    return _json(
+        {
+            "error": (
+                "A ping source device is required. Use ping_from_device with both source_hostname and "
+                "target_hostname. Do not assume ping runs from the local server."
+            ),
+            "hostname": hostname,
+            "count": max(1, min(count, 20)),
+            "timeout_sec": max(1, min(timeout_sec, 10)),
+        }
+    )
 
 
 @mcp.tool()
