@@ -611,11 +611,47 @@ def _looks_like_ping_prompt(prompt: str) -> bool:
 
 def _looks_like_bng_config_prompt(prompt: str) -> bool:
     lower_prompt = prompt.lower()
-    return (
-        "collect configuration" in lower_prompt
-        or "collect config" in lower_prompt
-        or "display-config" in lower_prompt
-    ) and "bng" in lower_prompt
+    has_host = bool(_extract_hosts_from_text(prompt))
+    has_bng_term = "bng" in lower_prompt or "bgn" in lower_prompt
+    has_config_term = any(
+        term in lower_prompt
+        for term in (
+            "collect configuration",
+            "collect config",
+            "collection configuration",
+            "collection config",
+            "collect the configuration",
+            "collect the config",
+            "configuration",
+            "config",
+            "display-config",
+        )
+    )
+    has_collect_term = any(
+        term in lower_prompt
+        for term in (
+            "collect",
+            "collection",
+            "get",
+            "grab",
+            "pull",
+            "save",
+        )
+    )
+    return has_host and has_bng_term and has_config_term and has_collect_term
+
+
+def _looks_ambiguous_bng_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    if not bool(_extract_hosts_from_text(prompt)):
+        return False
+    suspicious_terms = ("gnb", "bgnn", "bngg")
+    has_suspicious_term = any(term in lower_prompt for term in suspicious_terms)
+    has_config_term = "config" in lower_prompt or "configuration" in lower_prompt
+    has_collect_term = any(
+        term in lower_prompt for term in ("collect", "collection", "get", "grab", "pull", "save")
+    )
+    return has_suspicious_term and has_config_term and has_collect_term
 
 
 def _format_bng_collection_result(data: dict) -> str:
@@ -651,6 +687,11 @@ async def _handle_deterministic_bng_config_collection(
     prompt: str,
     session_memory: dict,
 ) -> str | None:
+    if _looks_ambiguous_bng_prompt(prompt):
+        hosts = _extract_hosts_from_text(prompt)
+        hostname = hosts[0] if hosts else "that device"
+        return f"Did you mean collect BNG configuration on `{hostname}`?"
+
     if not _looks_like_bng_config_prompt(prompt):
         return None
 
