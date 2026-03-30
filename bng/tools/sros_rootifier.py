@@ -2,7 +2,13 @@ import os
 import re
 import argparse
 
-from flask import Blueprint, jsonify, render_template, request
+try:
+    from flask import Blueprint, jsonify, render_template, request
+except ImportError:  # pragma: no cover - optional for CLI usage
+    Blueprint = None
+    jsonify = None
+    render_template = None
+    request = None
 
 
 def rm_insignificant_lines(in_cfg):
@@ -40,24 +46,38 @@ def rootify(clean_cfg):
         if "------------------" in line or "echo" in line:
             continue
         if line.strip() == 'exit':
-            cfg_string.pop()
-            prev_ind_level -= 4
+            if len(cfg_string) > 1:
+                cfg_string.pop()
+            prev_ind_level = max(0, prev_ind_level - 4)
             continue
 
         # calc current indent
         cur_ind_level = len(line) - len(line.lstrip())
+        stripped_line = line.strip()
+
+        # trim the stack back to the current indentation depth
+        target_depth = max(1, cur_ind_level // 4 + 1)
+        while len(cfg_string) > target_depth:
+            cfg_string.pop()
+
         # append a command if it is on a next level of indent
         if cur_ind_level > prev_ind_level:
-            cfg_string.append(line.strip())
+            cfg_string.append(stripped_line)
         # if a command on the same level of indent
         # we delete the prev. command and append the new one to the base string
         elif cur_ind_level == prev_ind_level:
-            cfg_string.pop()
+            if len(cfg_string) > 1:
+                cfg_string.pop()
             # removing (if any) `customer xxx create` or `create` at the end of the line
             # since it was previously printed out
-            cfg_string[-1] = re.sub(r'\scustomer\s\d+\screate$|\screate$', '', cfg_string[-1])
+            if cfg_string:
+                cfg_string[-1] = re.sub(r'\scustomer\s\d+\screate$|\screate$', '', cfg_string[-1])
 
-            cfg_string.append(line.strip())
+            cfg_string.append(stripped_line)
+        else:
+            if cfg_string:
+                cfg_string[-1] = re.sub(r'\scustomer\s\d+\screate$|\screate$', '', cfg_string[-1])
+            cfg_string.append(stripped_line)
 
         prev_ind_level = cur_ind_level
 
@@ -84,24 +104,25 @@ def rootify(clean_cfg):
 ###############
 
 
-sros_rootifier_bp = Blueprint('sros_rootifier', __name__, template_folder='templates', static_folder='static',
-                              static_url_path='/sros_rootifier/static')
+if Blueprint is not None:
+    sros_rootifier_bp = Blueprint('sros_rootifier', __name__, template_folder='templates', static_folder='static',
+                                  static_url_path='/sros_rootifier/static')
 
 
-@sros_rootifier_bp.route('/', methods=['GET', 'POST'])
-def sros_rootifier():
-    if request.method == 'GET':
-        return render_template('sros_rootifier.html')
+    @sros_rootifier_bp.route('/', methods=['GET', 'POST'])
+    def sros_rootifier():
+        if request.method == 'GET':
+            return render_template('sros_rootifier.html')
 
-    # handle POST method from JQuery (will be filled later)
-    elif request.method == 'POST':
-        result = {'output_data': '',
-                  'error': ''}
-        input_cfg = request.form['cfg']
+        # handle POST method from JQuery (will be filled later)
+        elif request.method == 'POST':
+            result = {'output_data': '',
+                      'error': ''}
+            input_cfg = request.form['cfg']
 
-        clean_cfg = rm_insignificant_lines(input_cfg)
-        result['output_data'] = rootify(clean_cfg)
-        return jsonify(result)
+            clean_cfg = rm_insignificant_lines(input_cfg)
+            result['output_data'] = rootify(clean_cfg)
+            return jsonify(result)
 
 
 import os
