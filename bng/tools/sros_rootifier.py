@@ -54,6 +54,9 @@ def rootify(clean_cfg):
         # calc current indent
         cur_ind_level = len(line) - len(line.lstrip())
         stripped_line = line.strip()
+        if stripped_line == "configure":
+            prev_ind_level = 0
+            continue
 
         # trim the stack back to the current indentation depth
         target_depth = max(1, cur_ind_level // 4 + 1)
@@ -138,22 +141,25 @@ def clean_config(lines):
     """
     start_index = 0
     for i in range(len(lines)):
-        line = lines[i].strip()
+        line = lines[i].strip().replace('\\"', '"')
+        next_1 = lines[i + 1].strip().replace('\\"', '"') if i + 1 < len(lines) else ""
+        next_2 = lines[i + 2].strip().replace('\\"', '"') if i + 2 < len(lines) else ""
+        next_3 = lines[i + 3].strip().replace('\\"', '"') if i + 3 < len(lines) else ""
 
         # Case 1: header block
         if i + 2 < len(lines):
-            if (lines[i].strip() == "#--------------------------------------------------" and
-                lines[i + 1].strip() == 'echo "System Configuration"' and
-                lines[i + 2].strip() == "#--------------------------------------------------"):
+            if (line == "#--------------------------------------------------" and
+                next_1 == 'echo "System Configuration"' and
+                next_2 == "#--------------------------------------------------"):
                 start_index = i + 3
                 break
 
         # Case 2: 'configure' followed by header block
         if (line == "configure" and
             i + 3 < len(lines) and
-            lines[i + 1].strip() == "#--------------------------------------------------" and
-            lines[i + 2].strip() == 'echo "System Configuration"' and
-            lines[i + 3].strip() == "#--------------------------------------------------"):
+            next_1 == "#--------------------------------------------------" and
+            next_2 == 'echo "System Configuration"' and
+            next_3 == "#--------------------------------------------------"):
             start_index = i + 4
             break
 
