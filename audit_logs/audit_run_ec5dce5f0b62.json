@@ -1,0 +1,54 @@
+{
+  "commands": [
+    "show interfaces description"
+  ],
+  "completed_at": 1774630942.3525002,
+  "completed_tasks": 1,
+  "created_at": 1774630937.1205056,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "pr01.lax101"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_ec5dce5f0b62.json",
+  "results": {
+    "pr01.lax101": {
+      "show interfaces description": {
+        "command": "show interfaces description",
+        "completed_at": 1774630942.3518577,
+        "components": [],
+        "duration_ms": 5228,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1774630937.123139,
+        "stderr": "W0327 10:02:22.236466 1479714 stubby.cc:1690] Stream was closed with status: UNKNOWN: invalid status gnetch::8: http://go/gnetch-errors: http://gnetch/auditlog/ac060b24-51a8-42d2-b1ae-c18ef8cab3aa host=pr01.lax101 agent=/bns/yv/borg/yv/bns/gnetch/gnetch.gfiber_agent/4 fallback=False google3.net.infra.telemetry.gnetch.lib.exceptions.CmdError(8) b'error: device description not found\\n'\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1470\nSend(/Gnetch2.Command) returned error UNKNOWN:\n /Gnetch2.Command to [2002:a63:9f01:0:b0:c74:2688:264d]:9801 : APP_ERROR(2) invalid status gnetch::8: http://go/gnetch-errors: http://gnetch/auditlog/ac060b24-51a8-42d2-b1ae-c18ef8cab3aa host=pr01.lax101 agent=/bns/yv/borg/yv/bns/gnetch/gnetch.gfiber_agent/4 fallback=False google3.net.infra.telemetry.gnetch.lib.exceptions.CmdError(8) b'error: device description not found\\n'",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "ec5dce5f0b62",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "ec5dce5f0b62",
+    "state": "completed",
+    "success_hosts": [
+      "pr01.lax101"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}

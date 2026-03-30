@@ -1,0 +1,60 @@
+{
+  "commands": [
+    "show version"
+  ],
+  "completed_at": 1774632120.5117466,
+  "completed_tasks": 1,
+  "created_at": 1774632117.9127831,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "cr01.aus121"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_ec7b35cbeed8.json",
+  "results": {
+    "cr01.aus121": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1774632120.5110083,
+        "components": [],
+        "duration_ms": 2596,
+        "exit_code": 0,
+        "facts": {
+          "junos_version": "24.4R1-S3.7-EVO"
+        },
+        "filtered": "Model: ptx10008\nJunos: 24.4R1-S3.7-EVO",
+        "started_at": 1774632117.9146934,
+        "stderr": "",
+        "stdout": "Hostname: re0-cr01.aus121-re0\nModel: ptx10008\nJunos: 24.4R1-S3.7-EVO\nYocto: 4.0.22\nLinux Kernel: 5.15.142-10.22.33.14-yocto-standard-juniper-12615-gcefb031838df\nJUNOS-EVO OS 64-bit [junos-evo-install-ptx-x86-64-24.4R1-S3.7-EVO]",
+        "structured_data_available": true
+      }
+    }
+  },
+  "run_id": "ec7b35cbeed8",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "junos_versions": {
+        "24.4R1-S3.7-EVO": [
+          "cr01.aus121"
+        ]
+      },
+      "line_cards": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "ec7b35cbeed8",
+    "state": "completed",
+    "success_hosts": [
+      "cr01.aus121"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}
