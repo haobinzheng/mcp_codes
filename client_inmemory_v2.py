@@ -37,6 +37,9 @@ Use the MCP tools with this workflow:
     Use ping_from_device with both source_hostname and target_hostname.
     If the user does not specify the source device, ask a short follow-up question asking where to run the ping from.
     When ping results are available, report the raw output plus the average latency. If asked, highlight the longest latency.
+4b. If the user asks to collect BNG configuration, use collect_bng_configuration.
+    That tool collects 'admin display-config' through gnetch, saves the original config, and rootifies it into the flat output directory.
+    Report the saved original and flat file paths plus any tool errors.
 5. For hardware component questions and totals, use count_components or list_components instead of reasoning from raw text.
 6. Default to exact matching for component names. Only use prefix or contains matching if the user explicitly asks for variants, prefixes, or fuzzy matches.
 7. When you need evidence for a host or command, prefer get_analysis_context. It returns structured data when a parser exists and raw output otherwise.
@@ -83,7 +86,7 @@ def _limit_list(items: list, max_items: int) -> list:
 
 
 def _extract_hosts_from_text(text: str) -> list[str]:
-    pattern = r"\b[a-z]{2,}\d{2}\.[a-z]{3}\d{3}\b"
+    pattern = r"\b[a-z][a-z0-9-]*\.[a-z][a-z0-9-]*\d+\b"
     hosts = re.findall(pattern, text.lower())
     return sorted(set(hosts))
 
@@ -606,6 +609,76 @@ def _looks_like_ping_prompt(prompt: str) -> bool:
     return "ping " in prompt.lower() or prompt.lower().startswith("ping")
 
 
+def _looks_like_bng_config_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    return (
+        "collect configuration" in lower_prompt
+        or "collect config" in lower_prompt
+        or "display-config" in lower_prompt
+    ) and "bng" in lower_prompt
+
+
+def _format_bng_collection_result(data: dict) -> str:
+    if data.get("error") or data.get("exit_code") not in (0, None):
+        details = data.get("stderr") or data.get("error") or "Collection failed."
+        return (
+            f'Failed to collect configuration from `{data.get("hostname", "")}`.\n\n'
+            f"{details}"
+        )
+
+    lines = [f'Collected configuration from `{data.get("hostname", "")}`.']
+    lines.append(f'- Original config: `{data.get("original_path", "")}`')
+    lines.append(f'- Flat config: `{data.get("flat_path", "")}`')
+    lines.append(f'- Lines collected: {data.get("lines_collected", 0)}')
+    lines.append(f'- Bytes collected: {data.get("bytes_collected", 0)}')
+    if data.get("rootifier_exit_code") not in (0, None):
+        lines.append("")
+        lines.append(
+            f'Rootifier failed with exit code {data.get("rootifier_exit_code")}: '
+            f'{data.get("rootifier_stderr", "")}'
+        )
+    elif data.get("rootifier_stderr"):
+        lines.append("")
+        lines.append(f'Rootifier note: {data.get("rootifier_stderr")}')
+    return "\n".join(lines)
+
+
+async def _handle_deterministic_bng_config_collection(
+    session,
+    log_file: str,
+    session_id: str,
+    turn_id: str,
+    prompt: str,
+    session_memory: dict,
+) -> str | None:
+    if not _looks_like_bng_config_prompt(prompt):
+        return None
+
+    hosts = _extract_hosts_from_text(prompt)
+    if not hosts:
+        return "Which BNG should I collect the configuration from?"
+
+    hostname = hosts[0]
+    result = await _call_tool_logged(
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        "collect_bng_configuration",
+        {"hostname": hostname},
+    )
+    data = _tool_result_json(result)
+    _remember_tool_data(session_memory, "collect_bng_configuration", data)
+    _remember_selection(
+        session_memory,
+        "hosts",
+        [hostname],
+        source_command="admin display-config",
+        label="bng config collection target",
+    )
+    return _format_bng_collection_result(data)
+
+
 def _format_ping_result(data: dict, highlight_longest: bool) -> str:
     source = data.get("source_hostname", "")
     target = data.get("target_hostname", "")
@@ -1063,6 +1136,15 @@ async def run_intelligent_agent() -> None:
                         deterministic_state,
                         session_memory,
                     )
+                    if deterministic_response is None:
+                        deterministic_response = await _handle_deterministic_bng_config_collection(
+                            session,
+                            session_log_file,
+                            session_id,
+                            turn_id,
+                            prompt,
+                            session_memory,
+                        )
                     if deterministic_response is None:
                         deterministic_response = await _handle_deterministic_ping(
                             session,

@@ -1,5 +1,6 @@
-import re
 import os 
+import re
+import argparse
 
 from flask import Blueprint, jsonify, render_template, request
 
@@ -143,43 +144,61 @@ def clean_config(lines):
     return lines[start_index:]
 
 
+def _flat_output_path(input_path, output_dir):
+    file_name = os.path.basename(input_path)
+    base, ext = os.path.splitext(file_name)
+    output_name = f"{base}_flat{ext or '.cfg'}"
+    return os.path.join(output_dir, output_name)
+
+
+def rootify_file(input_path, output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+
+    with open(input_path, "r") as f:
+        original_lines = f.readlines()
+
+    cleaned_lines = clean_config(original_lines)
+    rootified = rootify(cleaned_lines)
+    output_path = _flat_output_path(input_path, output_dir)
+
+    with open(output_path, "w") as f:
+        for line in rootified.splitlines():
+            if line.strip():
+                f.write(f"{line.lstrip('/')}\n")
+
+    return {
+        "input_path": input_path,
+        "output_path": output_path,
+    }
+
+
+def rootify_path(input_path, output_dir):
+    if os.path.isdir(input_path):
+        results = []
+        for name in sorted(os.listdir(input_path)):
+            full_path = os.path.join(input_path, name)
+            if os.path.isfile(full_path):
+                results.append(rootify_file(full_path, output_dir))
+        return results
+    return [rootify_file(input_path, output_dir)]
+
+
 if __name__ == "__main__":
-    input_dir = "bng_configs"
-    output_dir = "bng_configs_flat"
+    parser = argparse.ArgumentParser(description="Rootify SR OS configs into flat format.")
+    parser.add_argument(
+        "input_path",
+        nargs="?",
+        default="bng_configs",
+        help="Input file or directory containing original configs.",
+    )
+    parser.add_argument(
+        "output_dir",
+        nargs="?",
+        default="bng_configs_flat",
+        help="Output directory for flat configs.",
+    )
+    args = parser.parse_args()
 
-    # Ensure output directory exists and is empty
-    if os.path.exists(output_dir):
-        for f in os.listdir(output_dir):
-            os.remove(os.path.join(output_dir, f))
-    else:
-        os.makedirs(output_dir)
-
-    # Loop through all input files
-    files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
-
-    for file in files:
-        print(file)
-        input_path = os.path.join(input_dir, file)
-        base, ext = os.path.splitext(file)
-        if file.endswith(".cfg"):
-            output_filename = file[:-4] + "_flat.cfg"
-        else:
-            output_filename = file + "_flat"
-
-        output_path = os.path.join(output_dir, output_filename)
-
-        with open(input_path, 'r') as f:
-            original_lines = f.readlines()
-
-        # Clean and overwrite original
-        cleaned_lines = clean_config(original_lines)
-        with open(input_path, 'w') as f:
-            f.writelines(cleaned_lines)
-
-        # Apply rootify and write to output
-        rootified = rootify(cleaned_lines)
-        rootified_lines = rootified.split("\n")
-        with open(output_path, 'w') as f:
-            f.writelines(f"{line.lstrip('/')}\n" for line in rootified_lines if line.strip())
-
-        print(f"Finished rootifying {file} → {output_path}")
+    results = rootify_path(args.input_path, args.output_dir)
+    for item in results:
+        print(f'Finished rootifying {item["input_path"]} -> {item["output_path"]}')

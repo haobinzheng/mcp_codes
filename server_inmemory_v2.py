@@ -18,6 +18,10 @@ GNETCH_PATH = os.environ.get(
 CURRENT_DIR = os.getcwd()
 LOG_DIR = os.environ.get("AUDIT_LOG_DIR", os.path.join(CURRENT_DIR, "audit_logs"))
 SEMAPHORE_LIMIT = int(os.environ.get("AUDIT_SEMAPHORE_LIMIT", "30"))
+BNG_BASE_DIR = os.path.join(CURRENT_DIR, "bng")
+BNG_ORIGINAL_DIR = os.path.join(BNG_BASE_DIR, "configurations", "original")
+BNG_FLAT_DIR = os.path.join(BNG_BASE_DIR, "configurations", "flat")
+SROS_ROOTIFIER_PATH = os.path.join(BNG_BASE_DIR, "tools", "sros_rootifier.py")
 
 
 @dataclass
@@ -59,6 +63,11 @@ def _json(data: Any) -> str:
 
 def _ensure_log_dir() -> None:
     os.makedirs(LOG_DIR, exist_ok=True)
+
+
+def _ensure_bng_dirs() -> None:
+    os.makedirs(BNG_ORIGINAL_DIR, exist_ok=True)
+    os.makedirs(BNG_FLAT_DIR, exist_ok=True)
 
 
 def _parse_ping_stats(output: str) -> dict[str, Any]:
@@ -717,6 +726,95 @@ async def ping_from_device(
                 "packet_loss_percent": None,
                 "latencies_ms": [],
                 "average_latency_ms": None,
+            }
+        )
+
+
+@mcp.tool()
+async def collect_bng_configuration(hostname: str) -> str:
+    """
+    Collect BNG configuration using 'admin display-config' through gnetch,
+    save the original config under bng/configurations/original,
+    and rootify it into bng/configurations/flat.
+    """
+    _ensure_bng_dirs()
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    safe_hostname = hostname.strip().lower()
+    original_path = os.path.join(BNG_ORIGINAL_DIR, f"{safe_hostname}_{timestamp}.cfg")
+    flat_path = os.path.join(BNG_FLAT_DIR, f"{safe_hostname}_{timestamp}_flat.cfg")
+
+    start = time.time()
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            GNETCH_PATH,
+            "admin display-config",
+            safe_hostname,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await proc.communicate()
+        raw_output = stdout.decode(errors="replace")
+        stderr_text = stderr.decode(errors="replace").strip()
+
+        if proc.returncode != 0:
+            return _json(
+                {
+                    "hostname": safe_hostname,
+                    "command": "admin display-config",
+                    "exit_code": proc.returncode,
+                    "stderr": stderr_text,
+                    "duration_ms": int((time.time() - start) * 1000),
+                    "error": "Configuration collection failed.",
+                }
+            )
+
+        with open(original_path, "w") as f:
+            f.write(raw_output)
+
+        rootifier = await asyncio.create_subprocess_exec(
+            "python3",
+            SROS_ROOTIFIER_PATH,
+            original_path,
+            BNG_FLAT_DIR,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        root_stdout, root_stderr = await rootifier.communicate()
+        root_stdout_text = root_stdout.decode(errors="replace").strip()
+        root_stderr_text = root_stderr.decode(errors="replace").strip()
+
+        return _json(
+            {
+                "hostname": safe_hostname,
+                "command": "admin display-config",
+                "exit_code": proc.returncode,
+                "duration_ms": int((time.time() - start) * 1000),
+                "original_path": original_path,
+                "flat_path": flat_path,
+                "rootifier_exit_code": rootifier.returncode,
+                "rootifier_stdout": root_stdout_text,
+                "rootifier_stderr": root_stderr_text,
+                "bytes_collected": len(raw_output),
+                "lines_collected": len(raw_output.splitlines()),
+                "stderr": stderr_text,
+            }
+        )
+    except Exception as exc:
+        return _json(
+            {
+                "hostname": safe_hostname,
+                "command": "admin display-config",
+                "exit_code": -1,
+                "duration_ms": int((time.time() - start) * 1000),
+                "original_path": original_path,
+                "flat_path": flat_path,
+                "rootifier_exit_code": None,
+                "rootifier_stdout": "",
+                "rootifier_stderr": "",
+                "bytes_collected": 0,
+                "lines_collected": 0,
+                "stderr": str(exc),
+                "error": "Configuration collection failed with an exception.",
             }
         )
 
