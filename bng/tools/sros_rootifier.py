@@ -191,7 +191,7 @@ def rootify_file(input_path, output_dir):
     with open(output_path, "w") as f:
         for line in rootified.splitlines():
             if line.strip():
-                f.write(f"{line.lstrip('/')}\n")
+                f.write(f"{line}\n")
 
     return {
         "input_path": input_path,
