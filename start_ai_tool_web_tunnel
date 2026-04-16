@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ $# -ge 1 ]]; then
+  REMOTE_TARGET="$1"
+else
+  REMOTE_TARGET="${REMOTE_SSH_TARGET:-}"
+fi
+
+if [[ -z "${REMOTE_TARGET}" ]]; then
+  echo "Usage: $0 user@remote-vm"
+  echo "Or set REMOTE_SSH_TARGET=user@remote-vm"
+  exit 1
+fi
+
+LOCAL_PORT="${LOCAL_PORT:-8000}"
+REMOTE_HOST="${REMOTE_HOST:-127.0.0.1}"
+REMOTE_PORT="${REMOTE_PORT:-8000}"
+
+echo "Opening SSH tunnel to ${REMOTE_TARGET}"
+echo "Keep this terminal open while using the web client."
+echo "Open this URL in your Mac browser:"
+echo "http://127.0.0.1:${LOCAL_PORT}"
+
+exec ssh -N -L "${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT}" "${REMOTE_TARGET}"
