@@ -1,0 +1,27 @@
+[gl:/configure service]
+A:admin@sar01.jef102# info
+    ies "1" {
+        admin-state enable
+        service-id 1
+        customer "1"
+        interface "SPD_DATA" {
+            sap lag-5:2050.0 {
+                ingress {
+                    filter {
+                        ip "DATA_TEST_SERVER"
+                    }
+                }
+            }
+            ipv4 {
+                primary {
+                    address 192.119.23.98
+                    prefix-length 28
+                }
+                vrrp 20 {
+                    backup [192.119.23.97]
+                    priority 100
+                    ping-reply true
+                }
+            }
+        }
+    }
