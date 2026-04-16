@@ -2,15 +2,18 @@
 
 set -euo pipefail
 
+# Edit these placeholders for your environment.
+SSH_USER="${SSH_USER:-your-ssh-user}"
+SSH_HOST="${SSH_HOST:-your-remote-host}"
+
 if [[ $# -ge 1 ]]; then
   REMOTE_TARGET="$1"
 else
-  REMOTE_TARGET="${REMOTE_SSH_TARGET:-}"
+  REMOTE_TARGET="${REMOTE_SSH_TARGET:-${SSH_USER}@${SSH_HOST}}"
 fi
 
-if [[ -z "${REMOTE_TARGET}" ]]; then
-  echo "Usage: $0 user@remote-vm"
-  echo "Or set REMOTE_SSH_TARGET=user@remote-vm"
+if [[ "${REMOTE_TARGET}" == "your-ssh-user@your-remote-host" ]]; then
+  echo "Edit SSH_USER and SSH_HOST in this script before running it."
   exit 1
 fi
 
