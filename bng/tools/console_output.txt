@@ -1,0 +1,41 @@
+(myenv) mikezh@mikezh:~/Coding/mcp_codes/bng/tools$ python flat_sros.py
+Paste the SR OS hierarchical configuration block. If the pasted text includes [gl:/configure ...] or /configure ..., the tool will use that hierarchy automatically. Press Ctrl-D when finished:
+[gl:/configure service]
+A:admin@sar02.jef102# info
+    ies "1" {
+        admin-state enable
+        service-id 1
+        customer "1"
+        interface "SPD_DATA" {
+            sap lag-5:2050.0 {
+                ingress {
+                    filter {
+                        ip "DATA_TEST_SERVER"
+                    }
+                }
+            }
+            ipv4 {
+                primary {
+                    address 192.119.23.99
+                    prefix-length 28
+                }
+                vrrp 20 {
+                    backup [192.119.23.97]
+                    priority 100
+                    ping-reply true
+                }
+            }
+        }
+    }
+
+Flat configuration:
+
+/configure service ies "1" admin-state enable
+/configure service ies "1" service-id 1
+/configure service ies "1" customer "1"
+/configure service ies "1" interface "SPD_DATA" sap lag-5:2050.0 ingress filter ip "DATA_TEST_SERVER"
+/configure service ies "1" interface "SPD_DATA" ipv4 primary address 192.119.23.99
+/configure service ies "1" interface "SPD_DATA" ipv4 primary prefix-length 28
+/configure service ies "1" interface "SPD_DATA" ipv4 vrrp 20 backup [192.119.23.97]
+/configure service ies "1" interface "SPD_DATA" ipv4 vrrp 20 priority 100
+/configure service ies "1" interface "SPD_DATA" ipv4 vrrp 20 ping-reply true
