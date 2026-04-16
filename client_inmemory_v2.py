@@ -59,6 +59,12 @@ For arithmetic, totals, or per-device counts, do not calculate in free text if a
 If no structured parser exists for a command, use the raw output returned by get_analysis_context and answer from that evidence.
 """
 
+PASTE_MODE_HELP = (
+    "Paste mode commands:\n"
+    "- `:paste` captures a multi-line block until Ctrl-D and submits it as one prompt.\n"
+    "- `:paste flat-sros` captures a multi-line SR OS config block until Ctrl-D and submits it for flattening."
+)
+
 
 def _ensure_session_log_dir() -> None:
     os.makedirs(SESSION_LOG_DIR, exist_ok=True)
@@ -86,6 +92,17 @@ def _limit_list(items: list, max_items: int) -> list:
     if len(items) <= max_items:
         return items
     return items[-max_items:]
+
+
+def _read_paste_block() -> str:
+    print("[*] Paste mode active. Paste the block, then press Ctrl-D on a new line.")
+    lines: list[str] = []
+    while True:
+        try:
+            lines.append(input())
+        except EOFError:
+            print("[*] Paste mode finished.")
+            return "\n".join(lines).strip()
 
 
 def _extract_hosts_from_text(text: str) -> list[str]:
@@ -1325,6 +1342,18 @@ async def run_intelligent_agent() -> None:
 
             while True:
                 prompt = input("\n[USER]: ").strip()
+                if prompt.lower() in [":help", "help paste", ":help paste"]:
+                    print(PASTE_MODE_HELP)
+                    continue
+                if prompt.lower() in [":paste", ":paste flat-sros"]:
+                    pasted_block = _read_paste_block()
+                    if not pasted_block:
+                        print("[*] No pasted text captured.")
+                        continue
+                    if prompt.lower() == ":paste flat-sros":
+                        prompt = f"convert sros configuration into flat format\n{pasted_block}"
+                    else:
+                        prompt = pasted_block
                 if prompt.lower() in ["exit", "quit", "goodbye", "bye"]:
                     _write_session_log(
                         session_log_file,
