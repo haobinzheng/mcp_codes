@@ -226,6 +226,10 @@ def _new_session_memory() -> dict:
         "last_raw_context": {},
         "recent_user_prompts": [],
         "recent_selections": [],
+        "pending_flat_sros": {
+            "active": False,
+            "hierarchy": "",
+        },
     }
 
 
@@ -633,6 +637,76 @@ def _looks_like_flat_sros_prompt(prompt: str) -> bool:
     return has_sros_shape and has_flatten_intent
 
 
+def _has_flat_sros_intent(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    return any(
+        term in lower_prompt
+        for term in (
+            "flat format",
+            "flatten",
+            "flat sros",
+            "convert sros",
+            "convert sors",
+            "sros configuration into flat",
+            "sr os configuration into flat",
+        )
+    )
+
+
+def _looks_like_sros_config_payload(text: str) -> bool:
+    stripped = text.strip()
+    if not stripped:
+        return False
+    lower_text = stripped.lower()
+    if "# info" in lower_text:
+        return True
+    if "{" in stripped or "}" in stripped:
+        return True
+    config_markers = (
+        '\n    ',
+        '\n\t',
+        'ies "',
+        'vprn ',
+        'interface "',
+        "sap ",
+        "admin-state ",
+        "service-id ",
+        "customer ",
+        "address ",
+        "prefix-length ",
+        "ping-reply ",
+    )
+    return any(marker in lower_text for marker in config_markers)
+
+
+def _extract_flat_sros_payload(prompt: str) -> str:
+    text = prompt.strip()
+    if not text:
+        return ""
+
+    marker_patterns = (
+        r"here\s+is\s+the\s+configuration\s*:\s*",
+        r"here\s+is\s+the\s+sros\s+configuration\s*:\s*",
+        r"configuration\s*:\s*",
+        r"config\s*:\s*",
+        r"following\s+sros\s+configuration\s*:\s*",
+        r"following\s+configuration\s*:\s*",
+    )
+    for pattern in marker_patterns:
+        match = re.search(pattern, text, flags=re.IGNORECASE | re.DOTALL)
+        if match:
+            return text[match.end() :].strip()
+
+    if "\n" in text:
+        first_line, remainder = text.split("\n", 1)
+        if _has_flat_sros_intent(first_line):
+            return remainder.strip()
+
+    if _looks_like_sros_config_payload(text):
+        return text
+    return ""
+
+
 def _extract_explicit_hierarchy(prompt: str) -> str:
     match = re.search(r"(\[gl:(/configure[^\]]*)\])", prompt, flags=re.IGNORECASE)
     if match:
@@ -667,10 +741,43 @@ async def _handle_deterministic_flat_sros(
     prompt: str,
     session_memory: dict,
 ) -> str | None:
-    if not _looks_like_flat_sros_prompt(prompt):
+    pending_flat_sros = session_memory.setdefault(
+        "pending_flat_sros",
+        {"active": False, "hierarchy": ""},
+    )
+    explicit_hierarchy = _extract_explicit_hierarchy(prompt)
+    if explicit_hierarchy:
+        pending_flat_sros["hierarchy"] = explicit_hierarchy
+
+    has_intent = _has_flat_sros_intent(prompt)
+    payload = _extract_flat_sros_payload(prompt)
+    payload_looks_like_config = _looks_like_sros_config_payload(payload)
+    should_continue_pending = pending_flat_sros.get("active", False) and _looks_like_sros_config_payload(prompt)
+
+    if not has_intent and not should_continue_pending and not _looks_like_flat_sros_prompt(prompt):
         return None
 
-    hierarchy = _extract_explicit_hierarchy(prompt)
+    if has_intent and not payload_looks_like_config:
+        pending_flat_sros["active"] = True
+        hierarchy = pending_flat_sros.get("hierarchy", "")
+        if hierarchy:
+            return (
+                f"I have the SR OS hierarchy `{hierarchy}`. "
+                "Paste the configuration block next, and I will flatten it."
+            )
+        return (
+            "Paste the SR OS configuration block next. "
+            "If it does not include `[gl:/configure ...]` or `/configure ...`, include the current hierarchy too."
+        )
+
+    if should_continue_pending and not payload_looks_like_config:
+        payload = prompt.strip()
+        payload_looks_like_config = _looks_like_sros_config_payload(payload)
+
+    if not payload_looks_like_config:
+        return None
+
+    hierarchy = pending_flat_sros.get("hierarchy", "") or explicit_hierarchy
     result = await _call_tool_logged(
         session,
         log_file,
@@ -678,12 +785,14 @@ async def _handle_deterministic_flat_sros(
         turn_id,
         "flatten_sros_config",
         {
-            "raw_text": prompt,
+            "raw_text": payload,
             "hierarchy": hierarchy,
         },
     )
     data = _tool_result_json(result)
     _remember_tool_data(session_memory, "flatten_sros_config", data)
+    pending_flat_sros["active"] = False
+    pending_flat_sros["hierarchy"] = ""
     return _format_flat_sros_result(data)
 
 
