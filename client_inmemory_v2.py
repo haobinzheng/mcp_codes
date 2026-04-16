@@ -60,9 +60,11 @@ If no structured parser exists for a command, use the raw output returned by get
 """
 
 PASTE_MODE_HELP = (
-    "Paste mode commands:\n"
-    "- `:paste` captures a multi-line block until Ctrl-D and submits it as one prompt.\n"
-    "- `:paste flat-sros` captures a multi-line SR OS config block until Ctrl-D and submits it for flattening."
+    "Block prompt commands:\n"
+    "- `:paste` or `:prompt` starts multi-line capture and submits when you enter `:end`.\n"
+    "- `:paste flat-sros` or `:prompt flat-sros` starts multi-line SR OS capture and submits when you enter `:end`.\n"
+    "- `:cancel` aborts the current block capture without sending anything.\n"
+    "- `Ctrl-D` still ends block capture if needed, but `:end` is the preferred delimiter."
 )
 
 
@@ -94,15 +96,23 @@ def _limit_list(items: list, max_items: int) -> list:
     return items[-max_items:]
 
 
-def _read_paste_block() -> str:
-    print("[*] Paste mode active. Paste the block, then press Ctrl-D on a new line.")
+def _read_block_prompt() -> str | None:
+    print("[*] Block prompt active. Paste or type the message body. Enter ':end' on its own line to submit.")
+    print("[*] Enter ':cancel' on its own line to abort.")
     lines: list[str] = []
     while True:
         try:
-            lines.append(input())
+            line = input()
         except EOFError:
-            print("[*] Paste mode finished.")
+            print("[*] Block prompt finished with Ctrl-D.")
             return "\n".join(lines).strip()
+        if line.strip() == ":cancel":
+            print("[*] Block prompt canceled.")
+            return None
+        if line.strip() == ":end":
+            print("[*] Block prompt submitted.")
+            return "\n".join(lines).strip()
+        lines.append(line)
 
 
 def _extract_hosts_from_text(text: str) -> list[str]:
@@ -1345,12 +1355,14 @@ async def run_intelligent_agent() -> None:
                 if prompt.lower() in [":help", "help paste", ":help paste"]:
                     print(PASTE_MODE_HELP)
                     continue
-                if prompt.lower() in [":paste", ":paste flat-sros"]:
-                    pasted_block = _read_paste_block()
+                if prompt.lower() in [":paste", ":prompt", ":paste flat-sros", ":prompt flat-sros"]:
+                    pasted_block = _read_block_prompt()
+                    if pasted_block is None:
+                        continue
                     if not pasted_block:
                         print("[*] No pasted text captured.")
                         continue
-                    if prompt.lower() == ":paste flat-sros":
+                    if prompt.lower() in [":paste flat-sros", ":prompt flat-sros"]:
                         prompt = f"convert sros configuration into flat format\n{pasted_block}"
                     else:
                         prompt = pasted_block
