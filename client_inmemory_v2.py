@@ -40,6 +40,9 @@ Use the MCP tools with this workflow:
 4b. If the user asks to collect BNG configuration, use collect_bng_configuration.
     That tool collects 'admin display-config' through gnetch, saves the original config, and rootifies it into the flat output directory.
     Report the saved original and flat file paths plus any tool errors.
+4c. If the user asks to convert hierarchical SR OS configuration into flat format, use flatten_sros_config.
+    If the pasted text includes [gl:/configure ...] or /configure ..., use that hierarchy automatically.
+    If no hierarchy is present, ask the user for the current /configure hierarchy.
 5. For hardware component questions and totals, use count_components or list_components instead of reasoning from raw text.
 6. Default to exact matching for component names. Only use prefix or contains matching if the user explicitly asks for variants, prefixes, or fuzzy matches.
 7. When you need evidence for a host or command, prefer get_analysis_context. It returns structured data when a parser exists and raw output otherwise.
@@ -607,6 +610,81 @@ def _extract_ping_sources(prompt: str) -> list[str]:
 
 def _looks_like_ping_prompt(prompt: str) -> bool:
     return "ping " in prompt.lower() or prompt.lower().startswith("ping")
+
+
+def _looks_like_flat_sros_prompt(prompt: str) -> bool:
+    lower_prompt = prompt.lower()
+    has_sros_shape = (
+        "[gl:/configure" in lower_prompt
+        or "\n/configure" in lower_prompt
+        or lower_prompt.startswith("/configure")
+        or "# info" in lower_prompt
+    )
+    has_flatten_intent = any(
+        term in lower_prompt
+        for term in (
+            "flat format",
+            "flatten",
+            "flat sros",
+            "convert sros",
+            "sros configuration into flat",
+        )
+    )
+    return has_sros_shape and has_flatten_intent
+
+
+def _extract_explicit_hierarchy(prompt: str) -> str:
+    match = re.search(r"(\[gl:(/configure[^\]]*)\])", prompt, flags=re.IGNORECASE)
+    if match:
+        return match.group(2).strip()
+    match = re.search(r"(^|\s)(/configure[^\n\r]*)", prompt, flags=re.IGNORECASE)
+    if match:
+        return match.group(2).strip()
+    return ""
+
+
+def _format_flat_sros_result(data: dict) -> str:
+    if data.get("error"):
+        return f"Unable to flatten the SR OS configuration.\n\n{data['error']}"
+
+    lines = [
+        f'Flattened SR OS configuration using hierarchy `{data.get("hierarchy", "")}`.',
+        f'- Flat lines: {data.get("line_count", 0)}',
+        "",
+        "Flat configuration:",
+        "```",
+        data.get("flat_text", ""),
+        "```",
+    ]
+    return "\n".join(lines)
+
+
+async def _handle_deterministic_flat_sros(
+    session,
+    log_file: str,
+    session_id: str,
+    turn_id: str,
+    prompt: str,
+    session_memory: dict,
+) -> str | None:
+    if not _looks_like_flat_sros_prompt(prompt):
+        return None
+
+    hierarchy = _extract_explicit_hierarchy(prompt)
+    result = await _call_tool_logged(
+        session,
+        log_file,
+        session_id,
+        turn_id,
+        "flatten_sros_config",
+        {
+            "raw_text": prompt,
+            "hierarchy": hierarchy,
+        },
+    )
+    data = _tool_result_json(result)
+    _remember_tool_data(session_memory, "flatten_sros_config", data)
+    return _format_flat_sros_result(data)
 
 
 def _looks_like_bng_config_prompt(prompt: str) -> bool:
@@ -1179,6 +1257,15 @@ async def run_intelligent_agent() -> None:
                     )
                     if deterministic_response is None:
                         deterministic_response = await _handle_deterministic_bng_config_collection(
+                            session,
+                            session_log_file,
+                            session_id,
+                            turn_id,
+                            prompt,
+                            session_memory,
+                        )
+                    if deterministic_response is None:
+                        deterministic_response = await _handle_deterministic_flat_sros(
                             session,
                             session_log_file,
                             session_id,

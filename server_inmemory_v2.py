@@ -6,6 +6,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
+import importlib.util
 
 from mcp.server.fastmcp import FastMCP
 
@@ -22,6 +23,7 @@ BNG_BASE_DIR = os.path.join(CURRENT_DIR, "bng")
 BNG_ORIGINAL_DIR = os.path.join(BNG_BASE_DIR, "configurations", "original")
 BNG_FLAT_DIR = os.path.join(BNG_BASE_DIR, "configurations", "flat")
 SROS_ROOTIFIER_PATH = os.path.join(BNG_BASE_DIR, "tools", "sros_rootifier.py")
+FLAT_SROS_PATH = os.path.join(BNG_BASE_DIR, "tools", "flat_sros.py")
 
 
 @dataclass
@@ -68,6 +70,15 @@ def _ensure_log_dir() -> None:
 def _ensure_bng_dirs() -> None:
     os.makedirs(BNG_ORIGINAL_DIR, exist_ok=True)
     os.makedirs(BNG_FLAT_DIR, exist_ok=True)
+
+
+def _load_flat_sros_module():
+    spec = importlib.util.spec_from_file_location("flat_sros_tool", FLAT_SROS_PATH)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Unable to load flat_sros module from {FLAT_SROS_PATH}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _parse_ping_stats(output: str) -> dict[str, Any]:
@@ -815,6 +826,48 @@ async def collect_bng_configuration(hostname: str) -> str:
                 "lines_collected": 0,
                 "stderr": str(exc),
                 "error": "Configuration collection failed with an exception.",
+            }
+        )
+
+
+@mcp.tool()
+def flatten_sros_config(raw_text: str, hierarchy: str = "") -> str:
+    """
+    Convert hierarchical SR OS configuration into flat format.
+    - raw_text: pasted SR OS config block, optionally including [gl:/configure ...] and CLI prompt lines
+    - hierarchy: optional current location such as /configure service; if omitted, the tool will try to
+      extract it from raw_text
+    """
+    try:
+        module = _load_flat_sros_module()
+        resolved_hierarchy = hierarchy.strip() or module.extract_hierarchy_from_text(raw_text)
+        if not resolved_hierarchy:
+            return _json(
+                {
+                    "error": (
+                        "No SR OS hierarchy was found. Include a [gl:/configure ...] line in the pasted text "
+                        "or provide hierarchy explicitly, for example /configure service."
+                    ),
+                    "flat_lines": [],
+                    "hierarchy": "",
+                }
+            )
+
+        flat_lines = module.flatten_sros_config(resolved_hierarchy, raw_text)
+        return _json(
+            {
+                "hierarchy": resolved_hierarchy,
+                "flat_lines": flat_lines,
+                "flat_text": "\n".join(flat_lines),
+                "line_count": len(flat_lines),
+            }
+        )
+    except Exception as exc:
+        return _json(
+            {
+                "error": str(exc),
+                "flat_lines": [],
+                "hierarchy": hierarchy.strip(),
             }
         )
 
