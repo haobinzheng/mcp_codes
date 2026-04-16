@@ -3,8 +3,8 @@
 set -euo pipefail
 
 # Edit these placeholders for your environment.
-SSH_USER="${SSH_USER:-your-ssh-user}"
-SSH_HOST="${SSH_HOST:-your-remote-host}"
+SSH_USER="${SSH_USER:mikezh}"
+SSH_HOST="${SSH_HOST:mikezh.c.googlers.com}"
 
 if [[ $# -ge 1 ]]; then
   REMOTE_TARGET="$1"

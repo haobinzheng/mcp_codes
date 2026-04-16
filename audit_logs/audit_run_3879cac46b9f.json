@@ -1,0 +1,836 @@
+{
+  "commands": [
+    "show version"
+  ],
+  "completed_at": 1776370884.027539,
+  "completed_tasks": 47,
+  "created_at": 1776370877.1839788,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "dr01.atl103",
+    "dr01.aus121",
+    "dr01.cbf101",
+    "dr01.clt103",
+    "dr01.den103",
+    "dr01.las103",
+    "dr01.lax103",
+    "dr01.phx103",
+    "dr01.rdu103",
+    "dr01.sat103",
+    "dr01.slc101",
+    "dr01.slc103",
+    "dr02.atl103",
+    "dr02.aus121",
+    "dr02.cbf101",
+    "dr02.clt103",
+    "dr02.den103",
+    "dr02.las103",
+    "dr02.lax103",
+    "dr02.phx103",
+    "dr02.rdu103",
+    "dr02.sat103",
+    "dr02.slc101",
+    "dr02.slc103",
+    "mpr01.mci103",
+    "mpr02.mci103",
+    "pr01.atl101",
+    "pr01.aus122",
+    "pr01.den102",
+    "pr01.ewr101",
+    "pr01.iad101",
+    "pr01.las102",
+    "pr01.lax101",
+    "pr01.mci102",
+    "pr01.phx101",
+    "pr01.phx102",
+    "pr01.sat102",
+    "pr02.dfw101",
+    "pr02.ord101",
+    "pr02.sjc101",
+    "sar01.bna103",
+    "sar01.dsm102",
+    "sar01.dsm103",
+    "sar01.hsv107",
+    "sar01.oma102",
+    "sar01.oma103",
+    "sar02.bna103"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_3879cac46b9f.json",
+  "results": {
+    "dr01.atl103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.683795,
+        "components": [],
+        "duration_ms": 4497,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.1866152,
+        "stderr": "W0416 13:21:21.417355  909194 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 29a1146f-3215-4f19-950c-54567fdf7097 middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 29a1146f-3215-4f19-950c-54567fdf7097 middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr01.aus121": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.5036733,
+        "components": [],
+        "duration_ms": 4314,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.1892483,
+        "stderr": "W0416 13:21:21.371705  907695 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: bcfeb1e4-3244-4580-9a68-4493254ee800 middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: bcfeb1e4-3244-4580-9a68-4493254ee800 middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr01.cbf101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370882.1080458,
+        "components": [],
+        "duration_ms": 4915,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.1923537,
+        "stderr": "W0416 13:21:21.850265  909008 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: f5295f44-074d-4b07-9f32-abd840d71bd4 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: f5295f44-074d-4b07-9f32-abd840d71bd4 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr01.clt103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370882.1287014,
+        "components": [],
+        "duration_ms": 4935,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.193422,
+        "stderr": "W0416 13:21:21.650051  909323 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: e0ab78c2-2d07-4063-b399-6d08bcd965cc middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: e0ab78c2-2d07-4063-b399-6d08bcd965cc middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr01.den103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.9781568,
+        "components": [],
+        "duration_ms": 4782,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.195453,
+        "stderr": "W0416 13:21:21.698965  909475 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: ee53245a-210b-43c6-9afc-85290fdef953 middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: ee53245a-210b-43c6-9afc-85290fdef953 middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr01.las103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370882.0427446,
+        "components": [],
+        "duration_ms": 4845,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.1967857,
+        "stderr": "W0416 13:21:21.766973  909410 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 0db60ac8-9abc-4925-8b60-b712f57969c5 middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 0db60ac8-9abc-4925-8b60-b712f57969c5 middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr01.lax103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.6465826,
+        "components": [],
+        "duration_ms": 4448,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.1985183,
+        "stderr": "W0416 13:21:21.436540  909126 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: ccdab28e-f201-4779-b99c-1ba5c5e539fe middle=/bns/yv/borg/yv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: ccdab28e-f201-4779-b99c-1ba5c5e539fe middle=/bns/yv/borg/yv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr01.phx103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.8930616,
+        "components": [],
+        "duration_ms": 4693,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.1997933,
+        "stderr": "W0416 13:21:21.706306  909150 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 775c506b-6717-43e0-bb67-1d2bc5ea5229 middle=/bns/pv/borg/pv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a17:91b:2198:10b0:463:2402:fbfb]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 775c506b-6717-43e0-bb67-1d2bc5ea5229 middle=/bns/pv/borg/pv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr01.rdu103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370882.0599031,
+        "components": [],
+        "duration_ms": 4859,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2006671,
+        "stderr": "W0416 13:21:21.805314  908983 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 726ab1eb-1463-47ef-9660-8e2544bc16b5 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 726ab1eb-1463-47ef-9660-8e2544bc16b5 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr01.sat103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.7518787,
+        "components": [],
+        "duration_ms": 4547,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2045345,
+        "stderr": "W0416 13:21:21.470498  909379 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 6a9b8d53-1baf-4917-b0da-5550d81e84da middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 6a9b8d53-1baf-4917-b0da-5550d81e84da middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr01.slc101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.4833553,
+        "components": [],
+        "duration_ms": 4277,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2056901,
+        "stderr": "W0416 13:21:21.324091  909244 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 386042f3-8146-4f07-903b-ce8c13290d10 middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 386042f3-8146-4f07-903b-ce8c13290d10 middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr01.slc103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.7029073,
+        "components": [],
+        "duration_ms": 4496,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.206639,
+        "stderr": "W0416 13:21:21.425636  908701 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: c415ab6b-ff4f-4f61-a9fd-6b85a8e2e63f middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: c415ab6b-ff4f-4f61-a9fd-6b85a8e2e63f middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.atl103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370882.0811968,
+        "components": [],
+        "duration_ms": 4872,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2082112,
+        "stderr": "W0416 13:21:21.794757  908036 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 1a973799-d259-492f-ad0a-0606cbd5f5d7 middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 1a973799-d259-492f-ad0a-0606cbd5f5d7 middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.aus121": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370882.2455034,
+        "components": [],
+        "duration_ms": 5036,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2093904,
+        "stderr": "W0416 13:21:22.032828  909199 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 1270030b-3dfe-424c-8652-fee05280eb0a middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a17:91b:2198:10b0:463:2402:fbfb]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 1270030b-3dfe-424c-8652-fee05280eb0a middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.cbf101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.8282583,
+        "components": [],
+        "duration_ms": 4613,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2148778,
+        "stderr": "W0416 13:21:21.594976  908835 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 20389353-8508-461f-a69b-e5e9e0b38dc4 middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 20389353-8508-461f-a69b-e5e9e0b38dc4 middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.clt103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.710551,
+        "components": [],
+        "duration_ms": 4493,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2166684,
+        "stderr": "W0416 13:21:21.461791  909071 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: f702de3c-694e-4cec-8391-8bd026d399db middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: f702de3c-694e-4cec-8391-8bd026d399db middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.den103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.7929275,
+        "components": [],
+        "duration_ms": 4574,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2183895,
+        "stderr": "W0416 13:21:21.597012  909162 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: f69611e6-af19-42ee-bc54-63fe673387e7 middle=/bns/pv/borg/pv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: f69611e6-af19-42ee-bc54-63fe673387e7 middle=/bns/pv/borg/pv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.las103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.8281837,
+        "components": [],
+        "duration_ms": 4608,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2198038,
+        "stderr": "W0416 13:21:21.568890  909353 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: c419d295-9e9e-484a-b930-a9a802d949d4 middle=/bns/yv/borg/yv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: c419d295-9e9e-484a-b930-a9a802d949d4 middle=/bns/yv/borg/yv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.lax103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.3381147,
+        "components": [],
+        "duration_ms": 4114,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2236772,
+        "stderr": "W0416 13:21:21.167060  909049 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 01920180-14c8-47dd-b335-a3306576e00e middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 01920180-14c8-47dd-b335-a3306576e00e middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.phx103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.136005,
+        "components": [],
+        "duration_ms": 3895,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2409277,
+        "stderr": "W0416 13:21:20.976125  908822 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 8f3211a0-5ddd-4509-90d3-47da7070c837 middle=/bns/yv/borg/yv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a17:91b:2198:10b0:463:2402:fbfb]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 8f3211a0-5ddd-4509-90d3-47da7070c837 middle=/bns/yv/borg/yv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.rdu103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370882.0619545,
+        "components": [],
+        "duration_ms": 4819,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2428992,
+        "stderr": "W0416 13:21:21.792870  909193 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: f48d6e45-90f2-4999-b560-18f7107f4fb4 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: f48d6e45-90f2-4999-b560-18f7107f4fb4 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.sat103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370882.3238792,
+        "components": [],
+        "duration_ms": 5078,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2458038,
+        "stderr": "W0416 13:21:22.146943  909843 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 5da1a24a-d7fd-4a50-8f36-86fb867ad109 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 5da1a24a-d7fd-4a50-8f36-86fb867ad109 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.slc101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.4081047,
+        "components": [],
+        "duration_ms": 4160,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2477057,
+        "stderr": "W0416 13:21:21.242611  908988 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 6b306dc4-5a68-42b4-ab24-f4c04ab01346 middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 6b306dc4-5a68-42b4-ab24-f4c04ab01346 middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "dr02.slc103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370882.0955644,
+        "components": [],
+        "duration_ms": 4843,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2516973,
+        "stderr": "W0416 13:21:21.762146  909398 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 456c10f8-63bc-45b8-bbc2-d5248ff93cf5 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 456c10f8-63bc-45b8-bbc2-d5248ff93cf5 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "mpr01.mci103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370882.2921543,
+        "components": [],
+        "duration_ms": 5037,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2530499,
+        "stderr": "W0416 13:21:22.040663  909808 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: b897531d-663b-4ddc-8bcd-d8bfdb707596 middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: b897531d-663b-4ddc-8bcd-d8bfdb707596 middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "mpr02.mci103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.9647763,
+        "components": [],
+        "duration_ms": 4708,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2561011,
+        "stderr": "W0416 13:21:21.764494  909176 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: cca6a1db-254b-4bcf-8c6f-3efd3b97cb8c middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: cca6a1db-254b-4bcf-8c6f-3efd3b97cb8c middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr01.atl101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.601671,
+        "components": [],
+        "duration_ms": 4343,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2578778,
+        "stderr": "W0416 13:21:21.440528  909053 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 50337912-7f2f-42ef-9ec0-751556f1839b middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6300:2787:10b0:3a0:2437:4ae0]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 50337912-7f2f-42ef-9ec0-751556f1839b middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr01.aus122": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.7384472,
+        "components": [],
+        "duration_ms": 4479,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2588959,
+        "stderr": "W0416 13:21:21.546501  909106 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 0f4f566a-3542-4123-9825-87f3efb06d7f middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 0f4f566a-3542-4123-9825-87f3efb06d7f middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr01.den102": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370882.2149036,
+        "components": [],
+        "duration_ms": 4954,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2602048,
+        "stderr": "W0416 13:21:22.051319  909228 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: d44799c7-b064-4b98-8a96-ef804455250f middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: d44799c7-b064-4b98-8a96-ef804455250f middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr01.ewr101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370881.7383797,
+        "components": [],
+        "duration_ms": 4476,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2616987,
+        "stderr": "W0416 13:21:21.457780  909130 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 562208b6-d661-4a6e-b71b-d3097673501b middle=/bns/yv/borg/yv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 562208b6-d661-4a6e-b71b-d3097673501b middle=/bns/yv/borg/yv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr01.iad101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.4349875,
+        "components": [],
+        "duration_ms": 2298,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2634444,
+        "stderr": "W0416 13:21:23.309220  910353 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: e55cca46-59f0-4bfd-9bfa-929beade4ea7 middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: e55cca46-59f0-4bfd-9bfa-929beade4ea7 middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr01.las102": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.7291372,
+        "components": [],
+        "duration_ms": 2390,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2634857,
+        "stderr": "W0416 13:21:23.599752  910449 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 3589a638-d43a-4a6b-ada9-bd0053b42da6 middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a17:91b:2198:10b0:463:2402:fbfb]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 3589a638-d43a-4a6b-ada9-bd0053b42da6 middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr01.lax101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.4097035,
+        "components": [],
+        "duration_ms": 2001,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2634978,
+        "stderr": "W0416 13:21:23.288952  910436 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: fe293381-ae7f-49d0-a096-05a11d795dea middle=/bns/yv/borg/yv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: fe293381-ae7f-49d0-a096-05a11d795dea middle=/bns/yv/borg/yv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr01.mci102": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.8245475,
+        "components": [],
+        "duration_ms": 2341,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.263515,
+        "stderr": "W0416 13:21:23.709462  910455 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: a2e020b0-04cd-4cc3-a063-d87654a68394 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: a2e020b0-04cd-4cc3-a063-d87654a68394 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr01.phx101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.7352066,
+        "components": [],
+        "duration_ms": 2231,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2635198,
+        "stderr": "W0416 13:21:23.614243  910472 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 51ef370b-d216-4f70-83c7-0ce8db16b500 middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 51ef370b-d216-4f70-83c7-0ce8db16b500 middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr01.phx102": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.9800925,
+        "components": [],
+        "duration_ms": 2378,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2635274,
+        "stderr": "W0416 13:21:23.864719  910490 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 5af316ea-71dc-448a-a02e-e83a5bc32c31 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a06:124c:b0:778:ed49:525b]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 5af316ea-71dc-448a-a02e-e83a5bc32c31 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr01.sat102": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.7656384,
+        "components": [],
+        "duration_ms": 2118,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.263531,
+        "stderr": "W0416 13:21:23.643588  910484 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 0c32ee3a-b2c7-487a-936d-ba6daa8eb2db middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 0c32ee3a-b2c7-487a-936d-ba6daa8eb2db middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr02.dfw101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.8521202,
+        "components": [],
+        "duration_ms": 2168,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.263537,
+        "stderr": "W0416 13:21:23.736711  910510 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: e126bcea-a475-4b76-b3a9-39131f3f21df middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: e126bcea-a475-4b76-b3a9-39131f3f21df middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr02.ord101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.56483,
+        "components": [],
+        "duration_ms": 1861,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2635405,
+        "stderr": "W0416 13:21:23.448357  910476 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 9c4e675f-c210-45f3-a3e8-48ed1919116b middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 9c4e675f-c210-45f3-a3e8-48ed1919116b middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "pr02.sjc101": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.5849974,
+        "components": [],
+        "duration_ms": 1869,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2635446,
+        "stderr": "W0416 13:21:23.466458  910513 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 017b523e-ab52-48f7-8cca-85feb82790aa middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 017b523e-ab52-48f7-8cca-85feb82790aa middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "sar01.bna103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.6223922,
+        "components": [],
+        "duration_ms": 1883,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.263548,
+        "stderr": "W0416 13:21:23.491071  910528 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: aebb67ec-8b15-4f11-b75a-e0fc56f18f45 middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: aebb67ec-8b15-4f11-b75a-e0fc56f18f45 middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "sar01.dsm102": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.8824937,
+        "components": [],
+        "duration_ms": 2141,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2635517,
+        "stderr": "W0416 13:21:23.767562  910498 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 4a9aaaea-b6c5-4303-ae2a-b7a53a3b3eae middle=/bns/pv/borg/pv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 4a9aaaea-b6c5-4303-ae2a-b7a53a3b3eae middle=/bns/pv/borg/pv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "sar01.dsm103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.5938628,
+        "components": [],
+        "duration_ms": 1827,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2635558,
+        "stderr": "W0416 13:21:23.473400  910518 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 82a7fc3e-bc00-42f8-b0af-caa71801eabb middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 82a7fc3e-bc00-42f8-b0af-caa71801eabb middle=/bns/px/borg/px/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "sar01.hsv107": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.991662,
+        "components": [],
+        "duration_ms": 2198,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2635624,
+        "stderr": "W0416 13:21:23.876882  910523 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: dfb398d4-b40e-49fb-be54-a1b0e8d57c89 middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: dfb398d4-b40e-49fb-be54-a1b0e8d57c89 middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "sar01.oma102": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370883.9552047,
+        "components": [],
+        "duration_ms": 2126,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.263566,
+        "stderr": "W0416 13:21:23.840973  910542 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 526b8859-df56-4ec6-a57c-e693e36fce2f middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: === \nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 526b8859-df56-4ec6-a57c-e693e36fce2f middle=/bns/jy/borg/jy/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "sar01.oma103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370884.025242,
+        "components": [],
+        "duration_ms": 2189,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2635698,
+        "stderr": "W0416 13:21:23.909939  910519 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: 2940397c-879e-493e-b82c-672962ddd208 middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: 2940397c-879e-493e-b82c-672962ddd208 middle=/bns/jv/borg/jv/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    },
+    "sar02.bna103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1776370884.0101488,
+        "components": [],
+        "duration_ms": 2117,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776370877.2635734,
+        "stderr": "W0416 13:21:23.893037  910547 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: ac1506f3-3ac9-4afe-b82c-5444c6b4bf32 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a05:6a00:17a3:b0:82f:6c31:51ed]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: ac1506f3-3ac9-4afe-b82c-5444c6b4bf32 middle=/bns/nl/borg/nl/bns/gnetch/gnetch.middle/0 not authorized for requesting user/role/mode mikezh/gnetch-ro/cli: by rule #1000:last-rule-default-deny (\"$Id: //depot/google3/net/infra/telemetry/gnetch/config/gnetch_acl.pb#742 $\", 1001 rules)",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "3879cac46b9f",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 47,
+    "run_id": "3879cac46b9f",
+    "state": "completed",
+    "success_hosts": [
+      "dr01.atl103",
+      "dr01.aus121",
+      "dr01.cbf101",
+      "dr01.clt103",
+      "dr01.den103",
+      "dr01.las103",
+      "dr01.lax103",
+      "dr01.phx103",
+      "dr01.rdu103",
+      "dr01.sat103",
+      "dr01.slc101",
+      "dr01.slc103",
+      "dr02.atl103",
+      "dr02.aus121",
+      "dr02.cbf101",
+      "dr02.clt103",
+      "dr02.den103",
+      "dr02.las103",
+      "dr02.lax103",
+      "dr02.phx103",
+      "dr02.rdu103",
+      "dr02.sat103",
+      "dr02.slc101",
+      "dr02.slc103",
+      "mpr01.mci103",
+      "mpr02.mci103",
+      "pr01.atl101",
+      "pr01.aus122",
+      "pr01.den102",
+      "pr01.ewr101",
+      "pr01.iad101",
+      "pr01.las102",
+      "pr01.lax101",
+      "pr01.mci102",
+      "pr01.phx101",
+      "pr01.phx102",
+      "pr01.sat102",
+      "pr02.dfw101",
+      "pr02.ord101",
+      "pr02.sjc101",
+      "sar01.bna103",
+      "sar01.dsm102",
+      "sar01.dsm103",
+      "sar01.hsv107",
+      "sar01.oma102",
+      "sar01.oma103",
+      "sar02.bna103"
+    ],
+    "tasks_completed": 47,
+    "tasks_failed": 0,
+    "tasks_total": 47
+  },
+  "total_tasks": 47
+}
