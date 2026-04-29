@@ -7,7 +7,14 @@ PYTHON="${PYTHON:-python3}"
 
 cd "${SCRIPT_DIR}"
 
-echo "Starting GFiber v2 ADK client (${PYTHON} client_inmemory_v2_adk.py)"
-echo "Ensure GEMINI_API_KEY or GOOGLE_API_KEY is set and dependencies are installed (see DESIGN_PIP_INSTALL.md)."
+ADK_WEB_HOST="${ADK_WEB_HOST:-127.0.0.1}"
+ADK_WEB_PORT="${ADK_WEB_PORT:-8000}"
+AGENTS_DIR="${AGENTS_DIR:-${SCRIPT_DIR}/adk_agents}"
 
-exec "${PYTHON}" client_inmemory_v2_adk.py
+echo "Starting ADK Web UI (FastAPI) — agent package under ${AGENTS_DIR}"
+echo "Listening on ${ADK_WEB_HOST}:${ADK_WEB_PORT}"
+echo "From a laptop without a browser on the server, open an SSH tunnel then browse http://127.0.0.1:${ADK_WEB_PORT}"
+echo "Ensure GEMINI_API_KEY or GOOGLE_API_KEY is set (see DESIGN_PIP_INSTALL.md)."
+echo "Interactive CLI only (no web): ${PYTHON} client_inmemory_v2_adk.py"
+
+exec "${PYTHON}" -m google.adk.cli web --host "${ADK_WEB_HOST}" --port "${ADK_WEB_PORT}" "${AGENTS_DIR}"
