@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Edit these placeholders for your environment (same pattern as start_ai_tool_web_tunnel).
+SSH_USER="${SSH_USER:-mikezh}"
+SSH_HOST="${SSH_HOST:-mikezh.c.googlers.com}"
+
+if [[ $# -ge 1 ]]; then
+  REMOTE_TARGET="$1"
+else
+  REMOTE_TARGET="${REMOTE_SSH_TARGET:-${SSH_USER}@${SSH_HOST}}"
+fi
+
+if [[ "${REMOTE_TARGET}" == "your-ssh-user@your-remote-host" ]]; then
+  echo "Edit SSH_USER and SSH_HOST in this script before running it."
+  exit 1
+fi
+
+# Mode:
+#   interactive (default) — SSH with TTY to the remote; runs start_ai_tool_adk there (MCP server is
+#       spawned by the ADK client over stdio; no separate MCP daemon).
+#   port-forward — same -N -L tunnel as start_ai_tool_web_tunnel (use if you also run an HTTP
+#       service on the remote, e.g. client_inmemory_v2_web.py or adk web, on REMOTE_PORT).
+ADK_TUNNEL_MODE="${ADK_TUNNEL_MODE:-interactive}"
+
+if [[ "${ADK_TUNNEL_MODE}" == "port-forward" ]]; then
+  LOCAL_PORT="${LOCAL_PORT:-8000}"
+  REMOTE_HOST_BIND="${REMOTE_HOST:-127.0.0.1}"
+  REMOTE_PORT="${REMOTE_PORT:-8000}"
+
+  echo "Port-forward mode (ADK_TUNNEL_MODE=port-forward)"
+  echo "Tunnel: localhost:${LOCAL_PORT} -> ${REMOTE_TARGET}:${REMOTE_HOST_BIND}:${REMOTE_PORT}"
+  echo "Keep this terminal open while using the forwarded port."
+  exec ssh -N -L "${LOCAL_PORT}:${REMOTE_HOST_BIND}:${REMOTE_PORT}" "${REMOTE_TARGET}"
+fi
+
+# Interactive mode: open a shell session on the remote and run the ADK client from the repo.
+# Uses the remote user's HOME (not your Mac). Override with REMOTE_ABS=/path/on/server or
+# REMOTE_REL=subdir under remote HOME (default: mcp_codes).
+REMOTE_REL="${REMOTE_REL:-mcp_codes}"
+
+echo "Interactive remote ADK session -> ${REMOTE_TARGET}"
+if [[ -n "${REMOTE_ABS:-}" ]]; then
+  echo "Remote cwd: ${REMOTE_ABS} (REMOTE_ABS)"
+else
+  echo "Remote cwd: \$HOME/${REMOTE_REL} on the server (override REMOTE_REL or set REMOTE_ABS)"
+fi
+echo "The ADK client starts server_inmemory_v2.py over stdio automatically."
+echo
+
+if [[ -n "${REMOTE_ABS:-}" ]]; then
+  _remote_cd=$(printf '%q' "${REMOTE_ABS}")
+  exec ssh -t "${REMOTE_TARGET}" "bash --login -c 'cd ${_remote_cd} && exec ./start_ai_tool_adk'"
+else
+  # REMOTE_REL is expanded locally; \$HOME is expanded on the remote host (not your Mac).
+  exec ssh -t "${REMOTE_TARGET}" "bash --login -c 'cd \"\$HOME/${REMOTE_REL}\" && exec ./start_ai_tool_adk'"
+fi

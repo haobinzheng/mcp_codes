@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON="${PYTHON:-python3}"
+
+cd "${SCRIPT_DIR}"
+
+echo "Starting GFiber v2 ADK client (${PYTHON} client_inmemory_v2_adk.py)"
+echo "Ensure GEMINI_API_KEY or GOOGLE_API_KEY is set and dependencies are installed (see DESIGN_PIP_INSTALL.md)."
+
+exec "${PYTHON}" client_inmemory_v2_adk.py
