@@ -16,6 +16,19 @@ Remote servers often have **no graphical web browser** (or no easy way to use on
 | [`start_ai_tool_adk`](start_ai_tool_adk) | **ADK Web** (`adk web`): agents only under [`adk_agents/`](adk_agents/); default **`ADK_WEB_PORT=8787`** to avoid clashing with Flask / other `adk web` on `8000` |
 | [`start_ai_tool_adk_tunnel`](start_ai_tool_adk_tunnel) | Same `-L` pattern; defaults **`LOCAL_PORT`/`REMOTE_PORT=8787`** to match [`start_ai_tool_adk`](start_ai_tool_adk) (override if you set `ADK_WEB_PORT`) |
 
+## Logging (`start_ai_tool_adk`, `start_ai_tool_adk_tunnel`)
+
+Both scripts append **session headers** (timestamp, PID, key settings) and **tee all stdout/stderr** into log files under **`logs/`** by default.
+
+| Variable | Purpose |
+|----------|---------|
+| **`START_AI_TOOL_LOG_DIR`** | Directory for default log paths (default `<repo>/logs`; created automatically). |
+| **`ADK_LOG_FILE`** | Full path for ADK Web logs (default **`${START_AI_TOOL_LOG_DIR}/adk_web.log`**). |
+| **`ADK_TUNNEL_LOG_FILE`** | Full path for tunnel logs (default **`${START_AI_TOOL_LOG_DIR}/adk_tunnel.log`**). |
+| **`START_AI_TOOL_LOG_DISABLE`** | Set to **`1`** or **`true`** to disable file logging (terminal output unchanged). |
+
+Shared helpers live in [`start_ai_tool_logging.sh`](start_ai_tool_logging.sh).
+
 ## ADK Web: `start_ai_tool_adk`
 
 [`start_ai_tool_adk`](start_ai_tool_adk) runs **`python -m google.adk.cli web`** with an explicit **`AGENTS_DIR`** of [`adk_agents/`](adk_agents/) only (the `gfiber_network` agent in [`adk_agents/gfiber_network/agent.py`](adk_agents/gfiber_network/agent.py)). Always pass this directory — do **not** run bare `adk web` from `$HOME` or a multi-project folder, or ADK will treat every subdirectory as a separate agent and collide with other projects.
