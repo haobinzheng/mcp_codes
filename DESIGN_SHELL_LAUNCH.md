@@ -33,17 +33,16 @@ Default behavior opens **TTY** SSH and runs `./start_ai_tool_adk` on the remote 
 
 1. Edit placeholders at top of the script (`SSH_USER`, `SSH_HOST`) or pass `user@host` as the first argument (same as [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel)).
 2. Ensure the repo exists on the server and `start_ai_tool_adk` is executable there (`chmod +x start_ai_tool_adk`).
-3. Optional: point at the checkout on the server:
+3. **Finding the repo on the server:** if you set neither `REMOTE_ABS` nor `REMOTE_REL`, the script tries **`$HOME/Coding/mcp_codes`** then **`$HOME/mcp_codes`** (remote `$HOME`, not your laptop). Use an explicit path if yours differs:
 
 ```bash
-# Directory under the remote user's HOME (default: mcp_codes)
-REMOTE_REL=projects/mcp_codes ./start_ai_tool_adk_tunnel user@remote.example.com
+REMOTE_ABS=/absolute/path/on/server/to/mcp_codes ./start_ai_tool_adk_tunnel user@remote.example.com
 ```
 
-Or an absolute path on the server:
+Or a subdirectory under remote `$HOME`:
 
 ```bash
-REMOTE_ABS=/srv/mcp_codes ./start_ai_tool_adk_tunnel
+REMOTE_REL=projects/mcp_codes ./start_ai_tool_adk_tunnel user@remote.example.com
 ```
 
 ## Port-forward mode (HTTP on remote)

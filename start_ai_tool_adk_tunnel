@@ -22,16 +22,8 @@ fi
 ADK_TUNNEL_MODE="${ADK_TUNNEL_MODE:-interactive}"
 
 if [[ "${ADK_TUNNEL_MODE}" == "interactive" ]]; then
-  # Remote shell: runs ADK client there (MCP server is started over stdio by the client).
-  REMOTE_REL="${REMOTE_REL:-mcp_codes}"
-
   echo "Interactive mode (ADK_TUNNEL_MODE=interactive)"
   echo "Remote session -> ${REMOTE_TARGET}"
-  if [[ -n "${REMOTE_ABS:-}" ]]; then
-    echo "Remote cwd: ${REMOTE_ABS} (REMOTE_ABS)"
-  else
-    echo "Remote cwd: \$HOME/${REMOTE_REL} on the server (override REMOTE_REL or set REMOTE_ABS)"
-  fi
   echo "The ADK client starts server_inmemory_v2.py over stdio automatically."
   echo
   echo "For an SSH port forward like start_ai_tool_web_tunnel, run with:"
@@ -39,10 +31,48 @@ if [[ "${ADK_TUNNEL_MODE}" == "interactive" ]]; then
   echo
 
   if [[ -n "${REMOTE_ABS:-}" ]]; then
+    echo "Remote cwd (REMOTE_ABS): ${REMOTE_ABS}"
     _remote_cd=$(printf '%q' "${REMOTE_ABS}")
-    exec ssh -t "${REMOTE_TARGET}" "bash --login -c 'cd ${_remote_cd} && exec ./start_ai_tool_adk'"
+    exec ssh -t "${REMOTE_TARGET}" "bash --login -c 'set -euo pipefail
+if [[ ! -d ${_remote_cd} ]]; then
+  echo \"start_ai_tool_adk_tunnel: directory does not exist on the server: ${_remote_cd}\" >&2
+  echo \"Fix REMOTE_ABS or clone the repo to that path.\" >&2
+  exit 1
+fi
+cd ${_remote_cd}
+exec ./start_ai_tool_adk'"
+  elif [[ -n "${REMOTE_REL:-}" ]]; then
+    echo "Remote cwd: \$HOME/${REMOTE_REL} on the server"
+    exec ssh -t "${REMOTE_TARGET}" "bash --login -c 'set -euo pipefail
+_target=\"\${HOME}/${REMOTE_REL}\"
+if [[ ! -d \"\${_target}\" ]]; then
+  echo \"start_ai_tool_adk_tunnel: directory does not exist on the server: \${_target}\" >&2
+  echo \"Fix REMOTE_REL or set REMOTE_ABS to an absolute path on the server.\" >&2
+  exit 1
+fi
+cd \"\${_target}\"
+exec ./start_ai_tool_adk'"
   else
-    exec ssh -t "${REMOTE_TARGET}" "bash --login -c 'cd \"\$HOME/${REMOTE_REL}\" && exec ./start_ai_tool_adk'"
+    echo "Looking for repo under remote \\\$HOME (tries Coding/mcp_codes, then mcp_codes)."
+    echo "Override with REMOTE_ABS=/absolute/path or REMOTE_REL=subdir-under-home."
+    echo
+    # shellcheck disable=SC2016
+    exec ssh -t "${REMOTE_TARGET}" 'bash' '--login' '-c' '
+set -euo pipefail
+for _d in "${HOME}/Coding/mcp_codes" "${HOME}/mcp_codes"; do
+  if [[ -d "${_d}" ]]; then
+    cd "${_d}"
+    exec ./start_ai_tool_adk
+  fi
+done
+echo "start_ai_tool_adk_tunnel: could not find a checkout. Tried:" >&2
+echo "  ${HOME}/Coding/mcp_codes" >&2
+echo "  ${HOME}/mcp_codes" >&2
+echo "" >&2
+echo "Clone the repo on the server or set an explicit path on your laptop, e.g.:" >&2
+echo "  REMOTE_ABS=/path/on/server/to/mcp_codes ./start_ai_tool_adk_tunnel user@host" >&2
+exit 1
+'
   fi
 fi
 
