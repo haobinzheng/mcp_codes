@@ -13,10 +13,12 @@ Remote servers often have **no graphical web browser** (or no easy way to use on
 | [`start_ai_tool`](start_ai_tool) | Stdio CLI: `client_inmemory_v2.py` |
 | [`start_ai_tool_web`](start_ai_tool_web) | Flask UI: `client_inmemory_v2_web.py` (`WEB_HOST` / `WEB_PORT`) |
 | [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel) | SSH **local port forward** `-L` so your laptop browser reaches the remote web UI |
-| [`start_ai_tool_adk`](start_ai_tool_adk) | ADK CLI: `client_inmemory_v2_adk.py` (`PYTHON` overrides interpreter) |
-| [`start_ai_tool_adk_tunnel`](start_ai_tool_adk_tunnel) | Same as [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel): **SSH local port forward only** (`ssh -N -L`; `LOCAL_PORT`, `REMOTE_HOST`, `REMOTE_PORT`) |
+| [`start_ai_tool_adk`](start_ai_tool_adk) | **ADK Web** (`adk web`): FastAPI + ADK Web UI; agents from [`adk_agents/`](adk_agents/) (default `ADK_WEB_PORT=8000`) |
+| [`start_ai_tool_adk_tunnel`](start_ai_tool_adk_tunnel) | Same as [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel): **SSH local port forward only** (`ssh -N -L`; `LOCAL_PORT`, `REMOTE_HOST`, `REMOTE_PORT`) — point at the same port as `ADK_WEB_PORT` on the server |
 
-## Local / server: `start_ai_tool_adk`
+## ADK Web: `start_ai_tool_adk`
+
+[`start_ai_tool_adk`](start_ai_tool_adk) runs **`python -m google.adk.cli web`** against [`adk_agents/`](adk_agents/) (the `gfiber_network` agent in [`adk_agents/gfiber_network/agent.py`](adk_agents/gfiber_network/agent.py) defines `root_agent` with the same MCP `McpToolset` + `server_inmemory_v2.py` wiring as the standalone ADK client).
 
 From the repository directory (after `chmod +x` if needed):
 
@@ -25,11 +27,14 @@ export GEMINI_API_KEY=...   # or GOOGLE_API_KEY
 ./start_ai_tool_adk
 ```
 
-Equivalent:
+Environment variables:
 
-```bash
-PYTHON=python3 ./start_ai_tool_adk
-```
+- **`ADK_WEB_HOST`** — bind address (default `127.0.0.1`).
+- **`ADK_WEB_PORT`** — port (default `8000`). Use the **same** value for **`REMOTE_PORT`** when using [`start_ai_tool_adk_tunnel`](start_ai_tool_adk_tunnel).
+- **`AGENTS_DIR`** — override agents directory (default `<repo>/adk_agents`).
+- **`PYTHON`** — interpreter (default `python3`).
+
+**Interactive terminal CLI** (no browser UI): run `python3 client_inmemory_v2_adk.py` directly instead of this script.
 
 ## Port forwarding: `start_ai_tool_web_tunnel` and `start_ai_tool_adk_tunnel`
 
@@ -42,7 +47,7 @@ Both tunnel scripts only run **`ssh -N -L`**: traffic to `127.0.0.1:LOCAL_PORT` 
 # Optional: LOCAL_PORT=9000 REMOTE_PORT=9000 ./start_ai_tool_adk_tunnel user@remote.example.com
 ```
 
-The ADK **CLI** (`./start_ai_tool_adk`) does not open a TCP port by itself; run it directly on the machine where you want it (for example `ssh -t user@host 'cd ~/path/to/mcp_codes && ./start_ai_tool_adk'`).
+On the remote host, run `./start_ai_tool_adk` so ADK Web listens on `127.0.0.1:ADK_WEB_PORT`; the tunnel forwards your laptop’s `LOCAL_PORT` to that listener so you can use the ADK Web UI in a local browser.
 
 ## Permissions
 
