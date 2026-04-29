@@ -8,6 +8,7 @@ Run: ``python client_inmemory_v2_google_adk.py`` (or ``python client_inmemory_v2
 
 Logging (per session): by default under this repo's ``session_logs/`` (same folder tree as
 this file), files ``session_<id>.jsonl`` and ``session_<id>.log``. Override with ``SESSION_LOG_DIR``.
+That directory is tracked in git so you can ``git add`` / push logs from a remote host when sharing runs.
 Env: ``GFIBER_SESSION_LOG_LEVEL`` (default INFO), ``GFIBER_LOG_CONSOLE=1`` to mirror the text log to stderr.
 """
 
