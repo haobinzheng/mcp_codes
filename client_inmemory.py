@@ -12,7 +12,8 @@ from mcp.client.stdio import stdio_client
 
 
 SERVER_PATH = os.path.join(os.getcwd(), "server_inmemory.py")
-MODEL_ID = os.environ.get("GEMINI_MODEL_ID", "gemini-2.5-pro")
+DEFAULT_GEMINI_MODEL_ID = "gemini-2.5-pro"
+MODEL_ID = os.environ.get("GEMINI_MODEL_ID", DEFAULT_GEMINI_MODEL_ID)
 MAX_TOOL_LOOPS = 20
 MAX_MEMORY_PROMPTS = 6
 MAX_MEMORY_HOSTS = 8

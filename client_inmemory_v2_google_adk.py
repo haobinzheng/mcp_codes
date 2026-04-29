@@ -34,7 +34,9 @@ from mcp import StdioServerParameters
 
 
 SERVER_PATH = os.path.join(os.getcwd(), "server_inmemory_v2.py")
-MODEL_ID = os.environ.get("GEMINI_MODEL_ID", "gemini-2.5-pro")
+# Default when GEMINI_MODEL_ID is unset (Gemini 2.5 Pro).
+DEFAULT_GEMINI_MODEL_ID = "gemini-2.5-pro"
+MODEL_ID = os.environ.get("GEMINI_MODEL_ID", DEFAULT_GEMINI_MODEL_ID)
 CLIENT_VERSION = "v2-google-adk"
 SERVER_VERSION = "v2"
 MAX_MEMORY_HOSTS = 8

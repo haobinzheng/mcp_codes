@@ -21,7 +21,7 @@ from client_inmemory_v2 import MODEL_ID, SYSTEM_INSTRUCTION
 _SERVER_PATH = str(_REPO_ROOT / "server_inmemory_v2.py")
 
 root_agent = LlmAgent(
-    model=os.environ.get("GEMINI_MODEL_ID", MODEL_ID),
+    model=MODEL_ID,
     name="gfiber_network_agent",
     instruction=SYSTEM_INSTRUCTION,
     tools=[
