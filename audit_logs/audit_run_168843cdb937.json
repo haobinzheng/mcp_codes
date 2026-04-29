@@ -1,0 +1,54 @@
+{
+  "commands": [
+    "show chassis hardware"
+  ],
+  "completed_at": 1776460447.7771943,
+  "completed_tasks": 1,
+  "created_at": 1776460444.33827,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "mx906.txt"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_168843cdb937.json",
+  "results": {
+    "mx906.txt": {
+      "show chassis hardware": {
+        "command": "show chassis hardware",
+        "completed_at": 1776460447.7764957,
+        "components": [],
+        "duration_ms": 3429,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1776460444.3466294,
+        "stderr": "W0417 14:14:07.643383 1183604 stubby.cc:1690] Stream was closed with status: PERMISSION_DENIED: invalid status gnetch::20: http://go/gnetch-errors: failed security realm check: device \"mx906.txt\" not known to Device Metadata Server\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1464\nSend(/Gnetch2.Command) returned error PERMISSION_DENIED:\n /Gnetch2.Command to [2002:a63:7e16:0:b0:c79:71af:6e23]:9801 : APP_ERROR(7) invalid status gnetch::20: http://go/gnetch-errors: failed security realm check: device \"mx906.txt\" not known to Device Metadata Server",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "168843cdb937",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "168843cdb937",
+    "state": "completed",
+    "success_hosts": [
+      "mx906.txt"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}
