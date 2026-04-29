@@ -10,7 +10,7 @@ Executable helpers in the repo root for running the GFiber MCP-backed clients. I
 | [`start_ai_tool_web`](start_ai_tool_web) | Flask UI: `client_inmemory_v2_web.py` (`WEB_HOST` / `WEB_PORT`) |
 | [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel) | SSH **local port forward** `-L` so your laptop browser reaches the remote web UI |
 | [`start_ai_tool_adk`](start_ai_tool_adk) | ADK CLI: `client_inmemory_v2_adk.py` (`PYTHON` overrides interpreter) |
-| [`start_ai_tool_adk_tunnel`](start_ai_tool_adk_tunnel) | SSH to remote and run `start_ai_tool_adk` interactively, **or** `-L` tunnel if `ADK_TUNNEL_MODE=port-forward` |
+| [`start_ai_tool_adk_tunnel`](start_ai_tool_adk_tunnel) | Default: interactive SSH + `./start_ai_tool_adk` on remote. **`ADK_TUNNEL_MODE=port-forward`**: same `ssh -N -L` block as [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel) (`LOCAL_PORT`, `REMOTE_HOST`, `REMOTE_PORT`) |
 
 ## Local / server: `start_ai_tool_adk`
 
@@ -48,13 +48,11 @@ REMOTE_ABS=/srv/mcp_codes ./start_ai_tool_adk_tunnel
 
 ## Port-forward mode (HTTP on remote)
 
-If something on the remote listens on a TCP port (for example the Flask web client or another HTTP front end), use the same pattern as the web tunnel:
+With `ADK_TUNNEL_MODE=port-forward`, the script runs the **same** tunnel command and messages as [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel) (`LOCAL_PORT`, `REMOTE_HOST`, `REMOTE_PORT`, `ssh -N -L ...`). Use when something on the remote listens on a TCP port (for example the Flask web UI).
 
 ```bash
 ADK_TUNNEL_MODE=port-forward LOCAL_PORT=8000 REMOTE_PORT=8000 ./start_ai_tool_adk_tunnel user@remote.example.com
 ```
-
-Keep that terminal open; map `LOCAL_PORT` → `REMOTE_HOST:REMOTE_PORT` on the remote (defaults match [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel)).
 
 Pure ADK **CLI** does not listen on a port; use **interactive** tunnel mode for that case.
 
