@@ -18,9 +18,10 @@ if [[ "${REMOTE_TARGET}" == "your-ssh-user@your-remote-host" ]]; then
   exit 1
 fi
 
-LOCAL_PORT="${LOCAL_PORT:-8000}"
+# Defaults match start_ai_tool_adk (ADK_WEB_PORT=8787). Override if you changed ADK_WEB_PORT.
+LOCAL_PORT="${LOCAL_PORT:-8787}"
 REMOTE_HOST="${REMOTE_HOST:-127.0.0.1}"
-REMOTE_PORT="${REMOTE_PORT:-8000}"
+REMOTE_PORT="${REMOTE_PORT:-8787}"
 
 echo "Opening SSH tunnel to ${REMOTE_TARGET}"
 echo "Keep this terminal open. Open this URL in your laptop browser (remote host may have no browser):"
