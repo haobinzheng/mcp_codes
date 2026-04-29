@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=start_ai_tool_logging.sh
+source "${SCRIPT_DIR}/start_ai_tool_logging.sh"
+
 # Same as start_ai_tool_web_tunnel: ssh -N -L so your laptop browser can reach a service on the remote.
 # Use when the server has no web browser. Edit these placeholders for your environment.
 SSH_USER="${SSH_USER:-mikezh}"
@@ -23,8 +27,24 @@ LOCAL_PORT="${LOCAL_PORT:-8787}"
 REMOTE_HOST="${REMOTE_HOST:-127.0.0.1}"
 REMOTE_PORT="${REMOTE_PORT:-8787}"
 
+START_AI_TOOL_LOG_DIR="${START_AI_TOOL_LOG_DIR:-${SCRIPT_DIR}/logs}"
+ADK_TUNNEL_LOG_FILE="${ADK_TUNNEL_LOG_FILE:-${START_AI_TOOL_LOG_DIR}/adk_tunnel.log}"
+
+if start_ai_tool_logging_enabled; then
+  start_ai_tool_log_begin "${ADK_TUNNEL_LOG_FILE}" "start_ai_tool_adk_tunnel" \
+    "REMOTE_TARGET=${REMOTE_TARGET}" \
+    "LOCAL_PORT=${LOCAL_PORT}" \
+    "REMOTE_HOST=${REMOTE_HOST}" \
+    "REMOTE_PORT=${REMOTE_PORT}" \
+    "ADK_TUNNEL_LOG_FILE=${ADK_TUNNEL_LOG_FILE}"
+  start_ai_tool_log_tee "${ADK_TUNNEL_LOG_FILE}"
+fi
+
 echo "Opening SSH tunnel to ${REMOTE_TARGET}"
 echo "Keep this terminal open. Open this URL in your laptop browser (remote host may have no browser):"
 echo "http://127.0.0.1:${LOCAL_PORT}"
+if start_ai_tool_logging_enabled; then
+  echo "Logging to: ${ADK_TUNNEL_LOG_FILE} (disable: START_AI_TOOL_LOG_DISABLE=1)"
+fi
 
 exec ssh -N -L "${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT}" "${REMOTE_TARGET}"
