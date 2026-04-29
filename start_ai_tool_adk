@@ -8,13 +8,38 @@ PYTHON="${PYTHON:-python3}"
 cd "${SCRIPT_DIR}"
 
 ADK_WEB_HOST="${ADK_WEB_HOST:-127.0.0.1}"
-ADK_WEB_PORT="${ADK_WEB_PORT:-8000}"
+# Default avoids collisions with Flask (8000), other ADK web instances, and common dev servers.
+ADK_WEB_PORT="${ADK_WEB_PORT:-8787}"
 AGENTS_DIR="${AGENTS_DIR:-${SCRIPT_DIR}/adk_agents}"
 
-echo "Starting ADK Web UI (FastAPI) — agent package under ${AGENTS_DIR}"
-echo "Listening on ${ADK_WEB_HOST}:${ADK_WEB_PORT}"
-echo "From a laptop without a browser on the server, open an SSH tunnel then browse http://127.0.0.1:${ADK_WEB_PORT}"
+# Project-local ADK state so sessions never mix with other agents or repos on the same machine.
+ADK_DATA_DIR="${ADK_DATA_DIR:-${SCRIPT_DIR}/.adk_data}"
+mkdir -p "${ADK_DATA_DIR}"
+
+# SQLAlchemy / ADK: absolute SQLite path uses sqlite:////absolute/path (four slashes).
+SESSION_DB="${ADK_SESSION_SQLITE:-${ADK_DATA_DIR}/gfiber_web_sessions.sqlite}"
+SESSION_URI="sqlite:////${SESSION_DB}"
+
+# reload=true watches the filesystem and can interact badly with multiple ADK projects; opt in only when needed.
+ADK_WEB_RELOAD="${ADK_WEB_RELOAD:-false}"
+RELOAD_ARGS=(--no-reload)
+if [[ "${ADK_WEB_RELOAD}" == "true" ]] || [[ "${ADK_WEB_RELOAD}" == "1" ]]; then
+  RELOAD_ARGS=(--reload)
+fi
+
+LOGO_TEXT="${ADK_LOGO_TEXT:-GFiber MCP (mcp_codes)}"
+
+echo "Starting ADK Web UI — agents from ${AGENTS_DIR}"
+echo "Listening on ${ADK_WEB_HOST}:${ADK_WEB_PORT} (set ADK_WEB_PORT to avoid clashes)"
+echo "Session DB: ${SESSION_DB} (isolated from other ADK apps)"
+echo "SSH tunnel from laptop: use REMOTE_PORT=${ADK_WEB_PORT} with start_ai_tool_adk_tunnel"
 echo "Ensure GEMINI_API_KEY or GOOGLE_API_KEY is set (see DESIGN_PIP_INSTALL.md)."
 echo "Interactive CLI only (no web): ${PYTHON} client_inmemory_v2_adk.py"
 
-exec "${PYTHON}" -m google.adk.cli web --host "${ADK_WEB_HOST}" --port "${ADK_WEB_PORT}" "${AGENTS_DIR}"
+exec "${PYTHON}" -m google.adk.cli web \
+  --host "${ADK_WEB_HOST}" \
+  --port "${ADK_WEB_PORT}" \
+  "${RELOAD_ARGS[@]}" \
+  --session_service_uri "${SESSION_URI}" \
+  --logo-text "${LOGO_TEXT}" \
+  "${AGENTS_DIR}"
