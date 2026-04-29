@@ -407,7 +407,7 @@ class GfiberBookmarkPlugin(BasePlugin):
     """Merge MCP tool JSON into shared bookmarks; mirror a one-liner into session.state."""
 
     def __init__(self, bookmarks: dict, session_log: SessionRecorder | None = None) -> None:
-        super().__init__()
+        super().__init__(name="gfiber_bookmarks")
         self._bookmarks = bookmarks
         self._session_log = session_log
 
