@@ -2,6 +2,7 @@
 
 set -euo pipefail
 
+# Local port forward: use your laptop browser when the remote host has no GUI browser.
 # Edit these placeholders for your environment.
 SSH_USER="${SSH_USER:-mikezh}"
 SSH_HOST="${SSH_HOST:-mikezh.c.googlers.com}"
@@ -22,8 +23,7 @@ REMOTE_HOST="${REMOTE_HOST:-127.0.0.1}"
 REMOTE_PORT="${REMOTE_PORT:-8000}"
 
 echo "Opening SSH tunnel to ${REMOTE_TARGET}"
-echo "Keep this terminal open while using the web client."
-echo "Open this URL in your Mac browser:"
+echo "Keep this terminal open. Open this URL in your laptop browser (remote host may have no browser):"
 echo "http://127.0.0.1:${LOCAL_PORT}"
 
 exec ssh -N -L "${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT}" "${REMOTE_TARGET}"
