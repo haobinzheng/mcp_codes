@@ -2,9 +2,8 @@
 
 set -euo pipefail
 
-# Edit these placeholders for your environment.
-# Port-forward mode below matches start_ai_tool_web_tunnel (same LOCAL_PORT, REMOTE_HOST, REMOTE_PORT).
-# For an interactive TTY on the remote running ./start_ai_tool_adk, set ADK_TUNNEL_MODE=interactive.
+# Same as start_ai_tool_web_tunnel: ssh -N -L so your laptop browser can reach a service on the remote.
+# Use when the server has no web browser. Edit these placeholders for your environment.
 SSH_USER="${SSH_USER:-mikezh}"
 SSH_HOST="${SSH_HOST:-mikezh.c.googlers.com}"
 
@@ -19,71 +18,12 @@ if [[ "${REMOTE_TARGET}" == "your-ssh-user@your-remote-host" ]]; then
   exit 1
 fi
 
-ADK_TUNNEL_MODE="${ADK_TUNNEL_MODE:-interactive}"
-
-if [[ "${ADK_TUNNEL_MODE}" == "interactive" ]]; then
-  echo "Interactive mode (ADK_TUNNEL_MODE=interactive)"
-  echo "Remote session -> ${REMOTE_TARGET}"
-  echo "The ADK client starts server_inmemory_v2.py over stdio automatically."
-  echo
-  echo "For an SSH port forward like start_ai_tool_web_tunnel, run with:"
-  echo "  ADK_TUNNEL_MODE=port-forward ${0##*/} ${REMOTE_TARGET}"
-  echo
-
-  if [[ -n "${REMOTE_ABS:-}" ]]; then
-    echo "Remote cwd (REMOTE_ABS): ${REMOTE_ABS}"
-    _remote_cd=$(printf '%q' "${REMOTE_ABS}")
-    exec ssh -t "${REMOTE_TARGET}" "bash --login -c 'set -euo pipefail
-if [[ ! -d ${_remote_cd} ]]; then
-  echo \"start_ai_tool_adk_tunnel: directory does not exist on the server: ${_remote_cd}\" >&2
-  echo \"Fix REMOTE_ABS or clone the repo to that path.\" >&2
-  exit 1
-fi
-cd ${_remote_cd}
-exec ./start_ai_tool_adk'"
-  elif [[ -n "${REMOTE_REL:-}" ]]; then
-    echo "Remote cwd: \$HOME/${REMOTE_REL} on the server"
-    exec ssh -t "${REMOTE_TARGET}" "bash --login -c 'set -euo pipefail
-_target=\"\${HOME}/${REMOTE_REL}\"
-if [[ ! -d \"\${_target}\" ]]; then
-  echo \"start_ai_tool_adk_tunnel: directory does not exist on the server: \${_target}\" >&2
-  echo \"Fix REMOTE_REL or set REMOTE_ABS to an absolute path on the server.\" >&2
-  exit 1
-fi
-cd \"\${_target}\"
-exec ./start_ai_tool_adk'"
-  else
-    echo "Looking for repo under remote \\\$HOME (tries Coding/mcp_codes, then mcp_codes)."
-    echo "Override with REMOTE_ABS=/absolute/path or REMOTE_REL=subdir-under-home."
-    echo
-    # shellcheck disable=SC2016
-    exec ssh -t "${REMOTE_TARGET}" 'bash' '--login' '-c' '
-set -euo pipefail
-for _d in "${HOME}/Coding/mcp_codes" "${HOME}/mcp_codes"; do
-  if [[ -d "${_d}" ]]; then
-    cd "${_d}"
-    exec ./start_ai_tool_adk
-  fi
-done
-echo "start_ai_tool_adk_tunnel: could not find a checkout. Tried:" >&2
-echo "  ${HOME}/Coding/mcp_codes" >&2
-echo "  ${HOME}/mcp_codes" >&2
-echo "" >&2
-echo "Clone the repo on the server or set an explicit path on your laptop, e.g.:" >&2
-echo "  REMOTE_ABS=/path/on/server/to/mcp_codes ./start_ai_tool_adk_tunnel user@host" >&2
-exit 1
-'
-  fi
-fi
-
-# --- Same tunnel as start_ai_tool_web_tunnel ---
 LOCAL_PORT="${LOCAL_PORT:-8000}"
 REMOTE_HOST="${REMOTE_HOST:-127.0.0.1}"
 REMOTE_PORT="${REMOTE_PORT:-8000}"
 
 echo "Opening SSH tunnel to ${REMOTE_TARGET}"
-echo "Keep this terminal open while using the web client."
-echo "Open this URL in your Mac browser:"
+echo "Keep this terminal open. Open this URL in your laptop browser (remote host may have no browser):"
 echo "http://127.0.0.1:${LOCAL_PORT}"
 
 exec ssh -N -L "${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT}" "${REMOTE_TARGET}"

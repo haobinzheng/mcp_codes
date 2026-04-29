@@ -2,6 +2,10 @@
 
 Executable helpers in the repo root for running the GFiber MCP-backed clients. Install Python deps first ([`DESIGN_PIP_INSTALL.md`](DESIGN_PIP_INSTALL.md)).
 
+## Why SSH port forwarding?
+
+Remote servers often have **no graphical web browser** (or no easy way to use one). You run the Flask UI on the server and open an **SSH local forward** (`*-tunnel` scripts: `ssh -N -L`) so **`http://127.0.0.1:PORT` on your laptop** reaches the app bound on the remote host. The server never needs a browser; only your Mac (or other local machine) does.
+
 ## Scripts overview
 
 | Script | Purpose |
@@ -10,7 +14,7 @@ Executable helpers in the repo root for running the GFiber MCP-backed clients. I
 | [`start_ai_tool_web`](start_ai_tool_web) | Flask UI: `client_inmemory_v2_web.py` (`WEB_HOST` / `WEB_PORT`) |
 | [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel) | SSH **local port forward** `-L` so your laptop browser reaches the remote web UI |
 | [`start_ai_tool_adk`](start_ai_tool_adk) | ADK CLI: `client_inmemory_v2_adk.py` (`PYTHON` overrides interpreter) |
-| [`start_ai_tool_adk_tunnel`](start_ai_tool_adk_tunnel) | Default: interactive SSH + `./start_ai_tool_adk` on remote. **`ADK_TUNNEL_MODE=port-forward`**: same `ssh -N -L` block as [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel) (`LOCAL_PORT`, `REMOTE_HOST`, `REMOTE_PORT`) |
+| [`start_ai_tool_adk_tunnel`](start_ai_tool_adk_tunnel) | Same as [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel): **SSH local port forward only** (`ssh -N -L`; `LOCAL_PORT`, `REMOTE_HOST`, `REMOTE_PORT`) |
 
 ## Local / server: `start_ai_tool_adk`
 
@@ -27,33 +31,18 @@ Equivalent:
 PYTHON=python3 ./start_ai_tool_adk
 ```
 
-## Remote interactive session: `start_ai_tool_adk_tunnel`
+## Port forwarding: `start_ai_tool_web_tunnel` and `start_ai_tool_adk_tunnel`
 
-Default behavior opens **TTY** SSH and runs `./start_ai_tool_adk` on the remote host. The MCP server process is still started **by the ADK client** over stdio (same as locally); you do not run `server_inmemory_v2.py` by itself unless debugging.
+Both tunnel scripts only run **`ssh -N -L`**: traffic to `127.0.0.1:LOCAL_PORT` on **your laptop** is forwarded to `REMOTE_HOST:REMOTE_PORT` on the **remote** host. Typical use: the Flask app ([`start_ai_tool_web`](start_ai_tool_web)) listens on the server; you browse from your machine because the server has no browser (see [Why SSH port forwarding?](#why-ssh-port-forwarding) above).
 
-1. Edit placeholders at top of the script (`SSH_USER`, `SSH_HOST`) or pass `user@host` as the first argument (same as [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel)).
-2. Ensure the repo exists on the server and `start_ai_tool_adk` is executable there (`chmod +x start_ai_tool_adk`).
-3. **Finding the repo on the server:** if you set neither `REMOTE_ABS` nor `REMOTE_REL`, the script tries **`$HOME/Coding/mcp_codes`** then **`$HOME/mcp_codes`** (remote `$HOME`, not your laptop). Use an explicit path if yours differs:
+[`start_ai_tool_adk_tunnel`](start_ai_tool_adk_tunnel) is the same tunnel helper as [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel) if you prefer a separate name for documentation or automation.
 
 ```bash
-REMOTE_ABS=/absolute/path/on/server/to/mcp_codes ./start_ai_tool_adk_tunnel user@remote.example.com
+./start_ai_tool_adk_tunnel user@remote.example.com
+# Optional: LOCAL_PORT=9000 REMOTE_PORT=9000 ./start_ai_tool_adk_tunnel user@remote.example.com
 ```
 
-Or a subdirectory under remote `$HOME`:
-
-```bash
-REMOTE_REL=projects/mcp_codes ./start_ai_tool_adk_tunnel user@remote.example.com
-```
-
-## Port-forward mode (HTTP on remote)
-
-With `ADK_TUNNEL_MODE=port-forward`, the script runs the **same** tunnel command and messages as [`start_ai_tool_web_tunnel`](start_ai_tool_web_tunnel) (`LOCAL_PORT`, `REMOTE_HOST`, `REMOTE_PORT`, `ssh -N -L ...`). Use when something on the remote listens on a TCP port (for example the Flask web UI).
-
-```bash
-ADK_TUNNEL_MODE=port-forward LOCAL_PORT=8000 REMOTE_PORT=8000 ./start_ai_tool_adk_tunnel user@remote.example.com
-```
-
-Pure ADK **CLI** does not listen on a port; use **interactive** tunnel mode for that case.
+The ADK **CLI** (`./start_ai_tool_adk`) does not open a TCP port by itself; run it directly on the machine where you want it (for example `ssh -t user@host 'cd ~/path/to/mcp_codes && ./start_ai_tool_adk'`).
 
 ## Permissions
 
