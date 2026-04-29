@@ -5,14 +5,20 @@ This is the **ADK** CLI entrypoint: ``LlmAgent``, ``Runner``, ``McpTool``, and
 loop lives in ``client_inmemory_v2.py`` (unchanged).
 
 Run: ``python client_inmemory_v2_google_adk.py`` (or ``python client_inmemory_v2_adk.py``).
+
+Logging (per session): by default under this repo's ``session_logs/`` (same folder tree as
+this file), files ``session_<id>.jsonl`` and ``session_<id>.log``. Override with ``SESSION_LOG_DIR``.
+Env: ``GFIBER_SESSION_LOG_LEVEL`` (default INFO), ``GFIBER_LOG_CONSOLE=1`` to mirror the text log to stderr.
 """
 
 import asyncio
 import json
+import logging
 import os
 import re
 import time
 import uuid
+from typing import Any
 
 from google import genai
 from google.genai import types
@@ -33,9 +39,100 @@ SERVER_VERSION = "v2"
 MAX_MEMORY_HOSTS = 8
 MAX_MEMORY_COMMANDS = 6
 GFIBER_BOOKMARKS_VERSION = 1
+# Default logs dir is always this repo's ``session_logs/`` (not cwd), so paths are stable for tooling.
+_REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 SESSION_LOG_DIR = os.environ.get(
-    "SESSION_LOG_DIR", os.path.join(os.getcwd(), "session_logs")
+    "SESSION_LOG_DIR", os.path.join(_REPO_ROOT, "session_logs")
 )
+
+
+class SessionRecorder:
+    """Append-only JSONL (machine-readable) plus a plain-text ``.log`` for running sessions."""
+
+    def __init__(self, session_id: str, jsonl_path: str) -> None:
+        self.session_id = session_id
+        self.jsonl_path = jsonl_path
+        self.text_log_path = (
+            jsonl_path[:-6] + ".log" if jsonl_path.endswith(".jsonl") else jsonl_path + ".log"
+        )
+        level_name = os.environ.get("GFIBER_SESSION_LOG_LEVEL", "INFO").upper()
+        level = getattr(logging, level_name, logging.INFO)
+        self._logger = logging.getLogger(f"gfiber.adk.session.{session_id}")
+        self._logger.handlers.clear()
+        self._logger.setLevel(level)
+        self._logger.propagate = False
+        fmt = logging.Formatter(
+            fmt="%(asctime)s | %(levelname)s | %(message)s",
+            datefmt="%Y-%m-%dT%H:%M:%S",
+        )
+        fh = logging.FileHandler(self.text_log_path, encoding="utf-8")
+        fh.setLevel(level)
+        fh.setFormatter(fmt)
+        self._logger.addHandler(fh)
+        if os.environ.get("GFIBER_LOG_CONSOLE", "").lower() in ("1", "true", "yes"):
+            ch = logging.StreamHandler()
+            ch.setLevel(level)
+            ch.setFormatter(fmt)
+            self._logger.addHandler(ch)
+
+    @staticmethod
+    def _truncate(s: str, max_len: int) -> str:
+        s = s.replace("\r\n", "\n")
+        if len(s) <= max_len:
+            return s
+        return s[:max_len] + f"... ({len(s)} chars total)"
+
+    def _format_text_row(self, row: dict[str, Any]) -> str:
+        ev = row.get("event", "?")
+        bits: list[str] = [str(ev)]
+        for key in (
+            "turn_id",
+            "tool_name",
+            "route",
+            "duration_ms",
+            "author",
+            "invocation_id",
+            "error",
+            "reason",
+            "event_count",
+            "adk_tool_activity_events",
+            "user_text_len",
+            "response_len",
+            "route",
+        ):
+            if key in row and row[key] is not None:
+                bits.append(f"{key}={row[key]}")
+        if "prompt" in row:
+            p = str(row["prompt"])
+            bits.append(f"prompt_len={len(p)}")
+            bits.append(f"prompt_preview={self._truncate(p, 200)!r}")
+        if "response" in row:
+            r = str(row["response"])
+            bits.append(f"response_len={len(r)}")
+            bits.append(f"response_preview={self._truncate(r, 400)!r}")
+        if "args" in row and row["args"] is not None:
+            bits.append(f"args={self._truncate(json.dumps(row['args'], default=str), 600)}")
+        if "result" in row and row["result"] is not None:
+            r = str(row["result"])
+            bits.append(f"result_len={len(r)}")
+            bits.append(f"result_preview={self._truncate(r, 500)!r}")
+        if "function_calls" in row and row["function_calls"] is not None:
+            bits.append(f"function_calls={row['function_calls']}")
+        if "function_responses" in row and row["function_responses"] is not None:
+            bits.append(f"function_responses={row['function_responses']}")
+        if "result_keys" in row:
+            bits.append(f"result_keys={row['result_keys']}")
+        if "result_size" in row:
+            bits.append(f"result_size={row['result_size']}")
+        return " | ".join(bits)
+
+    def record(self, **fields: Any) -> None:
+        if "event" not in fields:
+            raise ValueError("SessionRecorder.record() requires event=...")
+        row = {"session_id": self.session_id, "timestamp": time.time(), **fields}
+        with open(self.jsonl_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(row, sort_keys=True, default=str) + "\n")
+        self._logger.info(self._format_text_row(row))
 
 SYSTEM_INSTRUCTION = """
 You are the GFiber Network Intelligence Agent.
@@ -82,11 +179,6 @@ PASTE_MODE_HELP = (
 
 def _ensure_session_log_dir() -> None:
     os.makedirs(SESSION_LOG_DIR, exist_ok=True)
-
-
-def _write_session_log(log_file: str, event: dict) -> None:
-    with open(log_file, "a") as f:
-        f.write(json.dumps(event, sort_keys=True) + "\n")
 
 
 def _tool_result_text(result) -> str:
@@ -311,9 +403,10 @@ def _gfiber_bookmark_one_liner(bookmarks: dict) -> str:
 class GfiberBookmarkPlugin(BasePlugin):
     """Merge MCP tool JSON into shared bookmarks; mirror a one-liner into session.state."""
 
-    def __init__(self, bookmarks: dict) -> None:
+    def __init__(self, bookmarks: dict, session_log: SessionRecorder | None = None) -> None:
         super().__init__()
         self._bookmarks = bookmarks
+        self._session_log = session_log
 
     async def after_tool_callback(
         self,
@@ -330,39 +423,42 @@ class GfiberBookmarkPlugin(BasePlugin):
         state = getattr(tool_context, "state", None)
         if state is not None:
             state["app:gfiber_bookmark"] = _gfiber_bookmark_one_liner(self._bookmarks)
+        if self._session_log is not None:
+            try:
+                payload = json.dumps(result, default=str)
+            except TypeError:
+                payload = str(result)
+            self._session_log.record(
+                event="adk_mcp_tool_callback",
+                tool_name=tool_name,
+                result_keys=sorted(result.keys()),
+                result_size=len(payload),
+            )
         return None
 
 
-async def _call_tool_logged(session, log_file: str, session_id: str, turn_id: str, tool_name: str, args: dict):
-    _write_session_log(
-        log_file,
-        {
-            "args": args,
-            "event": "tool_call",
-            "session_id": session_id,
-            "timestamp": time.time(),
-            "tool_name": tool_name,
-            "turn_id": turn_id,
-        },
+async def _call_tool_logged(
+    session, session_log: SessionRecorder, session_id: str, turn_id: str, tool_name: str, args: dict
+):
+    session_log.record(
+        event="tool_call",
+        turn_id=turn_id,
+        tool_name=tool_name,
+        args=args,
     )
     result = await session.call_tool(tool_name, args)
     result_text = _tool_result_text(result)
-    _write_session_log(
-        log_file,
-        {
-            "event": "tool_result",
-            "result": result_text,
-            "session_id": session_id,
-            "timestamp": time.time(),
-            "tool_name": tool_name,
-            "turn_id": turn_id,
-        },
+    session_log.record(
+        event="tool_result",
+        turn_id=turn_id,
+        tool_name=tool_name,
+        result=result_text,
     )
     return result
 
 
-async def _get_latest_run_id(session, log_file: str, session_id: str, turn_id: str) -> str | None:
-    result = await _call_tool_logged(session, log_file, session_id, turn_id, "list_audit_runs", {})
+async def _get_latest_run_id(session, session_log: SessionRecorder, session_id: str, turn_id: str) -> str | None:
+    result = await _call_tool_logged(session, session_log, session_id, turn_id, "list_audit_runs", {})
     data = _tool_result_json(result)
     runs = data.get("runs", [])
     if runs:
@@ -373,7 +469,7 @@ async def _get_latest_run_id(session, log_file: str, session_id: str, turn_id: s
         )
         return runs[0].get("run_id")
 
-    result = await _call_tool_logged(session, log_file, session_id, turn_id, "list_audit_log_runs", {})
+    result = await _call_tool_logged(session, session_log, session_id, turn_id, "list_audit_log_runs", {})
     data = _tool_result_json(result)
     runs = data.get("runs", [])
     if runs:
@@ -690,7 +786,7 @@ def _format_flat_sros_result(data: dict) -> str:
 
 async def _handle_deterministic_flat_sros(
     session,
-    log_file: str,
+    session_log: SessionRecorder,
     session_id: str,
     turn_id: str,
     prompt: str,
@@ -735,7 +831,7 @@ async def _handle_deterministic_flat_sros(
     hierarchy = pending_flat_sros.get("hierarchy", "") or explicit_hierarchy
     result = await _call_tool_logged(
         session,
-        log_file,
+        session_log,
         session_id,
         turn_id,
         "flatten_sros_config",
@@ -823,7 +919,7 @@ def _format_bng_collection_result(data: dict) -> str:
 
 async def _handle_deterministic_bng_config_collection(
     session,
-    log_file: str,
+    session_log: SessionRecorder,
     session_id: str,
     turn_id: str,
     prompt: str,
@@ -844,7 +940,7 @@ async def _handle_deterministic_bng_config_collection(
     hostname = hosts[0]
     result = await _call_tool_logged(
         session,
-        log_file,
+        session_log,
         session_id,
         turn_id,
         "collect_bng_configuration",
@@ -890,7 +986,7 @@ def _format_ping_result(data: dict, highlight_longest: bool) -> str:
 
 async def _handle_deterministic_ping(
     session,
-    log_file: str,
+    session_log: SessionRecorder,
     session_id: str,
     turn_id: str,
     prompt: str,
@@ -915,7 +1011,7 @@ async def _handle_deterministic_ping(
     for source in source_hosts:
         result = await _call_tool_logged(
             session,
-            log_file,
+            session_log,
             session_id,
             turn_id,
             "ping_from_device",
@@ -958,7 +1054,7 @@ async def _answer_from_raw_context(
 
 async def _handle_deterministic_hardware_count(
     session,
-    log_file: str,
+    session_log: SessionRecorder,
     session_id: str,
     turn_id: str,
     prompt: str,
@@ -972,7 +1068,7 @@ async def _handle_deterministic_hardware_count(
     if _looks_like_audit_start_prompt(prompt):
         return None
 
-    run_id = await _get_latest_run_id(session, log_file, session_id, turn_id)
+    run_id = await _get_latest_run_id(session, session_log, session_id, turn_id)
     if not run_id:
         return "No audit run is available to count against."
 
@@ -999,7 +1095,7 @@ async def _handle_deterministic_hardware_count(
     ):
         result = await _call_tool_logged(
             session,
-            log_file,
+            session_log,
             session_id,
             turn_id,
             "get_host_component_summary",
@@ -1019,7 +1115,7 @@ async def _handle_deterministic_hardware_count(
     if "all the hard" in lower_prompt or "all hardware" in lower_prompt or "each category" in lower_prompt:
         result = await _call_tool_logged(
             session,
-            log_file,
+            session_log,
             session_id,
             turn_id,
             "summarize_components",
@@ -1045,7 +1141,7 @@ async def _handle_deterministic_hardware_count(
         for component_type, name in _flatten_summary_categories(deterministic_state["last_summary"]):
             result = await _call_tool_logged(
                 session,
-                log_file,
+                session_log,
                 session_id,
                 turn_id,
                 "count_components",
@@ -1077,7 +1173,7 @@ async def _handle_deterministic_hardware_count(
 
     result = await _call_tool_logged(
         session,
-        log_file,
+        session_log,
         session_id,
         turn_id,
         "count_components",
@@ -1115,12 +1211,12 @@ async def _handle_deterministic_hardware_count(
 
 
 async def _wait_for_run_completion(
-    session, log_file: str, session_id: str, turn_id: str, run_id: str
+    session, session_log: SessionRecorder, session_id: str, turn_id: str, run_id: str
 ) -> dict:
     for _ in range(60):
         result = await _call_tool_logged(
             session,
-            log_file,
+            session_log,
             session_id,
             turn_id,
             "get_audit_run_status",
@@ -1149,7 +1245,7 @@ def _extract_audit_inputs(prompt: str) -> tuple[str, str] | tuple[None, None]:
 async def _handle_deterministic_audit_summary(
     session,
     genai_client: genai.Client,
-    log_file: str,
+    session_log: SessionRecorder,
     session_id: str,
     turn_id: str,
     prompt: str,
@@ -1165,7 +1261,7 @@ async def _handle_deterministic_audit_summary(
 
     result = await _call_tool_logged(
         session,
-        log_file,
+        session_log,
         session_id,
         turn_id,
         "start_audit_run",
@@ -1176,7 +1272,7 @@ async def _handle_deterministic_audit_summary(
     if not run_id:
         return "Unable to start the audit run."
 
-    status = await _wait_for_run_completion(session, log_file, session_id, turn_id, run_id)
+    status = await _wait_for_run_completion(session, session_log, session_id, turn_id, run_id)
     if status.get("error"):
         return f"Error: {status['error']}"
     if status.get("state") != "completed":
@@ -1185,7 +1281,7 @@ async def _handle_deterministic_audit_summary(
 
     result = await _call_tool_logged(
         session,
-        log_file,
+        session_log,
         session_id,
         turn_id,
         "summarize_components",
@@ -1196,7 +1292,7 @@ async def _handle_deterministic_audit_summary(
     if not summary:
         raw_result = await _call_tool_logged(
             session,
-            log_file,
+            session_log,
             session_id,
             turn_id,
             "get_raw_analysis_context",
@@ -1229,15 +1325,33 @@ async def _run_adk_turn(
     user_id: str,
     session_id: str,
     user_text: str,
+    session_log: SessionRecorder,
+    turn_id: str,
 ) -> str:
     """Runs one user turn through ADK; MCP tool calls are handled by the agent runtime."""
+    session_log.record(event="adk_turn_start", turn_id=turn_id, user_text_len=len(user_text))
+    t0 = time.time()
     new_message = types.Content(role="user", parts=[types.Part(text=user_text)])
     last_text = ""
+    activity_events = 0
     async for event in runner.run_async(
         user_id=user_id,
         session_id=session_id,
         new_message=new_message,
     ):
+        calls = event.get_function_calls()
+        responses = event.get_function_responses()
+        call_names = [c.name for c in calls if getattr(c, "name", None)]
+        resp_names = [r.name for r in responses if getattr(r, "name", None)]
+        if call_names or resp_names:
+            activity_events += 1
+            session_log.record(
+                event="adk_tool_activity",
+                turn_id=turn_id,
+                author=getattr(event, "author", ""),
+                function_calls=call_names,
+                function_responses=resp_names,
+            )
         if not event.content or not event.content.parts:
             continue
         if event.is_final_response():
@@ -1246,7 +1360,16 @@ async def _run_adk_turn(
                 for part in event.content.parts
                 if part.text and not getattr(part, "thought", False)
             )
-    return last_text.strip() or "No model text returned."
+    elapsed_ms = int((time.time() - t0) * 1000)
+    last_text = last_text.strip() or "No model text returned."
+    session_log.record(
+        event="adk_turn_complete",
+        turn_id=turn_id,
+        duration_ms=elapsed_ms,
+        adk_tool_activity_events=activity_events,
+        response_len=len(last_text),
+    )
+    return last_text
 
 
 ADK_APP_NAME = "gfiber_inmemory_v2_adk"
@@ -1277,6 +1400,7 @@ async def run_intelligent_agent() -> None:
     _ensure_session_log_dir()
     session_id = uuid.uuid4().hex[:12]
     session_log_file = os.path.join(SESSION_LOG_DIR, f"session_{session_id}.jsonl")
+    session_log = SessionRecorder(session_id, session_log_file)
 
     try:
         mcp_session = await mcp_manager.create_session()
@@ -1290,7 +1414,7 @@ async def run_intelligent_agent() -> None:
         ]
 
         gfiber_bookmarks = _new_gfiber_bookmarks()
-        bookmark_plugin = GfiberBookmarkPlugin(gfiber_bookmarks)
+        bookmark_plugin = GfiberBookmarkPlugin(gfiber_bookmarks, session_log)
 
         root_agent = LlmAgent(
             model=MODEL_ID,
@@ -1310,21 +1434,17 @@ async def run_intelligent_agent() -> None:
         print("\n" + "=" * 60)
         print(f" GFIBER IN-MEMORY AGENT (ADK): {MODEL_ID}")
         print(" Type 'exit' or 'quit' to end the session.")
-        print(f" Session log: {session_log_file}")
+        print(f" Session JSONL: {session_log.jsonl_path}")
+        print(f" Session text log: {session_log.text_log_path}")
         print("=" * 60)
 
-        _write_session_log(
-            session_log_file,
-            {
-                "client_version": CLIENT_VERSION,
-                "event": "session_started",
-                "framework": "google-adk",
-                "model_id": MODEL_ID,
-                "server_path": SERVER_PATH,
-                "server_version": SERVER_VERSION,
-                "session_id": session_id,
-                "timestamp": time.time(),
-            },
+        session_log.record(
+            event="session_started",
+            client_version=CLIENT_VERSION,
+            framework="google-adk",
+            model_id=MODEL_ID,
+            server_path=SERVER_PATH,
+            server_version=SERVER_VERSION,
         )
 
         deterministic_state: dict = {}
@@ -1346,15 +1466,7 @@ async def run_intelligent_agent() -> None:
                 else:
                     prompt = pasted_block
             if prompt.lower() in ["exit", "quit", "goodbye", "bye"]:
-                _write_session_log(
-                    session_log_file,
-                    {
-                        "event": "session_ended",
-                        "reason": "user_exit",
-                        "session_id": session_id,
-                        "timestamp": time.time(),
-                    },
-                )
+                session_log.record(event="session_ended", reason="user_exit")
                 print("\n[*] Closing session. Goodbye!\n")
                 break
             if not prompt:
@@ -1362,75 +1474,74 @@ async def run_intelligent_agent() -> None:
 
             try:
                 turn_id = uuid.uuid4().hex[:12]
-                _write_session_log(
-                    session_log_file,
-                    {
-                        "event": "user_prompt",
-                        "prompt": prompt,
-                        "session_id": session_id,
-                        "timestamp": time.time(),
-                        "turn_id": turn_id,
-                    },
-                )
+                session_log.record(event="user_prompt", turn_id=turn_id, prompt=prompt)
                 _apply_prompt_to_gfiber_bookmarks(gfiber_bookmarks, prompt)
 
+                route = "adk"
                 deterministic_response = await _handle_deterministic_audit_summary(
                     mcp_session,
                     genai_client,
-                    session_log_file,
+                    session_log,
                     session_id,
                     turn_id,
                     prompt,
                     deterministic_state,
                     gfiber_bookmarks,
                 )
-                if deterministic_response is None:
+                if deterministic_response is not None:
+                    route = "deterministic_audit_summary"
+                else:
                     deterministic_response = await _handle_deterministic_bng_config_collection(
                         mcp_session,
-                        session_log_file,
+                        session_log,
                         session_id,
                         turn_id,
                         prompt,
                         gfiber_bookmarks,
                     )
+                    if deterministic_response is not None:
+                        route = "deterministic_bng"
                 if deterministic_response is None:
                     deterministic_response = await _handle_deterministic_flat_sros(
                         mcp_session,
-                        session_log_file,
+                        session_log,
                         session_id,
                         turn_id,
                         prompt,
                         gfiber_bookmarks,
                     )
+                    if deterministic_response is not None:
+                        route = "deterministic_flat_sros"
                 if deterministic_response is None:
                     deterministic_response = await _handle_deterministic_ping(
                         mcp_session,
-                        session_log_file,
+                        session_log,
                         session_id,
                         turn_id,
                         prompt,
                         gfiber_bookmarks,
                     )
+                    if deterministic_response is not None:
+                        route = "deterministic_ping"
                 if deterministic_response is None:
                     deterministic_response = await _handle_deterministic_hardware_count(
                         mcp_session,
-                        session_log_file,
+                        session_log,
                         session_id,
                         turn_id,
                         prompt,
                         deterministic_state,
                         gfiber_bookmarks,
                     )
+                    if deterministic_response is not None:
+                        route = "deterministic_hardware_count"
+
                 if deterministic_response is not None:
-                    _write_session_log(
-                        session_log_file,
-                        {
-                            "event": "model_answer",
-                            "response": deterministic_response,
-                            "session_id": session_id,
-                            "timestamp": time.time(),
-                            "turn_id": turn_id,
-                        },
+                    session_log.record(
+                        event="model_answer",
+                        turn_id=turn_id,
+                        route=route,
+                        response=deterministic_response,
                     )
                     print(f"\n[AI]: {deterministic_response}")
                     continue
@@ -1444,29 +1555,26 @@ async def run_intelligent_agent() -> None:
                     user_id=ADK_USER_ID,
                     session_id=session_id,
                     user_text=enriched_prompt,
+                    session_log=session_log,
+                    turn_id=turn_id,
                 )
-                _write_session_log(
-                    session_log_file,
-                    {
-                        "event": "model_answer",
-                        "response": answer_text,
-                        "session_id": session_id,
-                        "timestamp": time.time(),
-                        "turn_id": turn_id,
-                    },
+                session_log.record(
+                    event="model_answer",
+                    turn_id=turn_id,
+                    route=route,
+                    response=answer_text,
                 )
                 print(f"\n[AI]: {answer_text}")
 
+            except KeyboardInterrupt:
+                session_log.record(event="session_ended", reason="keyboard_interrupt")
+                print("\n[*] Interrupted by user. Goodbye!\n")
+                break
             except Exception as exc:
-                _write_session_log(
-                    session_log_file,
-                    {
-                        "error": str(exc),
-                        "event": "turn_error",
-                        "session_id": session_id,
-                        "timestamp": time.time(),
-                        "turn_id": turn_id if "turn_id" in locals() else None,
-                    },
+                session_log.record(
+                    event="turn_error",
+                    turn_id=turn_id if "turn_id" in locals() else None,
+                    error=str(exc),
                 )
                 print(f"\n[!] Error: {exc}")
     finally:
