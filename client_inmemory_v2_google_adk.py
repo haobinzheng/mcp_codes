@@ -17,6 +17,7 @@ import uuid
 from google import genai
 from google.genai import types
 from google.adk.agents import LlmAgent
+from google.adk.plugins.base_plugin import BasePlugin
 from google.adk.runners import Runner
 from google.adk.sessions.in_memory_session_service import InMemorySessionService
 from google.adk.tools.mcp_tool.mcp_session_manager import MCPSessionManager
@@ -29,11 +30,9 @@ SERVER_PATH = os.path.join(os.getcwd(), "server_inmemory_v2.py")
 MODEL_ID = os.environ.get("GEMINI_MODEL_ID", "gemini-2.5-pro")
 CLIENT_VERSION = "v2-google-adk"
 SERVER_VERSION = "v2"
-MAX_MEMORY_PROMPTS = 6
 MAX_MEMORY_HOSTS = 8
 MAX_MEMORY_COMMANDS = 6
-MAX_MEMORY_SELECTIONS = 12
-MAX_SELECTION_PREVIEW_ITEMS = 5
+GFIBER_BOOKMARKS_VERSION = 1
 SESSION_LOG_DIR = os.environ.get(
     "SESSION_LOG_DIR", os.path.join(os.getcwd(), "session_logs")
 )
@@ -103,12 +102,6 @@ def _tool_result_json(result) -> dict:
     return json.loads(text)
 
 
-def _limit_list(items: list, max_items: int) -> list:
-    if len(items) <= max_items:
-        return items
-    return items[-max_items:]
-
-
 def _read_block_prompt() -> str | None:
     print("[*] Block prompt active. Paste or type the message body. Enter ':end' on its own line to submit.")
     print("[*] Enter ':cancel' on its own line to abort.")
@@ -142,71 +135,107 @@ def _extract_commands_from_text(text: str) -> list[str]:
     return [command.strip(" .,") for command in commands[:3]]
 
 
-def _selection_key(item) -> str:
-    if isinstance(item, dict):
-        return json.dumps(item, sort_keys=True)
-    return str(item)
-
-
-def _normalize_selection_items(items: list) -> list:
-    seen = set()
-    normalized = []
-    for item in items:
-        if item in (None, "", []):
-            continue
-        key = _selection_key(item)
-        if key in seen:
-            continue
-        seen.add(key)
-        normalized.append(item)
-    return normalized
-
-
-def _remember_selection(
-    session_memory: dict,
-    selection_type: str,
-    items: list,
-    *,
-    source_run_id: str = "",
-    source_command: str = "",
-    source_hosts: list[str] | None = None,
-    label: str = "",
-) -> None:
-    normalized_items = _normalize_selection_items(items)
-    if not selection_type or not normalized_items:
-        return
-
-    selection = {
-        "id": uuid.uuid4().hex[:12],
-        "type": selection_type,
-        "items": normalized_items,
-        "source_run_id": source_run_id,
-        "source_command": source_command,
-        "source_hosts": list(source_hosts or []),
-        "label": label,
-        "created_at": time.time(),
+def _new_gfiber_bookmarks() -> dict:
+    return {
+        "v": GFIBER_BOOKMARKS_VERSION,
+        "run_id": "",
+        "focus": {"hosts": [], "commands": []},
+        "picks": {"hosts": [], "destinations": []},
+        "evidence": {"structured_summary": {}, "raw": {}},
+        "ping": {"last_source": "", "last_target": ""},
+        "pending": {"flat_sros": {"active": False, "hierarchy": ""}},
     }
 
-    existing = []
-    for item in session_memory.get("recent_selections", []):
-        same_type = item.get("type") == selection_type
-        same_items = _normalize_selection_items(item.get("items", [])) == normalized_items
-        if same_type and same_items:
-            continue
-        existing.append(item)
-    session_memory["recent_selections"] = _limit_list(
-        existing + [selection],
-        MAX_MEMORY_SELECTIONS,
-    )
+
+def _pick_set(bookmarks: dict, kind: str, items: list) -> None:
+    """Remember one explicit batch for follow-ups ('hosts' / 'destinations')."""
+    normalized = [x for x in items if isinstance(x, str) and x.strip()]
+    if not normalized:
+        return
+    picks = bookmarks.setdefault("picks", {})
+    if kind == "hosts":
+        picks["hosts"] = normalized[-MAX_MEMORY_HOSTS:]
+    else:
+        picks[kind] = normalized[-8:]
 
 
-def _latest_selection(session_memory: dict, selection_type: str | None = None) -> dict | None:
-    selections = session_memory.get("recent_selections", [])
-    for selection in reversed(selections):
-        if selection_type and selection.get("type") != selection_type:
-            continue
-        return selection
-    return None
+def _merge_tool_into_gfiber_bookmarks(bookmarks: dict, tool_name: str, data: dict) -> None:
+    """Merge domain fields from any tool JSON; avoids per-tool caches elsewhere."""
+    if not isinstance(data, dict):
+        return
+    focus = bookmarks.setdefault("focus", {"hosts": [], "commands": []})
+    evidence = bookmarks.setdefault("evidence", {"structured_summary": {}, "raw": {}})
+    ping_meta = bookmarks.setdefault("ping", {"last_source": "", "last_target": ""})
+
+    run_id = data.get("run_id")
+    if run_id:
+        bookmarks["run_id"] = run_id
+
+    hosts: list[str] = []
+    if isinstance(data.get("hostname"), str) and data.get("hostname"):
+        hosts.append(data["hostname"])
+    if isinstance(data.get("hosts"), list):
+        hosts.extend([host for host in data["hosts"] if isinstance(host, str)])
+    if isinstance(data.get("per_host"), dict):
+        hosts.extend(list(data["per_host"].keys()))
+    if isinstance(data.get("items"), list):
+        for item in data["items"]:
+            if isinstance(item, dict) and isinstance(item.get("hostname"), str):
+                hosts.append(item["hostname"])
+    if hosts:
+        merged_hosts = list(dict.fromkeys(focus["hosts"] + hosts))
+        focus["hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
+    if data.get("hosts"):
+        _pick_set(bookmarks, "hosts", [host for host in data["hosts"] if isinstance(host, str)])
+
+    if tool_name == "ping_from_device":
+        if data.get("source_hostname"):
+            _pick_set(bookmarks, "hosts", [data["source_hostname"]])
+            ping_meta["last_source"] = data["source_hostname"]
+        if data.get("target_hostname"):
+            _pick_set(bookmarks, "destinations", [data["target_hostname"]])
+            ping_meta["last_target"] = data["target_hostname"]
+
+    commands: list[str] = []
+    command_value = data.get("command")
+    if isinstance(command_value, str) and command_value:
+        commands.append(command_value)
+    if isinstance(data.get("commands"), list):
+        commands.extend([command for command in data["commands"] if isinstance(command, str)])
+    if isinstance(data.get("items"), list):
+        for item in data["items"]:
+            if isinstance(item, dict) and isinstance(item.get("command"), str) and item.get("command"):
+                commands.append(item["command"])
+    if commands:
+        merged_commands = list(dict.fromkeys(focus["commands"] + commands))
+        focus["commands"] = merged_commands[-MAX_MEMORY_COMMANDS:]
+
+    if tool_name == "summarize_components" and data.get("summary"):
+        evidence["structured_summary"] = data["summary"]
+    elif tool_name == "get_raw_analysis_context" and data.get("items"):
+        evidence["raw"] = {
+            "run_id": data.get("run_id", ""),
+            "command": data.get("command", ""),
+            "question": data.get("question", ""),
+            "truncated": data.get("truncated", False),
+            "items": data.get("items", [])[:4],
+        }
+
+
+def _apply_prompt_to_gfiber_bookmarks(bookmarks: dict, prompt: str) -> None:
+    focus = bookmarks.setdefault("focus", {"hosts": [], "commands": []})
+    hosts = _extract_hosts_from_text(prompt)
+    if hosts:
+        merged_hosts = list(dict.fromkeys(focus["hosts"] + hosts))
+        focus["hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
+        _pick_set(bookmarks, "hosts", hosts[-MAX_MEMORY_HOSTS:])
+    commands = _extract_commands_from_text(prompt)
+    if commands:
+        merged_commands = list(dict.fromkeys(focus["commands"] + commands))
+        focus["commands"] = merged_commands[-MAX_MEMORY_COMMANDS:]
+    ping_target = _extract_ping_target(prompt)
+    if ping_target:
+        _pick_set(bookmarks, "destinations", [ping_target])
 
 
 def _prompt_refers_to_previous_selection(prompt: str) -> bool:
@@ -225,178 +254,36 @@ def _prompt_refers_to_previous_selection(prompt: str) -> bool:
     )
 
 
-def _resolve_selection(
-    session_memory: dict,
-    prompt: str,
-    preferred_types: list[str] | None = None,
-) -> dict | None:
-    selections = session_memory.get("recent_selections", [])
-    if not selections:
-        return None
+def _resolve_host_pick(bookmarks: dict, prompt: str) -> list[str] | None:
     if not _prompt_refers_to_previous_selection(prompt):
         return None
-
-    preferred = set(preferred_types or [])
-    for selection in reversed(selections):
-        if preferred and selection.get("type") not in preferred:
-            continue
-        return selection
-    return None
+    hosts = bookmarks.get("picks", {}).get("hosts", [])
+    return hosts if hosts else None
 
 
-def _selection_summary_line(selection: dict) -> str:
-    items = selection.get("items", [])
-    preview = ", ".join(str(item) for item in items[:MAX_SELECTION_PREVIEW_ITEMS])
-    if len(items) > MAX_SELECTION_PREVIEW_ITEMS:
-        preview += f", ... ({len(items)} total)"
-    parts = [f'{selection.get("type", "unknown")}: {preview}']
-    if selection.get("source_command"):
-        parts.append(f'command={selection["source_command"]}')
-    if selection.get("label"):
-        parts.append(f'label={selection["label"]}')
-    return " | ".join(parts)
+def _latest_host_pick(bookmarks: dict) -> list[str]:
+    return list(bookmarks.get("picks", {}).get("hosts", []))
 
 
-def _new_session_memory() -> dict:
-    return {
-        "last_run_id": "",
-        "last_hosts": [],
-        "last_commands": [],
-        "last_structured_summary": {},
-        "last_raw_context": {},
-        "recent_user_prompts": [],
-        "recent_selections": [],
-        "pending_flat_sros": {
-            "active": False,
-            "hierarchy": "",
-        },
-    }
-
-
-def _remember_user_prompt(session_memory: dict, prompt: str) -> None:
-    session_memory["recent_user_prompts"] = _limit_list(
-        session_memory.get("recent_user_prompts", []) + [prompt],
-        MAX_MEMORY_PROMPTS,
-    )
-    hosts = _extract_hosts_from_text(prompt)
-    if hosts:
-        merged_hosts = list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts))
-        session_memory["last_hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
-        _remember_selection(
-            session_memory,
-            "hosts",
-            hosts[-MAX_MEMORY_HOSTS:],
-            source_run_id=session_memory.get("last_run_id", ""),
-            source_command=session_memory.get("last_commands", [""])[-1]
-            if session_memory.get("last_commands")
-            else "",
-            label="hosts from prompt",
-        )
-    commands = _extract_commands_from_text(prompt)
-    if commands:
-        merged_commands = list(dict.fromkeys(session_memory.get("last_commands", []) + commands))
-        session_memory["last_commands"] = merged_commands[-MAX_MEMORY_COMMANDS:]
-    ping_target = _extract_ping_target(prompt)
-    if ping_target:
-        _remember_selection(
-            session_memory,
-            "destinations",
-            [ping_target],
-            source_run_id=session_memory.get("last_run_id", ""),
-            label="ping target from prompt",
-        )
-
-
-def _remember_tool_data(session_memory: dict, tool_name: str, data: dict) -> None:
-    run_id = data.get("run_id")
-    if run_id:
-        session_memory["last_run_id"] = run_id
-
-    hosts: list[str] = []
-    if isinstance(data.get("hostname"), str) and data.get("hostname"):
-        hosts.append(data["hostname"])
-    if isinstance(data.get("hosts"), list):
-        hosts.extend([host for host in data["hosts"] if isinstance(host, str)])
-    if isinstance(data.get("per_host"), dict):
-        hosts.extend(list(data["per_host"].keys()))
-    if isinstance(data.get("items"), list):
-        for item in data["items"]:
-            if isinstance(item, dict) and isinstance(item.get("hostname"), str):
-                hosts.append(item["hostname"])
-    if hosts:
-        merged_hosts = list(dict.fromkeys(session_memory.get("last_hosts", []) + hosts))
-        session_memory["last_hosts"] = merged_hosts[-MAX_MEMORY_HOSTS:]
-    if data.get("hosts"):
-        _remember_selection(
-            session_memory,
-            "hosts",
-            [host for host in data["hosts"] if isinstance(host, str)],
-            source_run_id=data.get("run_id", ""),
-            source_command=data.get("command", ""),
-            label=f"hosts from {tool_name}",
-        )
-    if tool_name == "ping_from_device":
-        if data.get("source_hostname"):
-            _remember_selection(
-                session_memory,
-                "hosts",
-                [data["source_hostname"]],
-                label="ping source",
-            )
-        if data.get("target_hostname"):
-            _remember_selection(
-                session_memory,
-                "destinations",
-                [data["target_hostname"]],
-                label="ping destination",
-            )
-
-    commands: list[str] = []
-    command_value = data.get("command")
-    if isinstance(command_value, str) and command_value:
-        commands.append(command_value)
-    if isinstance(data.get("commands"), list):
-        commands.extend([command for command in data["commands"] if isinstance(command, str)])
-    if isinstance(data.get("items"), list):
-        for item in data["items"]:
-            if isinstance(item, dict) and isinstance(item.get("command"), str) and item.get("command"):
-                commands.append(item["command"])
-    if commands:
-        merged_commands = list(dict.fromkeys(session_memory.get("last_commands", []) + commands))
-        session_memory["last_commands"] = merged_commands[-MAX_MEMORY_COMMANDS:]
-
-    if tool_name == "summarize_components" and data.get("summary"):
-        session_memory["last_structured_summary"] = data["summary"]
-    elif tool_name == "get_raw_analysis_context" and data.get("items"):
-        session_memory["last_raw_context"] = {
-            "run_id": data.get("run_id", ""),
-            "command": data.get("command", ""),
-            "question": data.get("question", ""),
-            "truncated": data.get("truncated", False),
-            "items": data.get("items", [])[:4],
-        }
-
-
-def _build_memory_context(session_memory: dict) -> str:
-    lines = ["Session memory:"]
-    if session_memory.get("last_run_id"):
-        lines.append(f'- Last run id: {session_memory["last_run_id"]}')
-    if session_memory.get("last_hosts"):
-        lines.append(
-            "- Recent hosts: " + ", ".join(session_memory["last_hosts"][-MAX_MEMORY_HOSTS:])
-        )
-    if session_memory.get("last_commands"):
-        lines.append(
-            "- Recent commands: " + ", ".join(session_memory["last_commands"][-MAX_MEMORY_COMMANDS:])
-        )
-    structured_summary = session_memory.get("last_structured_summary", {})
+def _format_gfiber_bookmarks_for_prompt(bookmarks: dict) -> str:
+    lines = ["Session bookmark:"]
+    if bookmarks.get("run_id"):
+        lines.append(f'- Last run id: {bookmarks["run_id"]}')
+    focus = bookmarks.get("focus", {})
+    fh = focus.get("hosts", [])
+    if fh:
+        lines.append("- Focus hosts: " + ", ".join(fh[-MAX_MEMORY_HOSTS:]))
+    fc = focus.get("commands", [])
+    if fc:
+        lines.append("- Focus commands: " + ", ".join(fc[-MAX_MEMORY_COMMANDS:]))
+    structured_summary = bookmarks.get("evidence", {}).get("structured_summary") or {}
     if structured_summary:
         categories = []
         for component_type, descriptions in structured_summary.items():
             categories.extend(f"{component_type}:{name}" for name in list(descriptions.keys())[:3])
         if categories:
-            lines.append("- Last structured categories: " + ", ".join(categories[:8]))
-    raw_context = session_memory.get("last_raw_context", {})
+            lines.append("- Structured categories: " + ", ".join(categories[:8]))
+    raw_context = bookmarks.get("evidence", {}).get("raw") or {}
     if raw_context:
         summary = [f'run={raw_context.get("run_id", "")}']
         if raw_context.get("command"):
@@ -405,17 +292,45 @@ def _build_memory_context(session_memory: dict) -> str:
         if raw_context.get("truncated"):
             summary.append("truncated=true")
         lines.append("- Last raw evidence: " + ", ".join(summary))
-    selections = session_memory.get("recent_selections", [])
-    if selections:
-        lines.append("- Recent selections:")
-        for selection in selections[-4:]:
-            lines.append("  - " + _selection_summary_line(selection))
-    prompts = session_memory.get("recent_user_prompts", [])
-    if prompts:
-        lines.append("- Recent user intents:")
-        for item in prompts[-3:]:
-            lines.append(f"  - {item}")
     return "\n".join(lines)
+
+
+def _gfiber_bookmark_one_liner(bookmarks: dict) -> str:
+    parts: list[str] = []
+    if bookmarks.get("run_id"):
+        parts.append(f"run={bookmarks['run_id']}")
+    fh = bookmarks.get("focus", {}).get("hosts", [])
+    if fh:
+        parts.append(f'hosts={",".join(fh[-4:])}')
+    fc = bookmarks.get("focus", {}).get("commands", [])
+    if fc:
+        parts.append(f"cmds={len(fc)}")
+    return "; ".join(parts) if parts else "(empty)"
+
+
+class GfiberBookmarkPlugin(BasePlugin):
+    """Merge MCP tool JSON into shared bookmarks; mirror a one-liner into session.state."""
+
+    def __init__(self, bookmarks: dict) -> None:
+        super().__init__()
+        self._bookmarks = bookmarks
+
+    async def after_tool_callback(
+        self,
+        *,
+        tool,
+        tool_args: dict,
+        tool_context,
+        result: dict,
+    ):
+        if not isinstance(result, dict):
+            return None
+        tool_name = getattr(tool, "name", "") or ""
+        _merge_tool_into_gfiber_bookmarks(self._bookmarks, tool_name, result)
+        state = getattr(tool_context, "state", None)
+        if state is not None:
+            state["app:gfiber_bookmark"] = _gfiber_bookmark_one_liner(self._bookmarks)
+        return None
 
 
 async def _call_tool_logged(session, log_file: str, session_id: str, turn_id: str, tool_name: str, args: dict):
@@ -779,10 +694,10 @@ async def _handle_deterministic_flat_sros(
     session_id: str,
     turn_id: str,
     prompt: str,
-    session_memory: dict,
+    gfiber_bookmarks: dict,
 ) -> str | None:
-    pending_flat_sros = session_memory.setdefault(
-        "pending_flat_sros",
+    pending_flat_sros = gfiber_bookmarks.setdefault("pending", {}).setdefault(
+        "flat_sros",
         {"active": False, "hierarchy": ""},
     )
     explicit_hierarchy = _extract_explicit_hierarchy(prompt)
@@ -830,7 +745,7 @@ async def _handle_deterministic_flat_sros(
         },
     )
     data = _tool_result_json(result)
-    _remember_tool_data(session_memory, "flatten_sros_config", data)
+    _merge_tool_into_gfiber_bookmarks(gfiber_bookmarks, "flatten_sros_config", data)
     pending_flat_sros["active"] = False
     pending_flat_sros["hierarchy"] = ""
     return _format_flat_sros_result(data)
@@ -912,7 +827,7 @@ async def _handle_deterministic_bng_config_collection(
     session_id: str,
     turn_id: str,
     prompt: str,
-    session_memory: dict,
+    gfiber_bookmarks: dict,
 ) -> str | None:
     if _looks_ambiguous_bng_prompt(prompt):
         hosts = _extract_hosts_from_text(prompt)
@@ -936,14 +851,7 @@ async def _handle_deterministic_bng_config_collection(
         {"hostname": hostname},
     )
     data = _tool_result_json(result)
-    _remember_tool_data(session_memory, "collect_bng_configuration", data)
-    _remember_selection(
-        session_memory,
-        "hosts",
-        [hostname],
-        source_command="admin display-config",
-        label="bng config collection target",
-    )
+    _merge_tool_into_gfiber_bookmarks(gfiber_bookmarks, "collect_bng_configuration", data)
     return _format_bng_collection_result(data)
 
 
@@ -986,7 +894,7 @@ async def _handle_deterministic_ping(
     session_id: str,
     turn_id: str,
     prompt: str,
-    session_memory: dict,
+    gfiber_bookmarks: dict,
 ) -> str | None:
     if not _looks_like_ping_prompt(prompt):
         return None
@@ -994,11 +902,9 @@ async def _handle_deterministic_ping(
     target = _extract_ping_target(prompt)
     source_hosts = _extract_ping_sources(prompt)
     if not source_hosts:
-        selection = _resolve_selection(session_memory, prompt, preferred_types=["hosts"])
-        if selection:
-            source_hosts = [
-                item for item in selection.get("items", []) if isinstance(item, str)
-            ][:MAX_MEMORY_HOSTS]
+        picked = _resolve_host_pick(gfiber_bookmarks, prompt)
+        if picked:
+            source_hosts = picked[:MAX_MEMORY_HOSTS]
     if not target:
         return None
     if not source_hosts:
@@ -1019,7 +925,7 @@ async def _handle_deterministic_ping(
             },
         )
         data = _tool_result_json(result)
-        _remember_tool_data(session_memory, "ping_from_device", data)
+        _merge_tool_into_gfiber_bookmarks(gfiber_bookmarks, "ping_from_device", data)
         results.append(_format_ping_result(data, highlight_longest))
 
     return "\n\n".join(results)
@@ -1057,7 +963,7 @@ async def _handle_deterministic_hardware_count(
     turn_id: str,
     prompt: str,
     deterministic_state: dict,
-    session_memory: dict,
+    gfiber_bookmarks: dict,
 ) -> str | None:
     if not _looks_like_hardware_count_prompt(prompt) and not (
         deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt)
@@ -1071,8 +977,8 @@ async def _handle_deterministic_hardware_count(
         return "No audit run is available to count against."
 
     lower_prompt = prompt.lower()
-    selection = _resolve_selection(session_memory, prompt, preferred_types=["hosts"])
-    if not selection and (
+    picked = _resolve_host_pick(gfiber_bookmarks, prompt)
+    if not picked and (
         "for each device" in lower_prompt
         or "per device" in lower_prompt
         or "device by device" in lower_prompt
@@ -1080,10 +986,8 @@ async def _handle_deterministic_hardware_count(
         or "same format" in lower_prompt
         or "all hardware summary for each device" in lower_prompt
     ):
-        selection = _latest_selection(session_memory, "hosts")
-    selected_hosts = [
-        item for item in (selection or {}).get("items", []) if isinstance(item, str)
-    ][:MAX_MEMORY_HOSTS]
+        picked = _latest_host_pick(gfiber_bookmarks)
+    selected_hosts = picked[:MAX_MEMORY_HOSTS] if picked else []
 
     if selected_hosts and (
         "for each device" in lower_prompt
@@ -1108,7 +1012,7 @@ async def _handle_deterministic_hardware_count(
         per_host = data.get("per_host", {})
         if not per_host:
             return "No structured component data was found for the selected hosts."
-        _remember_tool_data(session_memory, "get_host_component_summary", data)
+        _merge_tool_into_gfiber_bookmarks(gfiber_bookmarks, "get_host_component_summary", data)
         deterministic_state["last_run_id"] = run_id
         return _format_host_component_summary(per_host)
 
@@ -1133,7 +1037,7 @@ async def _handle_deterministic_hardware_count(
             )
         deterministic_state["last_summary"] = summary
         deterministic_state["last_run_id"] = run_id
-        _remember_tool_data(session_memory, "summarize_components", data)
+        _merge_tool_into_gfiber_bookmarks(gfiber_bookmarks, "summarize_components", data)
         return _format_component_summary(summary)
 
     if deterministic_state.get("last_summary") and _looks_like_followup_category_prompt(prompt):
@@ -1156,7 +1060,7 @@ async def _handle_deterministic_hardware_count(
             data = _tool_result_json(result)
             if data.get("error"):
                 continue
-            _remember_tool_data(session_memory, "count_components", data)
+            _merge_tool_into_gfiber_bookmarks(gfiber_bookmarks, "count_components", data)
             results.append(
                 {
                     "component_type": component_type,
@@ -1192,7 +1096,7 @@ async def _handle_deterministic_hardware_count(
     total_count = data.get("total_count", 0)
     host_count = data.get("host_count", 0)
     per_host = data.get("per_host", {})
-    _remember_tool_data(session_memory, "count_components", data)
+    _merge_tool_into_gfiber_bookmarks(gfiber_bookmarks, "count_components", data)
     deterministic_state["last_summary"] = {
         component_type or "unknown": {
             name: total_count,
@@ -1250,7 +1154,7 @@ async def _handle_deterministic_audit_summary(
     turn_id: str,
     prompt: str,
     deterministic_state: dict,
-    session_memory: dict,
+    gfiber_bookmarks: dict,
 ) -> str | None:
     if not _looks_like_audit_summary_prompt(prompt):
         return None
@@ -1277,7 +1181,7 @@ async def _handle_deterministic_audit_summary(
         return f"Error: {status['error']}"
     if status.get("state") != "completed":
         return f'Audit run {run_id} ended with state: {status.get("state")}.'
-    _remember_tool_data(session_memory, "start_audit_run", data)
+    _merge_tool_into_gfiber_bookmarks(gfiber_bookmarks, "start_audit_run", data)
 
     result = await _call_tool_logged(
         session,
@@ -1308,12 +1212,12 @@ async def _handle_deterministic_audit_summary(
                 "The completed audit run did not produce structured component data, "
                 f"and raw evidence lookup failed: {raw_data['error']}"
             )
-        _remember_tool_data(session_memory, "get_raw_analysis_context", raw_data)
+        _merge_tool_into_gfiber_bookmarks(gfiber_bookmarks, "get_raw_analysis_context", raw_data)
         deterministic_state["last_run_id"] = run_id
         deterministic_state["last_summary"] = {}
         return await _answer_from_raw_context(genai_client, MODEL_ID, prompt, raw_data)
 
-    _remember_tool_data(session_memory, "summarize_components", data)
+    _merge_tool_into_gfiber_bookmarks(gfiber_bookmarks, "summarize_components", data)
     deterministic_state["last_summary"] = summary
     deterministic_state["last_run_id"] = run_id
     return _format_component_summary(summary)
@@ -1385,6 +1289,9 @@ async def run_intelligent_agent() -> None:
             for t in tools_response.tools
         ]
 
+        gfiber_bookmarks = _new_gfiber_bookmarks()
+        bookmark_plugin = GfiberBookmarkPlugin(gfiber_bookmarks)
+
         root_agent = LlmAgent(
             model=MODEL_ID,
             name="gfiber_network_agent",
@@ -1397,6 +1304,7 @@ async def run_intelligent_agent() -> None:
             agent=root_agent,
             session_service=session_service,
             auto_create_session=True,
+            plugins=[bookmark_plugin],
         )
 
         print("\n" + "=" * 60)
@@ -1420,7 +1328,6 @@ async def run_intelligent_agent() -> None:
         )
 
         deterministic_state: dict = {}
-        session_memory = _new_session_memory()
 
         while True:
             prompt = input("\n[USER]: ").strip()
@@ -1465,7 +1372,7 @@ async def run_intelligent_agent() -> None:
                         "turn_id": turn_id,
                     },
                 )
-                _remember_user_prompt(session_memory, prompt)
+                _apply_prompt_to_gfiber_bookmarks(gfiber_bookmarks, prompt)
 
                 deterministic_response = await _handle_deterministic_audit_summary(
                     mcp_session,
@@ -1475,7 +1382,7 @@ async def run_intelligent_agent() -> None:
                     turn_id,
                     prompt,
                     deterministic_state,
-                    session_memory,
+                    gfiber_bookmarks,
                 )
                 if deterministic_response is None:
                     deterministic_response = await _handle_deterministic_bng_config_collection(
@@ -1484,7 +1391,7 @@ async def run_intelligent_agent() -> None:
                         session_id,
                         turn_id,
                         prompt,
-                        session_memory,
+                        gfiber_bookmarks,
                     )
                 if deterministic_response is None:
                     deterministic_response = await _handle_deterministic_flat_sros(
@@ -1493,7 +1400,7 @@ async def run_intelligent_agent() -> None:
                         session_id,
                         turn_id,
                         prompt,
-                        session_memory,
+                        gfiber_bookmarks,
                     )
                 if deterministic_response is None:
                     deterministic_response = await _handle_deterministic_ping(
@@ -1502,7 +1409,7 @@ async def run_intelligent_agent() -> None:
                         session_id,
                         turn_id,
                         prompt,
-                        session_memory,
+                        gfiber_bookmarks,
                     )
                 if deterministic_response is None:
                     deterministic_response = await _handle_deterministic_hardware_count(
@@ -1512,7 +1419,7 @@ async def run_intelligent_agent() -> None:
                         turn_id,
                         prompt,
                         deterministic_state,
-                        session_memory,
+                        gfiber_bookmarks,
                     )
                 if deterministic_response is not None:
                     _write_session_log(
@@ -1529,7 +1436,7 @@ async def run_intelligent_agent() -> None:
                     continue
 
                 enriched_prompt = (
-                    f"{_build_memory_context(session_memory)}\n\n"
+                    f"{_format_gfiber_bookmarks_for_prompt(gfiber_bookmarks)}\n\n"
                     f"Current user request:\n{prompt}"
                 )
                 answer_text = await _run_adk_turn(
