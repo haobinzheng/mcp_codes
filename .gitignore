@@ -4,3 +4,15 @@ __pycache__/
 .venv/
 .adk_data/
 logs/
+
+# Secrets & local credentials — never commit API keys or auth material
+.env
+.env.*
+!.env.example
+*credentials*.json
+**/application_default_credentials.json
+**/client_secret*.json
+**/service-account*.json
+*.pem
+*.p12
+adk_log.txt
