@@ -1,0 +1,149 @@
+(myenv) mikezh@mikezh:~/Coding/mcp_codes$ adk web .
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/authlib/_joserfc_helpers.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import ECKey
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/features/_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.PLUGGABLE_AUTH is enabled.
+  check_feature_enabled()
+2026-04-30 11:08:15,881 - INFO - service_factory.py:266 - Using in-memory memory service
+2026-04-30 11:08:15,881 - INFO - local_storage.py:84 - Using per-agent session storage rooted at /usr/local/google/home/mikezh/Coding/mcp_codes
+2026-04-30 11:08:15,883 - INFO - local_storage.py:110 - Using file artifact service at /usr/local/google/home/mikezh/Coding/mcp_codes/.adk/artifacts
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/fast_api.py:204: UserWarning: [EXPERIMENTAL] InMemoryCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  credential_service = InMemoryCredentialService()
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/auth/credential_service/in_memory_credential_service.py:33: UserWarning: [EXPERIMENTAL] BaseCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  super().__init__()
+INFO:     Started server process [154024]
+INFO:     Waiting for application startup.
+
++-----------------------------------------------------------------------------+
+| ADK Web Server started                                                      |
+|                                                                             |
+| For local testing, access at http://127.0.0.1:8000.                         |
++-----------------------------------------------------------------------------+
+
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:58530 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:58530 - "GET /dev-ui/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58530 - "GET /dev-ui/chunk-EN473UE3.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58542 - "GET /dev-ui/polyfills-5CFQRCPP.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58540 - "GET /dev-ui/chunk-W7GRJBO5.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58544 - "GET /dev-ui/main-TCIQIOZ3.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58554 - "GET /dev-ui/styles-2ORK6PRA.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58544 - "GET /dev-ui/assets/config/runtime-config.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58544 - "GET /dev-ui/prism-dark.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58530 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58554 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58554 - "GET /dev-ui/assets/ADK-512-color.svg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58554 - "GET /dev-ui/adk_favicon.svg HTTP/1.1" 200 OK
+2026-04-30 11:09:50,689 - INFO - envs.py:90 - No .env file found for adk_agents
+2026-04-30 11:09:50,690 - INFO - envs.py:90 - No .env file found for adk_agents
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/utils/agent_loader.py:277: UserWarning: [EXPERIMENTAL] _load_from_yaml_config: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  if root_agent := self._load_from_yaml_config(actual_agent_name, agents_dir):
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/features/_feature_decorator.py:81: UserWarning: [EXPERIMENTAL] feature FeatureName.AGENT_CONFIG is enabled.
+  check_feature_enabled()
+INFO:     127.0.0.1:47712 - "GET /dev/build_graph/adk_agents HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/fastapi/applications.py", line 1160, in __call__
+    await super().__call__(scope, receive, send)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/starlette/applications.py", line 107, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 267, in __call__
+    await self._app(scope, receive, send)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/fastapi/routing.py", line 130, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/fastapi/routing.py", line 116, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/fastapi/routing.py", line 670, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/fastapi/routing.py", line 324, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 1038, in get_app_info
+    runner = await self.get_runner_async(app_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 696, in get_runner_async
+    agent_or_app = self.agent_loader.load_agent(app_name)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/utils/agent_loader.py", line 359, in load_agent
+    agent_or_app = self._perform_load(agent_name)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/utils/agent_loader.py", line 301, in _perform_load
+    raise ValueError(
+ValueError: No root_agent found for 'adk_agents'. Searched in 'adk_agents.agent.root_agent', 'adk_agents.root_agent' and 'adk_agents/root_agent.yaml'.
+
+Expected directory structure:
+  <agents_dir>/
+    adk_agents/
+      agent.py (with root_agent) OR
+      root_agent.yaml
+
+Then run: adk web <agents_dir>
+
+Ensure '/usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents' is structured correctly, an .env file can be loaded if present, and a root_agent is exposed.
+INFO:     127.0.0.1:47726 - "GET /dev/build_graph_image/adk_agents?dark_mode=false HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47740 - "GET /dev/build_graph_image/adk_agents?dark_mode=true HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:47752 - "GET /builder/app/adk_agents?ts=1777572590652 HTTP/1.1" 200 OK
+2026-04-30 11:09:55,020 - ERROR - adk_web_server.py:874 - Internal server error during session creation: No module named '_sqlite3'
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 861, in _create_session
+    session = await self.session_service.create_session(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/utils/local_storage.py", line 162, in create_session
+    service = await self._get_service(app_name)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/utils/local_storage.py", line 147, in _get_service
+    service = create_local_database_session_service(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/utils/local_storage.py", line 53, in create_local_database_session_service
+    from ...sessions.sqlite_session_service import SqliteSessionService
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/sessions/sqlite_session_service.py", line 21, in <module>
+    import sqlite3
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/sqlite3/__init__.py", line 57, in <module>
+    from sqlite3.dbapi2 import *
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/sqlite3/dbapi2.py", line 27, in <module>
+    from _sqlite3 import *
+ModuleNotFoundError: No module named '_sqlite3'
+INFO:     127.0.0.1:47752 - "POST /apps/adk_agents/users/user/sessions HTTP/1.1" 500 Internal Server Error
+^CINFO:     Shutting down
+INFO:     Waiting for application shutdown.
+
++-----------------------------------------------------------------------------+
+| ADK Web Server shutting down...                                             |
++-----------------------------------------------------------------------------+
+
+INFO:     Application shutdown complete.
+INFO:     Finished server process [154024]
+
+Aborted!
+
