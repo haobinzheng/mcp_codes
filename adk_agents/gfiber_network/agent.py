@@ -3,6 +3,11 @@
 from __future__ import annotations
 
 import os
+
+# google-genai prefers GOOGLE_API_KEY over GEMINI_API_KEY when both are set.
+# Manual `python -m google.adk.cli web` skips start_ai_tool_adk's `unset`; match that here.
+os.environ.pop("GOOGLE_API_KEY", None)
+
 import sys
 from pathlib import Path
 

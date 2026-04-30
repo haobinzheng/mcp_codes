@@ -54,8 +54,11 @@ echo "SSH tunnel from laptop: use REMOTE_PORT=${ADK_WEB_PORT} with start_ai_tool
 if start_ai_tool_logging_enabled; then
   echo "Logging to: ${ADK_LOG_FILE} (disable: START_AI_TOOL_LOG_DISABLE=1)"
 fi
-echo "Ensure GEMINI_API_KEY or GOOGLE_API_KEY is set (see DESIGN_PIP_INSTALL.md)."
+echo "Ensure GEMINI_API_KEY is set (see DESIGN_PIP_INSTALL.md)."
 echo "Interactive CLI only (no web): ${PYTHON} client_inmemory_v2_adk.py"
+
+# Gemini API key only; do not let google.genai / ADK prefer GOOGLE_API_KEY from the parent shell.
+unset GOOGLE_API_KEY || true
 
 exec "${PYTHON}" -m google.adk.cli web \
   --host "${ADK_WEB_HOST}" \

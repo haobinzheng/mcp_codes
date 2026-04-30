@@ -10,6 +10,7 @@ Logging (per session): by default under this repo's ``session_logs/`` (same fold
 this file), files ``session_<id>.jsonl`` and ``session_<id>.log``. Override with ``SESSION_LOG_DIR``.
 That directory is tracked in git so you can ``git add`` / push logs from a remote host when sharing runs.
 Env: ``GFIBER_SESSION_LOG_LEVEL`` (default INFO), ``GFIBER_LOG_CONSOLE=1`` to mirror the text log to stderr.
+Requires ``GEMINI_API_KEY`` only (this entrypoint does not read or set ``GOOGLE_API_KEY``).
 """
 
 import asyncio
@@ -1380,12 +1381,12 @@ ADK_USER_ID = "local"
 
 
 async def run_intelligent_agent() -> None:
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+    api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
-        print("Error: Set GEMINI_API_KEY or GOOGLE_API_KEY.")
+        print("Error: Set GEMINI_API_KEY.")
         return
-    if not os.environ.get("GOOGLE_API_KEY"):
-        os.environ["GOOGLE_API_KEY"] = api_key
+    # Prefer Gemini API key only: drop GOOGLE_API_KEY so shared SDKs do not pick it over GEMINI_API_KEY.
+    os.environ.pop("GOOGLE_API_KEY", None)
 
     if not os.path.exists(SERVER_PATH):
         print(f"Error: Server not found at {SERVER_PATH}")
