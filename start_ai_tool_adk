@@ -22,9 +22,18 @@ ADK_LOG_FILE="${ADK_LOG_FILE:-${START_AI_TOOL_LOG_DIR}/adk_web.log}"
 ADK_DATA_DIR="${ADK_DATA_DIR:-${SCRIPT_DIR}/.adk_data}"
 mkdir -p "${ADK_DATA_DIR}"
 
-# SQLAlchemy / ADK: absolute SQLite path uses sqlite:////absolute/path (four slashes).
+# Session backend: SQLite file when Python has sqlite3; else ADK in-memory (no _sqlite3).
 SESSION_DB="${ADK_SESSION_SQLITE:-${ADK_DATA_DIR}/gfiber_web_sessions.sqlite}"
-SESSION_URI="sqlite:////${SESSION_DB}"
+if [[ -n "${ADK_SESSION_SERVICE_URI:-}" ]]; then
+  SESSION_URI="${ADK_SESSION_SERVICE_URI}"
+elif "${PYTHON}" -c "import sqlite3" 2>/dev/null; then
+  # SQLAlchemy / ADK: absolute SQLite path uses sqlite:////absolute/path (four slashes).
+  SESSION_URI="sqlite:////${SESSION_DB}"
+else
+  SESSION_URI="memory://"
+  echo "Warning: This Python has no sqlite3 module (_sqlite3). Using session_service_uri=memory:// (sessions vanish on restart)." >&2
+  echo "Fix: install SQLite dev libs and rebuild Python (e.g. pyenv after libsqlite3-dev), or set ADK_SESSION_SERVICE_URI." >&2
+fi
 
 # reload=true watches the filesystem and can interact badly with multiple ADK projects; opt in only when needed.
 ADK_WEB_RELOAD="${ADK_WEB_RELOAD:-false}"
@@ -49,13 +58,18 @@ fi
 
 echo "Starting ADK Web UI — agents from ${AGENTS_DIR}"
 echo "Listening on ${ADK_WEB_HOST}:${ADK_WEB_PORT} (set ADK_WEB_PORT to avoid clashes)"
-echo "Session DB: ${SESSION_DB} (isolated from other ADK apps)"
+if [[ "${SESSION_URI}" == memory://* ]]; then
+  echo "Session storage: in-memory (${SESSION_URI}; isolated per process, not persisted)"
+else
+  echo "Session DB: ${SESSION_DB} (isolated from other ADK apps)"
+fi
 echo "SSH tunnel from laptop: use REMOTE_PORT=${ADK_WEB_PORT} with start_ai_tool_adk_tunnel"
 if start_ai_tool_logging_enabled; then
   echo "Logging to: ${ADK_LOG_FILE} (disable: START_AI_TOOL_LOG_DISABLE=1)"
 fi
 echo "Ensure GEMINI_API_KEY is set (see DESIGN_PIP_INSTALL.md)."
-echo "Interactive CLI only (no web): ${PYTHON} client_inmemory_v2_adk.py"
+echo "Same agent as client_inmemory_v2_google_adk.py: open app gfiber_network in the ADK Web UI."
+echo "Interactive CLI (stdio): ${PYTHON} client_inmemory_v2_adk.py"
 
 # Gemini API key only; do not let google.genai / ADK prefer GOOGLE_API_KEY from the parent shell.
 unset GOOGLE_API_KEY || true

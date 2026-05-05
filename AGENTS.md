@@ -4,10 +4,13 @@
 
 This repository contains a small set of Python scripts for running MCP-backed network audit workflows against GFiber / Juniper devices.
 
-There are two main patterns:
+There are several patterns:
 
 - `server.py` + `client.py`: a basic MCP server/client pair for single commands and file access.
 - `server_agg.py` + `client_agg.py`: the main concurrent audit flow for running `gnetch.sh` across many devices and then analyzing the saved results with Gemini.
+- **GFiber in-memory MCP + Google ADK (stdio):** `server_inmemory_v2.py` with `client_inmemory_v2_google_adk.py`. **Treat this as the canonical ADK entrypoint** when changing agent behavior, logging, or MCP wiring.
+
+**ADK Web** (`google.adk.cli web`, `start_ai_tool_adk`, tunnel helpers) is optional and **experimental**—for trying the browser UI only, not the main product path.
 
 The `.txt` files in this directory are working inputs and outputs, not general documentation.
 
@@ -27,6 +30,12 @@ The `.txt` files in this directory are working inputs and outputs, not general d
 
 - `/Users/haobin/Coding/mcp_codes/client_agg.py`
   Interactive Gemini client with a stronger system prompt intended for the aggregated audit workflow.
+
+- `/Users/haobin/Coding/mcp_codes/client_inmemory_v2_google_adk.py`
+  **Primary ADK client:** stdio chat loop using `LlmAgent`, `Runner`, and MCP tools against `server_inmemory_v2.py`. Uses `GEMINI_API_KEY` only; session logs default under `session_logs/`. Alias entry: `client_inmemory_v2_adk.py`.
+
+- `/Users/haobin/Coding/mcp_codes/server_inmemory_v2.py`
+  In-memory GFiber/Juniper MCP server paired with the ADK client above.
 
 - `/Users/haobin/Coding/mcp_codes/juniper_devices.txt`
   Large example inventory file of hostnames used as input to `audit_devices`.
@@ -74,6 +83,7 @@ This repository does not currently include dependency manifests such as `require
 
 ## Change Guidelines For Agents
 
+- For **ADK + GFiber MCP** work, prefer **`client_inmemory_v2_google_adk.py`** (and its server); do not spend effort on ADK Web unless the user asks.
 - Preserve the current MCP tool names unless the user explicitly asks for a breaking API change.
 - Do not remove the output filtering in `server_agg.py` unless the user wants fuller raw output; it exists to reduce model token load.
 - Be careful with hardcoded filesystem paths. They are environment-specific and likely the most fragile part of this repo.
@@ -90,6 +100,15 @@ From `/Users/haobin/Coding/mcp_codes`:
 export GEMINI_API_KEY=...
 python3 client_agg.py
 ```
+
+**ADK Web (same GFiber agent as `client_inmemory_v2_google_adk.py`, experimental UI):**
+
+```bash
+export GEMINI_API_KEY=...
+./start_ai_tool_adk
+```
+
+Then open `http://127.0.0.1:8787` (or your `ADK_WEB_HOST`/`ADK_WEB_PORT`) and select app **`gfiber_network`**.
 
 Typical prompt examples inside the client:
 
