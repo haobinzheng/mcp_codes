@@ -1,7 +1,7 @@
-"""Root agent for ADK Web: same MCP stack as ``client_inmemory_v2_google_adk.py`` (stdio).
+"""Root agent for ADK Web: same model/prompt/MCP env as the stdio ADK client (``gfiber_adk_shared``).
 
 Run from repo root: ``./start_ai_tool_adk`` (or ``python -m google.adk.cli web … adk_agents``).
-In the UI, open app **gfiber_network**. ADK Web cannot load the ``.py`` script directly; this package mirrors it.
+In the UI, open app **gfiber_network**. ADK Web cannot load ``client_inmemory_v2_google_adk.py`` directly.
 """
 
 from __future__ import annotations
@@ -25,7 +25,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from client_inmemory_v2_google_adk import MODEL_ID, SYSTEM_INSTRUCTION, mcp_stdio_server_env
+from gfiber_adk_shared import MODEL_ID, SYSTEM_INSTRUCTION, mcp_stdio_server_env
 
 _SERVER_PATH = str(_REPO_ROOT / "server_inmemory_v2.py")
 
