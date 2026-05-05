@@ -36,14 +36,14 @@ Shared helpers live in [`start_ai_tool_logging.sh`](start_ai_tool_logging.sh).
 ### Avoiding conflicts with other ADK / web apps
 
 - **Port:** default **`8787`** (not `8000`) so this repo does not fight [`start_ai_tool_web`](start_ai_tool_web), other Flask apps, or another `adk web` on the same host.
-- **Sessions:** SQLite under **`<repo>/.adk_data/gfiber_web_sessions.sqlite`** via `--session_service_uri`, so chat/session state is not mixed with another app’s default storage.
+- **Sessions:** **`memory://`** via **`--session_service_uri`** (no SQLite in this launcher). Chat state is per process and not persisted. Set **`ADK_SESSION_SERVICE_URI`** if you need a different ADK-supported backend.
 - **Reload:** **`--no-reload`** by default (set **`ADK_WEB_RELOAD=true`** to enable). Reload watches files and is easy to misconfigure when several agent trees exist on one machine.
-- **UI label:** **`--logo-text`** defaults to `GFiber MCP (mcp_codes)` (`ADK_LOGO_TEXT` overrides).
+- **UI logo:** Custom branding is passed only when **both** **`ADK_LOGO_TEXT`** and **`ADK_LOGO_IMAGE_URL`** are set (newer ADK rejects **`--logo-text`** alone).
 
 From the repository directory (after `chmod +x` if needed):
 
 ```bash
-export GEMINI_API_KEY=...   # or GOOGLE_API_KEY
+export GEMINI_API_KEY=...
 ./start_ai_tool_adk
 ```
 
@@ -52,10 +52,9 @@ Environment variables:
 - **`ADK_WEB_HOST`** — bind address (default `127.0.0.1`).
 - **`ADK_WEB_PORT`** — port (default **`8787`**). Use the **same** value for **`REMOTE_PORT`** / **`LOCAL_PORT`** when tunneling (see [`start_ai_tool_adk_tunnel`](start_ai_tool_adk_tunnel)).
 - **`AGENTS_DIR`** — override agents directory (default `<repo>/adk_agents`).
-- **`ADK_DATA_DIR`** — where `.adk_data` lives (default `<repo>/.adk_data`).
-- **`ADK_SESSION_SQLITE`** — override session DB path (default `<ADK_DATA_DIR>/gfiber_web_sessions.sqlite`).
+- **`ADK_SESSION_SERVICE_URI`** — session backend URI (default **`memory://`**). Set explicitly only if you need something other than in-memory sessions.
 - **`ADK_WEB_RELOAD`** — `true` / `1` to enable `--reload`.
-- **`ADK_LOGO_TEXT`** — Web UI logo string.
+- **`ADK_LOGO_TEXT`** / **`ADK_LOGO_IMAGE_URL`** — optional pair for custom Web UI logo (both required together).
 - **`PYTHON`** — interpreter (default `python3`).
 
 **Interactive terminal CLI** (no browser UI): run `python3 client_inmemory_v2_adk.py` directly instead of this script.

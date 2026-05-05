@@ -18,22 +18,8 @@ AGENTS_DIR="${AGENTS_DIR:-${SCRIPT_DIR}/adk_agents}"
 START_AI_TOOL_LOG_DIR="${START_AI_TOOL_LOG_DIR:-${SCRIPT_DIR}/logs}"
 ADK_LOG_FILE="${ADK_LOG_FILE:-${START_AI_TOOL_LOG_DIR}/adk_web.log}"
 
-# Project-local ADK state so sessions never mix with other agents or repos on the same machine.
-ADK_DATA_DIR="${ADK_DATA_DIR:-${SCRIPT_DIR}/.adk_data}"
-mkdir -p "${ADK_DATA_DIR}"
-
-# Session backend: SQLite file when Python has sqlite3; else ADK in-memory (no _sqlite3).
-SESSION_DB="${ADK_SESSION_SQLITE:-${ADK_DATA_DIR}/gfiber_web_sessions.sqlite}"
-if [[ -n "${ADK_SESSION_SERVICE_URI:-}" ]]; then
-  SESSION_URI="${ADK_SESSION_SERVICE_URI}"
-elif "${PYTHON}" -c "import sqlite3" 2>/dev/null; then
-  # SQLAlchemy / ADK: absolute SQLite path uses sqlite:////absolute/path (four slashes).
-  SESSION_URI="sqlite:////${SESSION_DB}"
-else
-  SESSION_URI="memory://"
-  echo "Warning: This Python has no sqlite3 module (_sqlite3). Using session_service_uri=memory:// (sessions vanish on restart)." >&2
-  echo "Fix: install SQLite dev libs and rebuild Python (e.g. pyenv after libsqlite3-dev), or set ADK_SESSION_SERVICE_URI." >&2
-fi
+# ADK Web sessions: in-memory only (no sqlite). Override with ADK_SESSION_SERVICE_URI if you need another backend.
+SESSION_URI="${ADK_SESSION_SERVICE_URI:-memory://}"
 
 # reload=true watches the filesystem and can interact badly with multiple ADK projects; opt in only when needed.
 ADK_WEB_RELOAD="${ADK_WEB_RELOAD:-false}"
@@ -42,7 +28,13 @@ if [[ "${ADK_WEB_RELOAD}" == "true" ]] || [[ "${ADK_WEB_RELOAD}" == "1" ]]; then
   RELOAD_ARGS=(--reload)
 fi
 
-LOGO_TEXT="${ADK_LOGO_TEXT:-GFiber MCP (mcp_codes)}"
+# Newer ADK: if either --logo-text or --logo-image-url is passed, both must be set. Omit both unless configured.
+LOGO_TEXT="${ADK_LOGO_TEXT:-}"
+LOGO_IMAGE_URL="${ADK_LOGO_IMAGE_URL:-}"
+LOGO_ARGS=()
+if [[ -n "${LOGO_TEXT}" && -n "${LOGO_IMAGE_URL}" ]]; then
+  LOGO_ARGS=(--logo-text "${LOGO_TEXT}" --logo-image-url "${LOGO_IMAGE_URL}")
+fi
 
 if start_ai_tool_logging_enabled; then
   start_ai_tool_log_begin "${ADK_LOG_FILE}" "start_ai_tool_adk" \
@@ -50,7 +42,6 @@ if start_ai_tool_logging_enabled; then
     "ADK_WEB_HOST=${ADK_WEB_HOST}" \
     "ADK_WEB_PORT=${ADK_WEB_PORT}" \
     "AGENTS_DIR=${AGENTS_DIR}" \
-    "SESSION_DB=${SESSION_DB}" \
     "SESSION_URI=${SESSION_URI}" \
     "ADK_LOG_FILE=${ADK_LOG_FILE}"
   start_ai_tool_log_tee "${ADK_LOG_FILE}"
@@ -58,16 +49,15 @@ fi
 
 echo "Starting ADK Web UI — agents from ${AGENTS_DIR}"
 echo "Listening on ${ADK_WEB_HOST}:${ADK_WEB_PORT} (set ADK_WEB_PORT to avoid clashes)"
-if [[ "${SESSION_URI}" == memory://* ]]; then
-  echo "Session storage: in-memory (${SESSION_URI}; isolated per process, not persisted)"
-else
-  echo "Session DB: ${SESSION_DB} (isolated from other ADK apps)"
-fi
+echo "Session storage: ${SESSION_URI} (not persisted unless you set ADK_SESSION_SERVICE_URI to a durable backend)"
 echo "SSH tunnel from laptop: use REMOTE_PORT=${ADK_WEB_PORT} with start_ai_tool_adk_tunnel"
 if start_ai_tool_logging_enabled; then
   echo "Logging to: ${ADK_LOG_FILE} (disable: START_AI_TOOL_LOG_DISABLE=1)"
 fi
 echo "Ensure GEMINI_API_KEY is set (see DESIGN_PIP_INSTALL.md)."
+if ((${#LOGO_ARGS[@]} == 0)); then
+  echo "Custom UI logo: set both ADK_LOGO_TEXT and ADK_LOGO_IMAGE_URL (ADK rejects logo-text alone)."
+fi
 echo "Same agent as client_inmemory_v2_google_adk.py: open app gfiber_network in the ADK Web UI."
 echo "Interactive CLI (stdio): ${PYTHON} client_inmemory_v2_adk.py"
 
@@ -79,5 +69,5 @@ exec "${PYTHON}" -m google.adk.cli web \
   --port "${ADK_WEB_PORT}" \
   "${RELOAD_ARGS[@]}" \
   --session_service_uri "${SESSION_URI}" \
-  --logo-text "${LOGO_TEXT}" \
+  "${LOGO_ARGS[@]}" \
   "${AGENTS_DIR}"
