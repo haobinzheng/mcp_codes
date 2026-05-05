@@ -49,6 +49,18 @@ SESSION_LOG_DIR = os.environ.get(
     "SESSION_LOG_DIR", os.path.join(_REPO_ROOT, "session_logs")
 )
 
+# MCP stdio server does not call Gemini; strip keys so ADK Web / logs never surface them to the child env.
+_MCP_ENV_STRIP = frozenset(
+    ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY")
+)
+
+
+def mcp_stdio_server_env() -> dict[str, str]:
+    env = dict(os.environ)
+    for key in _MCP_ENV_STRIP:
+        env.pop(key, None)
+    return env
+
 
 class SessionRecorder:
     """Append-only JSONL (machine-readable) plus a plain-text ``.log`` for running sessions."""
@@ -1397,7 +1409,7 @@ async def run_intelligent_agent() -> None:
         server_params=StdioServerParameters(
             command="python3",
             args=[SERVER_PATH],
-            env=os.environ.copy(),
+            env=mcp_stdio_server_env(),
         ),
     )
     mcp_manager = MCPSessionManager(connection_params)
