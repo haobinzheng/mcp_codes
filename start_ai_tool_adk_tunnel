@@ -1,28 +1,41 @@
 #!/usr/bin/env bash
-
+# SSH local port forward: use your Mac browser while ADK Web runs on Linux (no GUI needed there).
+# Same pattern as start_ai_tool_web_tunnel; default ports match start_ai_tool_adk (8787).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=start_ai_tool_logging.sh
 source "${SCRIPT_DIR}/start_ai_tool_logging.sh"
 
-# Same as start_ai_tool_web_tunnel: ssh -N -L so your laptop browser can reach a service on the remote.
-# Use when the server has no web browser. Edit these placeholders for your environment.
-SSH_USER="${SSH_USER:-mikezh}"
-SSH_HOST="${SSH_HOST:-mikezh.c.googlers.com}"
-
 if [[ $# -ge 1 ]]; then
   REMOTE_TARGET="$1"
+elif [[ -n "${REMOTE_SSH_TARGET:-}" ]]; then
+  REMOTE_TARGET="${REMOTE_SSH_TARGET}"
 else
-  REMOTE_TARGET="${REMOTE_SSH_TARGET:-${SSH_USER}@${SSH_HOST}}"
-fi
+  cat <<'EOF' >&2
+Usage: ./start_ai_tool_adk_tunnel user@linux-host.example
 
-if [[ "${REMOTE_TARGET}" == "your-ssh-user@your-remote-host" ]]; then
-  echo "Edit SSH_USER and SSH_HOST in this script before running it."
+Mac (this machine): forwards your browser to ADK Web on the Linux host.
+
+  1) On the Linux server (repo checkout):
+       export GEMINI_API_KEY=...
+       ./start_ai_tool_adk
+     (Listens on 127.0.0.1:8787 by default; see ADK_WEB_HOST / ADK_WEB_PORT.)
+
+  2) On this Mac, run (leave the terminal open):
+       ./start_ai_tool_adk_tunnel user@linux-host.example
+
+  3) Open in Safari/Chrome on the Mac:
+       http://127.0.0.1:8787
+     Pick app **gfiber_network** in the ADK Web UI.
+
+Overrides: REMOTE_SSH_TARGET=user@host  LOCAL_PORT=8787  REMOTE_PORT=8787  REMOTE_HOST=127.0.0.1
+Optional: START_AI_TOOL_TUNNEL_OPEN_BROWSER=1  → run \`open\` on macOS after the tunnel starts.
+EOF
   exit 1
 fi
 
-# Defaults match start_ai_tool_adk (ADK_WEB_PORT=8787). Override if you changed ADK_WEB_PORT.
+# On the remote, ADK Web should listen where this forward points (default loopback + ADK_WEB_PORT).
 LOCAL_PORT="${LOCAL_PORT:-8787}"
 REMOTE_HOST="${REMOTE_HOST:-127.0.0.1}"
 REMOTE_PORT="${REMOTE_PORT:-8787}"
@@ -40,11 +53,16 @@ if start_ai_tool_logging_enabled; then
   start_ai_tool_log_tee "${ADK_TUNNEL_LOG_FILE}"
 fi
 
-echo "Opening SSH tunnel to ${REMOTE_TARGET}"
-echo "Keep this terminal open. Open this URL in your laptop browser (remote host may have no browser):"
-echo "http://127.0.0.1:${LOCAL_PORT}"
+echo "SSH tunnel: Mac 127.0.0.1:${LOCAL_PORT} → ${REMOTE_TARGET} ${REMOTE_HOST}:${REMOTE_PORT}"
+echo "On the Linux host, ADK Web should already be running (./start_ai_tool_adk with GEMINI_API_KEY set)."
+echo "Keep this terminal open. On your Mac, open:"
+echo "  http://127.0.0.1:${LOCAL_PORT}"
 if start_ai_tool_logging_enabled; then
   echo "Logging to: ${ADK_TUNNEL_LOG_FILE} (disable: START_AI_TOOL_LOG_DISABLE=1)"
+fi
+
+if [[ "$(uname -s)" == "Darwin" && "${START_AI_TOOL_TUNNEL_OPEN_BROWSER:-0}" == "1" ]]; then
+  open "http://127.0.0.1:${LOCAL_PORT}" || true
 fi
 
 exec ssh -N -L "${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT}" "${REMOTE_TARGET}"

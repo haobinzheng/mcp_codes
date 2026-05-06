@@ -73,7 +73,9 @@ Both tunnel scripts only run **`ssh -N -L`**: traffic to `127.0.0.1:LOCAL_PORT` 
 # REMOTE_PORT=9999 LOCAL_PORT=9999 ./start_ai_tool_adk_tunnel user@remote.example.com
 ```
 
-On the remote host, run `./start_ai_tool_adk` so ADK Web listens on `127.0.0.1:ADK_WEB_PORT`; the tunnel forwards your laptop’s `LOCAL_PORT` to that listener so you can use the ADK Web UI in a local browser.
+**ADK Web from a Mac while the server is Linux:** run `./start_ai_tool_adk` on the Linux host first, then on the Mac run `./start_ai_tool_adk_tunnel user@linux-host` (no hardcoded SSH user/host in the script—pass **`user@host`** or set **`REMOTE_SSH_TARGET`**). Open **`http://127.0.0.1:8787`** locally and choose app **`gfiber_network`**. Optional: **`START_AI_TOOL_TUNNEL_OPEN_BROWSER=1`** runs **`open`** on macOS after the tunnel command starts (still keep the terminal open for **`ssh -N`**).
+
+On the remote host, ADK Web must be listening on **`REMOTE_HOST`:`REMOTE_PORT`** (defaults **`127.0.0.1:8787`**); the tunnel forwards your Mac’s **`LOCAL_PORT`** to that listener.
 
 ## Permissions
 
