@@ -10,15 +10,20 @@ Logging (per session): by default under this repo's ``session_logs/`` (same fold
 this file), files ``session_<id>.jsonl`` and ``session_<id>.log``. Override with ``SESSION_LOG_DIR``.
 That directory is tracked in git so you can ``git add`` / push logs from a remote host when sharing runs.
 Env: ``GFIBER_SESSION_LOG_LEVEL`` (default INFO), ``GFIBER_LOG_CONSOLE=1`` to mirror the text log to stderr.
+ADK turn diagnostics: ``GFIBER_ADK_TURN_HEARTBEAT_SEC`` (default ``30``, set ``0`` to disable) logs
+``adk_turn_heartbeat`` while ``runner.run_async`` is waiting on the model or tools; set
+``GFIBER_ADK_RUNNER_EVENT_LOG=1`` to append one ``adk_runner_event`` line per streamed ADK event (verbose).
 Uses the process environment for Gemini auth (see project docs); clears a conflicting legacy env alias when present.
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import os
 import re
 import time
+import traceback
 import uuid
 from typing import Any
 
@@ -95,12 +100,28 @@ class SessionRecorder:
             "author",
             "invocation_id",
             "error",
+            "exc_type",
             "reason",
             "event_count",
             "adk_tool_activity_events",
             "user_text_len",
             "response_len",
             "route",
+            "heartbeat_index",
+            "runner_events",
+            "runner_event_count",
+            "final_response_seen",
+            "idle_since_last_event_ms",
+            "event_index",
+            "since_turn_start_ms",
+            "is_final_response",
+            "content_parts",
+            "model_text_chars",
+            "mcp_is_error",
+            "pid",
+            "phase",
+            "heartbeat_interval_sec",
+            "runner_event_log",
         ):
             if key in row and row[key] is not None:
                 bits.append(f"{key}={row[key]}")
@@ -126,6 +147,8 @@ class SessionRecorder:
             bits.append(f"result_keys={row['result_keys']}")
         if "result_size" in row:
             bits.append(f"result_size={row['result_size']}")
+        if "traceback" in row and row["traceback"]:
+            bits.append(f"traceback={self._truncate(str(row['traceback']), 800)!r}")
         return " | ".join(bits)
 
     def record(self, **fields: Any) -> None:
@@ -147,6 +170,54 @@ PASTE_MODE_HELP = (
 
 def _ensure_session_log_dir() -> None:
     os.makedirs(SESSION_LOG_DIR, exist_ok=True)
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = os.environ.get(name, "").strip()
+    if not raw:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
+def _env_flag(name: str, *, default: bool = False) -> bool:
+    raw = os.environ.get(name, "").strip().lower()
+    if not raw:
+        return default
+    return raw in ("1", "true", "yes", "on")
+
+
+def _adk_runner_event_summary(event: Any) -> dict[str, Any]:
+    """Lightweight, log-safe snapshot of one ADK runner stream event."""
+    calls = event.get_function_calls()
+    responses = event.get_function_responses()
+    call_names = [c.name for c in calls if getattr(c, "name", None)] if calls else []
+    resp_names = [r.name for r in responses if getattr(r, "name", None)] if responses else []
+    n_parts = 0
+    text_chars = 0
+    if event.content and event.content.parts:
+        n_parts = len(event.content.parts)
+        for part in event.content.parts:
+            t = getattr(part, "text", None) or ""
+            if t:
+                text_chars += len(t)
+    is_final = False
+    fn = getattr(event, "is_final_response", None)
+    if callable(fn):
+        try:
+            is_final = bool(fn())
+        except Exception:
+            is_final = False
+    return {
+        "author": getattr(event, "author", "") or "",
+        "is_final_response": is_final,
+        "function_calls": call_names or None,
+        "function_responses": resp_names or None,
+        "content_parts": n_parts,
+        "model_text_chars": text_chars,
+    }
 
 
 def _tool_result_text(result) -> str:
@@ -396,12 +467,15 @@ class GfiberBookmarkPlugin(BasePlugin):
                 payload = json.dumps(result, default=str)
             except TypeError:
                 payload = str(result)
-            self._session_log.record(
-                event="adk_mcp_tool_callback",
-                tool_name=tool_name,
-                result_keys=sorted(result.keys()),
-                result_size=len(payload),
-            )
+            fields: dict[str, Any] = {
+                "event": "adk_mcp_tool_callback",
+                "tool_name": tool_name,
+                "result_keys": sorted(result.keys()),
+                "result_size": len(payload),
+            }
+            if "isError" in result:
+                fields["mcp_is_error"] = result.get("isError")
+            self._session_log.record(**fields)
         return None
 
 
@@ -1297,37 +1371,99 @@ async def _run_adk_turn(
     turn_id: str,
 ) -> str:
     """Runs one user turn through ADK; MCP tool calls are handled by the agent runtime."""
-    session_log.record(event="adk_turn_start", turn_id=turn_id, user_text_len=len(user_text))
+    heartbeat_sec = _env_float("GFIBER_ADK_TURN_HEARTBEAT_SEC", 30.0)
+    log_runner_events = _env_flag("GFIBER_ADK_RUNNER_EVENT_LOG", default=False)
+    session_log.record(
+        event="adk_turn_start",
+        turn_id=turn_id,
+        user_text_len=len(user_text),
+        heartbeat_interval_sec=heartbeat_sec,
+        runner_event_log=log_runner_events,
+        pid=os.getpid(),
+    )
     t0 = time.time()
     new_message = types.Content(role="user", parts=[types.Part(text=user_text)])
     last_text = ""
     activity_events = 0
-    async for event in runner.run_async(
-        user_id=user_id,
-        session_id=session_id,
-        new_message=new_message,
-    ):
-        calls = event.get_function_calls()
-        responses = event.get_function_responses()
-        call_names = [c.name for c in calls if getattr(c, "name", None)]
-        resp_names = [r.name for r in responses if getattr(r, "name", None)]
-        if call_names or resp_names:
-            activity_events += 1
+    turn_state = {"runner_events": 0, "final_seen": False, "last_event_mono": time.monotonic()}
+    stop_hb = asyncio.Event()
+
+    async def _heartbeat_task() -> None:
+        if heartbeat_sec <= 0:
+            return
+        n = 0
+        while not stop_hb.is_set():
+            try:
+                await asyncio.wait_for(stop_hb.wait(), timeout=heartbeat_sec)
+            except asyncio.TimeoutError:
+                pass
+            if stop_hb.is_set():
+                break
+            n += 1
+            idle_ms = int((time.monotonic() - turn_state["last_event_mono"]) * 1000)
             session_log.record(
-                event="adk_tool_activity",
+                event="adk_turn_heartbeat",
                 turn_id=turn_id,
-                author=getattr(event, "author", ""),
-                function_calls=call_names,
-                function_responses=resp_names,
+                heartbeat_index=n,
+                elapsed_ms=int((time.time() - t0) * 1000),
+                runner_events=turn_state["runner_events"],
+                final_response_seen=turn_state["final_seen"],
+                idle_since_last_event_ms=idle_ms,
             )
-        if not event.content or not event.content.parts:
-            continue
-        if event.is_final_response():
-            last_text = "".join(
-                part.text
-                for part in event.content.parts
-                if part.text and not getattr(part, "thought", False)
-            )
+
+    hb: asyncio.Task[None] | None = None
+    if heartbeat_sec > 0:
+        hb = asyncio.create_task(_heartbeat_task())
+
+    final_response_seen = False
+    try:
+        async for event in runner.run_async(
+            user_id=user_id,
+            session_id=session_id,
+            new_message=new_message,
+        ):
+            turn_state["runner_events"] += 1
+            turn_state["last_event_mono"] = time.monotonic()
+            ev_ix = turn_state["runner_events"]
+            if log_runner_events:
+                summ = _adk_runner_event_summary(event)
+                session_log.record(
+                    event="adk_runner_event",
+                    turn_id=turn_id,
+                    event_index=ev_ix,
+                    since_turn_start_ms=int((time.time() - t0) * 1000),
+                    **summ,
+                )
+            calls = event.get_function_calls()
+            responses = event.get_function_responses()
+            call_names = [c.name for c in calls if getattr(c, "name", None)]
+            resp_names = [r.name for r in responses if getattr(r, "name", None)]
+            if call_names or resp_names:
+                activity_events += 1
+                session_log.record(
+                    event="adk_tool_activity",
+                    turn_id=turn_id,
+                    author=getattr(event, "author", ""),
+                    function_calls=call_names,
+                    function_responses=resp_names,
+                )
+            if not event.content or not event.content.parts:
+                continue
+            if event.is_final_response():
+                final_response_seen = True
+                turn_state["final_seen"] = True
+                last_text = "".join(
+                    part.text
+                    for part in event.content.parts
+                    if part.text and not getattr(part, "thought", False)
+                )
+    finally:
+        stop_hb.set()
+        if hb is not None:
+            hb.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await hb
+
     elapsed_ms = int((time.time() - t0) * 1000)
     last_text = last_text.strip() or "No model text returned."
     session_log.record(
@@ -1336,6 +1472,8 @@ async def _run_adk_turn(
         duration_ms=elapsed_ms,
         adk_tool_activity_events=activity_events,
         response_len=len(last_text),
+        final_response_seen=final_response_seen,
+        runner_event_count=turn_state["runner_events"],
     )
     return last_text
 
@@ -1413,6 +1551,7 @@ async def run_intelligent_agent() -> None:
             model_id=MODEL_ID,
             server_path=SERVER_PATH,
             server_version=SERVER_VERSION,
+            pid=os.getpid(),
         )
 
         deterministic_state: dict = {}
@@ -1543,9 +1682,15 @@ async def run_intelligent_agent() -> None:
                     event="turn_error",
                     turn_id=turn_id if "turn_id" in locals() else None,
                     error=str(exc),
+                    exc_type=type(exc).__name__,
+                    traceback=traceback.format_exc(),
                 )
                 print(f"\n[!] Error: {exc}")
     finally:
+        try:
+            session_log.record(event="client_shutdown_phase", phase="before_mcp_manager_close")
+        except Exception:
+            pass
         await mcp_manager.close()
 
 
