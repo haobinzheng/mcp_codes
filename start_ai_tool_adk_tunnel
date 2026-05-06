@@ -1,37 +1,25 @@
 #!/usr/bin/env bash
 # SSH local port forward: use your Mac browser while ADK Web runs on Linux (no GUI needed there).
-# Same pattern as start_ai_tool_web_tunnel; default ports match start_ai_tool_adk (8787).
+# Remote target defaults match start_ai_tool_web_tunnel (edit SSH_USER / SSH_HOST or pass user@host).
+# Default ports match start_ai_tool_adk (8787).
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=start_ai_tool_logging.sh
 source "${SCRIPT_DIR}/start_ai_tool_logging.sh"
 
+# Same pattern and defaults as start_ai_tool_web_tunnel (override with SSH_USER, SSH_HOST, REMOTE_SSH_TARGET, or $1).
+SSH_USER="${SSH_USER:-mikezh}"
+SSH_HOST="${SSH_HOST:-mikezh.c.googlers.com}"
+
 if [[ $# -ge 1 ]]; then
   REMOTE_TARGET="$1"
-elif [[ -n "${REMOTE_SSH_TARGET:-}" ]]; then
-  REMOTE_TARGET="${REMOTE_SSH_TARGET}"
 else
-  cat <<'EOF' >&2
-Usage: ./start_ai_tool_adk_tunnel user@linux-host.example
+  REMOTE_TARGET="${REMOTE_SSH_TARGET:-${SSH_USER}@${SSH_HOST}}"
+fi
 
-Mac (this machine): forwards your browser to ADK Web on the Linux host.
-
-  1) On the Linux server (repo checkout):
-       export GEMINI_API_KEY=...
-       ./start_ai_tool_adk
-     (Listens on 127.0.0.1:8787 by default; see ADK_WEB_HOST / ADK_WEB_PORT.)
-
-  2) On this Mac, run (leave the terminal open):
-       ./start_ai_tool_adk_tunnel user@linux-host.example
-
-  3) Open in Safari/Chrome on the Mac:
-       http://127.0.0.1:8787
-     Pick app **gfiber_network** in the ADK Web UI.
-
-Overrides: REMOTE_SSH_TARGET=user@host  LOCAL_PORT=8787  REMOTE_PORT=8787  REMOTE_HOST=127.0.0.1
-Optional: START_AI_TOOL_TUNNEL_OPEN_BROWSER=1  → run \`open\` on macOS after the tunnel starts.
-EOF
+if [[ "${REMOTE_TARGET}" == "your-ssh-user@your-remote-host" ]]; then
+  echo "Edit SSH_USER and SSH_HOST in start_ai_tool_adk_tunnel (same defaults as start_ai_tool_web_tunnel)." >&2
   exit 1
 fi
 
