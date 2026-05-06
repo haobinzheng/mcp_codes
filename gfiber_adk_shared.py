@@ -12,8 +12,8 @@ from __future__ import annotations
 
 import os
 
-# Default when GEMINI_MODEL_ID is unset.
-DEFAULT_GEMINI_MODEL_ID = "gemini-3-pro-preview"
+# Default when GEMINI_MODEL_ID is unset (Gemini 2.5 Pro; stable for ADK + ADK Web).
+DEFAULT_GEMINI_MODEL_ID = "gemini-2.5-pro"
 MODEL_ID = os.environ.get("GEMINI_MODEL_ID", DEFAULT_GEMINI_MODEL_ID)
 
 SYSTEM_INSTRUCTION = """
