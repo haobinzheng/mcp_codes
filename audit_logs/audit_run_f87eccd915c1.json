@@ -1,0 +1,60 @@
+{
+  "commands": [
+    "show version"
+  ],
+  "completed_at": 1778088917.0601704,
+  "completed_tasks": 1,
+  "created_at": 1778088909.9582589,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "agg01.atl103"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_f87eccd915c1.json",
+  "results": {
+    "agg01.atl103": {
+      "show version": {
+        "command": "show version",
+        "completed_at": 1778088917.058512,
+        "components": [],
+        "duration_ms": 7096,
+        "exit_code": 0,
+        "facts": {
+          "junos_version": "21.4R1-S2.3"
+        },
+        "filtered": "Model: qfx5100-96s-8q\nJunos: 21.4R1-S2.3",
+        "started_at": 1778088909.9616642,
+        "stderr": "",
+        "stdout": "fpc0:\n--------------------------------------------------------------------------\nHostname: agg01.atl103\nModel: qfx5100-96s-8q\nJunos: 21.4R1-S2.3\nJUNOS Base OS boot [21.4R1-S2.3]\nJUNOS Base OS Software Suite [21.4R1-S2.3]\nJUNOS Crypto Software Suite [21.4R1-S2.3]\nJUNOS Crypto Software Suite [21.4R1-S2.3]\nJUNOS Online Documentation [21.4R1-S2.3]\nJUNOS Kernel Software Suite [21.4R1-S2.3]\nJUNOS Packet Forwarding Engine Support (qfx-ex-x86-32) [21.4R1-S2.3]\nJUNOS Phone-Home Software Suite [21.4R1-S2.3]\nJUNOS Routing Software Suite [21.4R1-S2.3]\nJUNOS jsd [i386-21.4R1-S2.3-jet-1]\nJUNOS SDN Software Suite [21.4R1-S2.3]\nJUNOS Enterprise Software Suite [21.4R1-S2.3]\nJUNOS Openconfig [21.4R1-S2.3]\nJUNOS Web Management Platform Package [21.4R1-S2.3]\nJUNOS py-base-i386 [21.4R1-S2.3]\nJUNOS py-extensions-i386 [21.4R1-S2.3]\nJUNOS Host Software [21.4R1-S2.3]",
+        "structured_data_available": true
+      }
+    }
+  },
+  "run_id": "f87eccd915c1",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "junos_versions": {
+        "21.4R1-S2.3": [
+          "agg01.atl103"
+        ]
+      },
+      "line_cards": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "f87eccd915c1",
+    "state": "completed",
+    "success_hosts": [
+      "agg01.atl103"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}
