@@ -538,9 +538,17 @@ def _rancid_sample_paths_secure(canonical_family: str) -> tuple[str, str] | None
 
 
 def _rancid_gather_hostnames(
-    mapping: dict[str, str], canonical_family: str, depot_path: str
+    mapping: dict[str, str],
+    canonical_family: str,
+    depot_path: str,
+    *,
+    allow_sample_fallback: bool = True,
 ) -> tuple[list[str], str, str]:
-    """Return (hostnames, inventory_path_used, source) where source is depot, sample, or none."""
+    """Return (hostnames, inventory_path_used, source).
+
+    ``source`` is ``depot`` (live ``os.listdir``), ``sample`` (repo sample file), ``none`` (no data),
+    or ``depot_unavailable`` when the depot cannot be read and sample fallback is disabled.
+    """
     allowed = _rancid_allowed_depot_realpaths(mapping)
     try:
         depot_real = os.path.realpath(depot_path)
@@ -548,6 +556,9 @@ def _rancid_gather_hostnames(
         depot_real = ""
     if depot_real and os.path.isdir(depot_path) and depot_real in allowed:
         return _rancid_list_depot_hostnames(depot_path), depot_path, "depot"
+
+    if not allow_sample_fallback:
+        return [], depot_path, "depot_unavailable"
 
     _rancid_ensure_sample_file(canonical_family)
     secured = _rancid_sample_paths_secure(canonical_family)
@@ -579,11 +590,21 @@ def _rancid_summarize_function_categories(
     cap = max(0, int(max_samples_per_category))
     samples = {c: buckets[c][:cap] if cap else [] for c in categories}
     counts = {c: len(buckets[c]) for c in categories}
+    truncated_flags = {
+        c: (cap > 0 and len(buckets[c]) > cap) for c in categories
+    }
     return {
         "function_categories": categories,
         "function_category_counts": counts,
         "sample_hostnames_per_category": samples,
+        "sample_hostnames_truncated": truncated_flags,
+        "max_samples_per_category": cap,
         "category_derivation": "stem before first dot; letters/hyphens before trailing digits on stem (e.g. dr01 -> dr)",
+        "note": (
+            "function_category_counts are full totals per category. "
+            "sample_hostnames_per_category lists at most max_samples_per_category hosts each; "
+            "see sample_hostnames_truncated when the sample list is shorter than the count."
+        ),
     }
 
 
@@ -1751,18 +1772,17 @@ def list_rancid_devices(
     max_samples_per_category: int = 5,
 ) -> str:
     """
-    Rancid device inventory (paths from repo ``rancid_folders``; sample fallback if depot missing).
+    Rancid device inventory (paths from repo ``rancid_folders``).
 
     **Two modes** (do not combine with ``hostname_prefix`` when listing categories—prefix is ignored then):
 
-    1. ``list_function_categories=True`` — scan the full listing and return distinct function-style
-       codes derived from hostnames (e.g. ``cr``, ``mar``, ``dr``, ``sar``), counts per code, and a
-       few sample hostnames per code. No hardcoded map to English role names.
+    1. ``list_function_categories=True`` — **live only**: ``os.listdir`` on the depot directory (same
+       idea as ``ls``). Categories and counts are derived from those filenames. If the depot path is
+       missing or unreadable, returns an error—**no** ``rancid_samples`` fallback.
 
-    2. ``list_function_categories=False`` — return device names; if ``hostname_prefix`` is set,
-       filter like ``ls | grep <prefix>`` (substring, case-insensitive), e.g. all ``dr`` lines.
-
-    If the depot path is missing locally, uses ``rancid_samples/<family>/ls_output_sample.txt``.
+    2. ``list_function_categories=False`` — return device names from depot when available; if the
+       depot is missing locally, may fall back to ``rancid_samples/<family>/ls_output_sample.txt``.
+       Optional ``hostname_prefix`` filters like ``ls | grep <prefix>`` (substring, case-insensitive).
     """
     mapping = _parse_rancid_folders_file()
     if not mapping:
@@ -1783,7 +1803,19 @@ def list_rancid_devices(
         )
 
     depot_path = mapping[canonical]
-    hostnames, inventory_path, source = _rancid_gather_hostnames(mapping, canonical, depot_path)
+    allow_sample = not list_function_categories
+    hostnames, inventory_path, source = _rancid_gather_hostnames(
+        mapping, canonical, depot_path, allow_sample_fallback=allow_sample
+    )
+    if source == "depot_unavailable":
+        return _json(
+            {
+                "error": "Live Rancid directory not available; category listing requires a readable depot path.",
+                "device_family": canonical,
+                "configured_depot_path": depot_path,
+                "hint": "Run the MCP server where rancid_folders paths exist (real-time os.listdir). Sample files are not used for list_function_categories.",
+            }
+        )
     if source == "none":
         return _json(
             {
@@ -1807,6 +1839,7 @@ def list_rancid_devices(
             hostnames, max_samples_per_category=max_samples_per_category
         )
         base["mode"] = "function_categories"
+        base["listing"] = "live_depot_os_listdir"
         base.update(summary)
         if hostname_prefix.strip():
             base["hostname_prefix_ignored"] = hostname_prefix.strip()
