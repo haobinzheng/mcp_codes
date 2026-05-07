@@ -608,13 +608,70 @@ def _rancid_summarize_function_categories(
     }
 
 
-def _rancid_depot_accessible(mapping: dict[str, str], depot_path: str) -> bool:
+def _rancid_depot_access_details(mapping: dict[str, str], depot_path: str) -> dict[str, Any]:
+    """Return whether a configured Rancid depot root is usable, with stable ``reason`` codes for clients."""
+    result: dict[str, Any] = {"ok": False, "configured_depot_path": depot_path}
+    path = (depot_path or "").strip()
+    if not path:
+        result["reason"] = "empty_path"
+        result["hint"] = "The juniper entry in rancid_folders must be a non-empty directory path."
+        return result
+
     allowed = _rancid_allowed_depot_realpaths(mapping)
     try:
-        depot_real = os.path.realpath(depot_path)
-    except OSError:
-        return False
-    return bool(depot_real and os.path.isdir(depot_path) and depot_real in allowed)
+        depot_real = os.path.realpath(path)
+    except OSError as exc:
+        result["reason"] = "realpath_failed"
+        result["os_error"] = str(exc)
+        result["hint"] = "Could not resolve the configured path (parent permissions or I/O)."
+        return result
+
+    result["depot_realpath"] = depot_real
+    if depot_real not in allowed:
+        result["reason"] = "not_in_allowlist"
+        result["hint"] = (
+            "After realpath(), this directory is not one of the roots declared in rancid_folders; "
+            "check for typos or unexpected symlinks."
+        )
+        return result
+
+    if not os.path.lexists(path):
+        result["reason"] = "path_missing"
+        result["hint"] = (
+            "The path is absent on the host running the MCP server (default rancid_folders often "
+            "targets an internal checkout). This is not an LLM permission issue: point "
+            "RANCID_FOLDERS_FILE at a local mapping file whose juniper: line references a directory "
+            "that exists here, or run the client on a host that mounts the real Rancid tree."
+        )
+        return result
+
+    if not os.path.isdir(path):
+        result["reason"] = "not_a_directory"
+        result["hint"] = "Expected a directory of per-host Rancid files, not a single file."
+        return result
+
+    try:
+        os.listdir(path)
+    except PermissionError as exc:
+        result["reason"] = "permission_denied"
+        result["os_error"] = str(exc)
+        result["hint"] = (
+            "The OS denied listing this directory; fix filesystem permissions or run as a user "
+            "with read and execute on the depot directory."
+        )
+        return result
+    except OSError as exc:
+        result["reason"] = "listdir_failed"
+        result["os_error"] = str(exc)
+        result["hint"] = "Could not list directory contents; see os_error."
+        return result
+
+    result["ok"] = True
+    return result
+
+
+def _rancid_depot_accessible(mapping: dict[str, str], depot_path: str) -> bool:
+    return bool(_rancid_depot_access_details(mapping, depot_path).get("ok"))
 
 
 def _parse_junos_model_and_release_from_config(text: str) -> dict[str, Any]:
@@ -1862,7 +1919,8 @@ def list_rancid_devices(
        missing or unreadable, returns an error—**no** ``rancid_samples`` fallback.
 
     2. ``list_function_categories=False`` — return device names from depot when available; if the
-       depot is missing locally, may fall back to ``rancid_samples/<family>/ls_output_sample.txt``.
+       live depot path is missing locally, may fall back to ``rancid_samples/<family>/ls_output_sample.txt``.
+       Check the JSON ``source`` field: ``depot`` means live ``os.listdir``; ``sample`` means the repo sample list only.
        Optional ``hostname_prefix`` filters like ``ls | grep <prefix>`` (substring, case-insensitive).
     """
     mapping = _parse_rancid_folders_file()
@@ -1973,6 +2031,7 @@ def list_rancid_juniper_platform_models(
     sorted depot list until the budget is exhausted—raise it if matches may lie beyond the first chunk.
 
     Requires a readable **depot** directory from ``rancid_folders`` (no sample-file fallback).
+    On failure, JSON includes ``depot_access_reason`` (e.g. ``path_missing``, ``permission_denied``).
 
     - ``hostname_prefix``: optional ``ls | grep`` style filter on the hostname/filename before scanning.
     - ``model_substring``: optional case-insensitive substring match on the parsed **model** field.
@@ -1994,14 +2053,29 @@ def list_rancid_juniper_platform_models(
         return _json({"error": "juniper family missing from rancid_folders", "known_families": sorted(mapping.keys())})
 
     depot_path = mapping[canonical]
-    if not _rancid_depot_accessible(mapping, depot_path):
-        return _json(
-            {
-                "error": "Juniper Rancid depot directory not readable; platform scan requires live depot access.",
-                "configured_depot_path": depot_path,
-                "hint": "Run MCP where rancid_folders paths exist and are readable.",
-            }
-        )
+    # Same live-depot rule as list_rancid_devices, but **never** sample fallback: hostname-only
+    # listing can return ``source: "sample"`` when the configured path is absent, which is easy
+    # to mistake for a working depot—this tool must open per-host files under the real directory.
+    probe_source = _rancid_gather_hostnames(
+        mapping, canonical, depot_path, allow_sample_fallback=False
+    )[2]
+    if probe_source != "depot":
+        access = _rancid_depot_access_details(mapping, depot_path)
+        err: dict[str, Any] = {
+            "error": "Live Juniper Rancid depot is not reachable for a platform scan (per-host file reads).",
+            "depot_access_reason": access.get("reason", "unknown"),
+            "hostname_list_probe_source": probe_source,
+            "configured_depot_path": depot_path,
+            "hint": access.get("hint", ""),
+            "note": (
+                "If ``list_rancid_devices`` showed CR routers but this tool fails, check that JSON's "
+                "``source`` field: ``sample`` means ``rancid_samples/`` only, not your live Rancid tree."
+            ),
+        }
+        for key in ("depot_realpath", "os_error"):
+            if key in access:
+                err[key] = access[key]
+        return _json(err)
 
     host_file_pairs: list[tuple[str, str]] = []
     try:
@@ -2030,12 +2104,12 @@ def list_rancid_juniper_platform_models(
     files_opened = 0
     stopped_early = False
 
-    for hostname, entry in sorted(host_file_pairs, key=lambda item: item[0]):
+    for hostname, filepath in sorted(host_file_pairs, key=lambda item: item[0]):
         if files_opened >= cap_reads:
             stopped_early = total_depot_candidates > files_opened
             break
         files_opened += 1
-        text, truncated, err = _rancid_read_file_for_model_scan(entry, per_cap)
+        text, truncated, err = _rancid_read_file_for_model_scan(filepath, per_cap)
         if err:
             errors.append({"hostname": hostname, "error": err})
             rows.append(
@@ -2075,6 +2149,8 @@ def list_rancid_juniper_platform_models(
     unique_models = sorted(model_histogram.keys(), key=lambda k: (-model_histogram[k], k.lower()))
     payload: dict[str, Any] = {
         "device_family": "juniper",
+        "hostname_inventory_source": "depot",
+        "inventory_path": depot_path,
         "configured_depot_path": depot_path,
         "hostname_prefix": hostname_prefix.strip(),
         "model_substring": model_substring.strip(),
