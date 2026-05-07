@@ -608,6 +608,59 @@ def _rancid_summarize_function_categories(
     }
 
 
+def _rancid_depot_accessible(mapping: dict[str, str], depot_path: str) -> bool:
+    allowed = _rancid_allowed_depot_realpaths(mapping)
+    try:
+        depot_real = os.path.realpath(depot_path)
+    except OSError:
+        return False
+    return bool(depot_real and os.path.isdir(depot_path) and depot_real in allowed)
+
+
+def _parse_junos_model_and_release_from_config(text: str) -> dict[str, Any]:
+    """Best-effort parse of Junos ``show version`` / ``show version detail`` style lines in Rancid text."""
+    model: str | None = None
+    junos: str | None = None
+    for pattern in (
+        r"(?im)^\s*#?\s*Model:\s*(.+?)\s*$",
+        r"(?im)^\s*model\s*:\s*(.+?)\s*$",
+    ):
+        m = re.search(pattern, text)
+        if m:
+            model = m.group(1).strip()
+            break
+    for pattern in (
+        r"(?im)^\s*Junos:\s*(.+?)\s*$",
+        r"(?im)^\s*JUNOS\s+Software\s+Release\s+\[([^\]]+)\]",
+        r"(?i)JUNOS\s+Base\s+OS\s+Software\s+\[([^\]]+)\]",
+    ):
+        m = re.search(pattern, text)
+        if m:
+            junos = m.group(1).strip()
+            break
+    return {"model": model, "junos": junos}
+
+
+def _rancid_read_file_for_model_scan(path: str, max_bytes: int) -> tuple[str, bool, str | None]:
+    """Return (text, truncated, error)."""
+    cap = max(4096, min(int(max_bytes), 64_000_000))
+    try:
+        size = os.path.getsize(path)
+    except OSError as exc:
+        return "", False, str(exc)
+    truncated = size > cap
+    try:
+        with open(path, "rb") as handle:
+            blob = handle.read(cap)
+    except OSError as exc:
+        return "", False, str(exc)
+    try:
+        text = blob.decode("utf-8", errors="replace")
+    except Exception as exc:
+        return "", truncated, str(exc)
+    return text, truncated, None
+
+
 def _iter_results(
     run_data: dict[str, Any], command: str = "", hosts: set[str] | None = None
 ) -> list[tuple[str, str, dict[str, Any]]]:
@@ -1764,6 +1817,34 @@ def get_audit_log_host_details(run_id: str, hostname: str, include_raw: bool = F
 
 
 @mcp.tool()
+def list_rancid_device_families() -> str:
+    """
+    List Rancid **device family** keys from the repo ``rancid_folders`` file (e.g. juniper, cisco, bng).
+
+    Use when the user asks how many / which device families exist for Rancid inventories, before
+    calling ``list_rancid_devices`` with a specific ``device_family``.
+    """
+    mapping = _parse_rancid_folders_file()
+    if not mapping:
+        return _json(
+            {
+                "error": "No rancid_folders mapping loaded",
+                "hint": os.environ.get(
+                    "RANCID_FOLDERS_FILE", os.path.join(_REPO_ROOT, "rancid_folders")
+                ),
+            }
+        )
+    families = sorted(mapping.keys())
+    return _json(
+        {
+            "families": families,
+            "family_count": len(families),
+            "paths_by_family": dict(sorted(mapping.items())),
+        }
+    )
+
+
+@mcp.tool()
 def list_rancid_devices(
     device_family: str = "juniper",
     list_function_categories: bool = False,
@@ -1864,6 +1945,157 @@ def list_rancid_devices(
         payload["truncated"] = True
         payload["max_devices"] = cap
         payload["note"] = f"Returned first {cap} names after filter; increase max_devices if needed."
+    return _json(payload)
+
+
+@mcp.tool()
+def list_rancid_juniper_platform_models(
+    hostname_prefix: str = "",
+    model_substring: str = "",
+    max_files: int = 5000,
+    max_read_bytes_per_file: int = 0,
+) -> str:
+    """
+    For **Juniper** Rancid configs: read each host file under the live ``juniper`` depot path and
+    extract platform **model** and **Junos/OS release** from ``show version`` / ``show version detail``
+    style lines (e.g. ``# Model: ex4200-48t``, ``Junos: 22.2R3-S1.9``).
+
+    Answers questions like **all CR devices' OS version** from Rancid: set ``hostname_prefix="cr"``
+    (substring match on hostnames such as ``cr01....``); each row's ``junos`` field is the parsed OS
+    release from saved config text—**not** a live ``start_audit_run`` (use audits when the user needs
+    fresh CLI output).
+
+    For **all MX960 (or EX4200-48t, etc.) OS versions** from Rancid, set ``model_substring`` to a
+    substring of the parsed ``Model:`` line (case-insensitive), e.g. ``mx960`` or ``ex4200-48t``;
+    only hosts whose model contains that text are returned. Hostname and model filters combine with AND.
+
+    ``max_files`` is the maximum number of **files opened** (read budget) per call, scanning the
+    sorted depot list until the budget is exhausted—raise it if matches may lie beyond the first chunk.
+
+    Requires a readable **depot** directory from ``rancid_folders`` (no sample-file fallback).
+
+    - ``hostname_prefix``: optional ``ls | grep`` style filter on the hostname/filename before scanning.
+    - ``model_substring``: optional case-insensitive substring match on the parsed **model** field.
+    - ``max_files``: max host **files to open** per call (default 5000, hard cap 50000).
+    - ``max_read_bytes_per_file``: per-file read cap (default from env ``RANCID_MODEL_SCAN_MAX_BYTES`` or 8 MiB).
+    """
+    mapping = _parse_rancid_folders_file()
+    if not mapping:
+        return _json(
+            {
+                "error": "No rancid_folders mapping loaded",
+                "hint": os.environ.get(
+                    "RANCID_FOLDERS_FILE", os.path.join(_REPO_ROOT, "rancid_folders")
+                ),
+            }
+        )
+    canonical = _rancid_resolve_family_key(mapping, "juniper")
+    if not canonical:
+        return _json({"error": "juniper family missing from rancid_folders", "known_families": sorted(mapping.keys())})
+
+    depot_path = mapping[canonical]
+    if not _rancid_depot_accessible(mapping, depot_path):
+        return _json(
+            {
+                "error": "Juniper Rancid depot directory not readable; platform scan requires live depot access.",
+                "configured_depot_path": depot_path,
+                "hint": "Run MCP where rancid_folders paths exist and are readable.",
+            }
+        )
+
+    host_file_pairs: list[tuple[str, str]] = []
+    try:
+        for entry in sorted(os.listdir(depot_path)):
+            path = os.path.join(depot_path, entry)
+            if not _rancid_is_probable_host_file(path) or not os.path.isfile(path):
+                continue
+            host_file_pairs.append((_rancid_hostname_from_entry(entry), path))
+    except OSError as exc:
+        return _json({"error": f"Cannot list juniper depot: {exc}", "configured_depot_path": depot_path})
+
+    needle = hostname_prefix.strip().lower()
+    if needle:
+        host_file_pairs = [(h, p) for h, p in host_file_pairs if needle in h.lower()]
+
+    total_depot_candidates = len(host_file_pairs)
+    cap_reads = max(1, min(int(max_files), 50_000))
+    model_needle = model_substring.strip().lower()
+
+    default_bytes = int(os.environ.get("RANCID_MODEL_SCAN_MAX_BYTES", str(8 * 1024 * 1024)))
+    per_cap = int(max_read_bytes_per_file) if int(max_read_bytes_per_file) > 0 else default_bytes
+
+    rows: list[dict[str, Any]] = []
+    errors: list[dict[str, str]] = []
+    model_histogram: dict[str, int] = {}
+    files_opened = 0
+    stopped_early = False
+
+    for hostname, entry in sorted(host_file_pairs, key=lambda item: item[0]):
+        if files_opened >= cap_reads:
+            stopped_early = total_depot_candidates > files_opened
+            break
+        files_opened += 1
+        text, truncated, err = _rancid_read_file_for_model_scan(entry, per_cap)
+        if err:
+            errors.append({"hostname": hostname, "error": err})
+            rows.append(
+                {
+                    "hostname": hostname,
+                    "model": None,
+                    "junos": None,
+                    "file_read_truncated": False,
+                    "parse_note": f"read_error: {err}",
+                }
+            )
+            continue
+        parsed = _parse_junos_model_and_release_from_config(text)
+        model = parsed["model"]
+        junos = parsed["junos"]
+        note_parts: list[str] = []
+        if truncated:
+            note_parts.append(f"read_truncated_after_{per_cap}_bytes")
+        if not model and not junos:
+            note_parts.append("no_model_or_junos_line_found")
+        if model_needle:
+            if not model or model_needle not in model.lower():
+                continue
+        rows.append(
+            {
+                "hostname": hostname,
+                "model": model,
+                "junos": junos,
+                "file_read_truncated": truncated,
+                "parse_note": "; ".join(note_parts) if note_parts else "",
+            }
+        )
+        if model:
+            mk = model.strip()
+            model_histogram[mk] = model_histogram.get(mk, 0) + 1
+
+    unique_models = sorted(model_histogram.keys(), key=lambda k: (-model_histogram[k], k.lower()))
+    payload: dict[str, Any] = {
+        "device_family": "juniper",
+        "configured_depot_path": depot_path,
+        "hostname_prefix": hostname_prefix.strip(),
+        "model_substring": model_substring.strip(),
+        "max_reads_budget": cap_reads,
+        "files_opened": files_opened,
+        "depot_host_candidates_after_hostname_filter": total_depot_candidates,
+        "stopped_early_after_read_budget": stopped_early,
+        "max_read_bytes_per_file": per_cap,
+        "matching_host_count": len(rows),
+        "platforms": rows,
+        "unique_model_histogram": {m: model_histogram[m] for m in unique_models},
+        "read_errors": errors,
+        "note": (
+            "Field ``junos`` on each row is the OS/Junos release parsed from Rancid file contents "
+            "(show-version style lines), not a live device poll."
+        ),
+    }
+    if stopped_early:
+        payload["budget_note"] = (
+            "Read budget exhausted before every depot file was opened; raise max_files to search further."
+        )
     return _json(payload)
 
 
