@@ -183,10 +183,46 @@ def _parse_commands(commands: str) -> list[str]:
     return parsed
 
 
-def _filter_output(output: str) -> str:
-    markers = ("RE-S", "SCB", "MPC", "FPC", "Chassis", "Model", "Junos:")
+def _filter_output(output: str, command: str = "") -> str:
+    """Keep hardware-relevant lines; PTX/JNP10K output uses PSM/SIB/FTC/etc., not only MX-style markers."""
+    cmd = command.lower()
+    if "show chassis hardware" in cmd:
+        markers = (
+            "Chassis",
+            "Model",
+            "Junos:",
+            "RE-S",
+            "SCB",
+            "MPC",
+            "FPC",
+            "Routing Engine",
+            "CB ",
+            "PSM",
+            "PDM",
+            "SIB",
+            "FTC",
+            "Fan Tray",
+            "Midplane",
+            "FPM ",
+            "MEZZ",
+            "PIC ",
+            "Xcvr",
+        )
+    else:
+        markers = ("RE-S", "SCB", "MPC", "FPC", "Chassis", "Model", "Junos:")
     lines = [line for line in output.splitlines() if any(marker in line for marker in markers)]
     return "\n".join(lines).strip()
+
+
+def _hw_table_tail(columns: list[str]) -> tuple[str, str, str]:
+    """Part number, serial, description from a typical ``show chassis hardware`` row."""
+    if len(columns) >= 5:
+        return columns[-3], columns[-2], columns[-1]
+    if len(columns) == 4:
+        return "", columns[-2], columns[-1]
+    if len(columns) >= 2:
+        return "", "", columns[-1]
+    return "", "", ""
 
 
 def _extract_components(command: str, stdout: str, filtered: str) -> list[dict[str, Any]]:
@@ -221,21 +257,51 @@ def _extract_components(command: str, stdout: str, filtered: str) -> list[dict[s
         elif stripped.startswith("Routing Engine"):
             component_type = "routing_engine"
             if len(columns) >= 4:
-                part_number = columns[-3]
-                serial_number = columns[-2]
-                description = columns[-1]
+                part_number, serial_number, description = _hw_table_tail(columns)
         elif stripped.startswith("CB "):
             component_type = "control_board"
             if len(columns) >= 5:
                 part_number = columns[-3]
                 serial_number = columns[-2]
                 description = columns[-1]
+            elif len(columns) >= 4:
+                part_number, serial_number, description = _hw_table_tail(columns)
         elif stripped.startswith("FPC "):
             component_type = "line_card"
             if len(columns) >= 5:
                 part_number = columns[-3]
                 serial_number = columns[-2]
                 description = columns[-1]
+            elif len(columns) >= 4:
+                part_number, serial_number, description = _hw_table_tail(columns)
+        elif re.match(r"^PSM\s+\d+", stripped):
+            component_type = "power_supply"
+            if len(columns) >= 4:
+                part_number, serial_number, description = _hw_table_tail(columns)
+        elif re.match(r"^SIB\s+\d+", stripped):
+            component_type = "fabric"
+            if len(columns) >= 4:
+                part_number, serial_number, description = _hw_table_tail(columns)
+        elif re.match(r"^FTC\s+\d+", stripped):
+            component_type = "fan_controller"
+            if len(columns) >= 4:
+                part_number, serial_number, description = _hw_table_tail(columns)
+        elif re.match(r"^Fan Tray\s+\d+", stripped):
+            component_type = "fan_tray"
+            if len(columns) >= 4:
+                part_number, serial_number, description = _hw_table_tail(columns)
+        elif stripped.startswith("Midplane"):
+            component_type = "midplane"
+            if len(columns) >= 4:
+                part_number, serial_number, description = _hw_table_tail(columns)
+        elif re.match(r"^FPM\s+\d+", stripped) or stripped.startswith("FPM "):
+            component_type = "front_panel"
+            if len(columns) >= 4:
+                part_number, serial_number, description = _hw_table_tail(columns)
+        elif re.match(r"^MEZZ\s+\d+", stripped):
+            component_type = "mezzanine"
+            if len(columns) >= 4:
+                part_number, serial_number, description = _hw_table_tail(columns)
 
         if component_type and description:
             components.append(
@@ -260,6 +326,8 @@ def _extract_facts(command: str, stdout: str, filtered: str) -> dict[str, Any]:
         chassis_models = []
         routing_engines = []
         line_cards = []
+        fabric_modules: list[str] = []
+        power_modules: list[str] = []
 
         for line in text.splitlines():
             stripped = line.strip()
@@ -275,6 +343,14 @@ def _extract_facts(command: str, stdout: str, filtered: str) -> dict[str, Any]:
                 parts = stripped.split()
                 if len(parts) >= 2:
                     line_cards.append(" ".join(parts[5:]) if len(parts) > 5 else stripped)
+            elif re.match(r"^SIB\s+\d+", stripped):
+                cols = [p.strip() for p in re.split(r"\s{2,}", stripped) if p.strip()]
+                if cols:
+                    fabric_modules.append(cols[-1])
+            elif re.match(r"^PSM\s+\d+", stripped):
+                cols = [p.strip() for p in re.split(r"\s{2,}", stripped) if p.strip()]
+                if cols:
+                    power_modules.append(cols[-1])
 
         if chassis_models:
             facts["chassis_models"] = sorted(set(chassis_models))
@@ -282,6 +358,10 @@ def _extract_facts(command: str, stdout: str, filtered: str) -> dict[str, Any]:
             facts["routing_engines"] = sorted(set(routing_engines))
         if line_cards:
             facts["line_cards"] = sorted(set(line_cards))
+        if fabric_modules:
+            facts["fabric_modules"] = sorted(set(fabric_modules))
+        if power_modules:
+            facts["power_modules"] = sorted(set(power_modules))
 
     if "show version" in cmd:
         match = re.search(r"Junos:\s+([^\s]+)", stdout)
@@ -919,7 +999,7 @@ async def _run_single_command(
             stdout, stderr = await proc.communicate()
             result.stdout = stdout.decode(errors="replace").strip()
             result.stderr = stderr.decode(errors="replace").strip()
-            result.filtered = _filter_output(result.stdout)
+            result.filtered = _filter_output(result.stdout, command=command)
             result.exit_code = proc.returncode
             result.duration_ms = int((time.time() - start) * 1000)
             result.completed_at = time.time()
@@ -951,6 +1031,8 @@ def _build_summary(run: AuditRun) -> dict[str, Any]:
             "routing_engines": {},
             "junos_versions": {},
             "line_cards": {},
+            "fabric_modules": {},
+            "power_modules": {},
         },
     }
 
@@ -983,6 +1065,10 @@ def _build_summary(run: AuditRun) -> dict[str, Any]:
                 summary["facts"]["junos_versions"].setdefault(junos_version, []).append(hostname)
             for card in result.facts.get("line_cards", []):
                 summary["facts"]["line_cards"].setdefault(card, []).append(hostname)
+            for mod in result.facts.get("fabric_modules", []):
+                summary["facts"]["fabric_modules"].setdefault(mod, []).append(hostname)
+            for mod in result.facts.get("power_modules", []):
+                summary["facts"]["power_modules"].setdefault(mod, []).append(hostname)
 
         if host_succeeded:
             success_hosts.add(hostname)
@@ -1031,6 +1117,31 @@ async def _execute_run(run_id: str) -> None:
         _persist_run_snapshot(run)
 
 
+async def _start_audit_run_async(
+    hosts: list[str],
+    parsed_commands: list[str],
+    *,
+    audit_profile: str | None = None,
+) -> str:
+    run_id = uuid.uuid4().hex[:12]
+    run = AuditRun(
+        run_id=run_id,
+        created_at=time.time(),
+        hosts=hosts,
+        commands=parsed_commands,
+        total_tasks=len(hosts) * len(parsed_commands),
+        log_file=os.path.join(LOG_DIR, f"audit_run_{run_id}.json"),
+    )
+    RUNS[run_id] = run
+    _persist_run_snapshot(run)
+
+    asyncio.create_task(_execute_run(run_id))
+    payload: dict[str, Any] = dict(_run_to_dict(run))
+    if audit_profile:
+        payload["audit_profile"] = audit_profile
+    return _json(payload)
+
+
 @mcp.tool()
 async def start_audit_run(devices: str, commands: str) -> str:
     """
@@ -1046,20 +1157,26 @@ async def start_audit_run(devices: str, commands: str) -> str:
     if not parsed_commands:
         return _json({"error": "No commands were provided."})
 
-    run_id = uuid.uuid4().hex[:12]
-    run = AuditRun(
-        run_id=run_id,
-        created_at=time.time(),
-        hosts=hosts,
-        commands=parsed_commands,
-        total_tasks=len(hosts) * len(parsed_commands),
-        log_file=os.path.join(LOG_DIR, f"audit_run_{run_id}.json"),
-    )
-    RUNS[run_id] = run
-    _persist_run_snapshot(run)
+    return await _start_audit_run_async(hosts, parsed_commands)
 
-    asyncio.create_task(_execute_run(run_id))
-    return _json(_run_to_dict(run))
+
+@mcp.tool()
+async def start_ptx_chassis_hardware_audit(devices: str) -> str:
+    """
+    Start a **PTX / JNP10K-class** chassis hardware audit: runs ``show chassis hardware`` on each host
+    via gnetch. Uses PTX-aware output filtering (PSM, SIB, FTC, Fan Tray, …) and structured parsing for
+    fabric, power, line cards, and routing engines—same follow-up tools as ``start_audit_run``
+    (``get_audit_run_status``, ``get_audit_run_summary``, ``summarize_components``, ``count_components``, …).
+    - devices: filename in the current working directory or comma/space-separated hostnames (same as ``start_audit_run``).
+    """
+    hosts = _parse_devices(devices)
+    if not hosts:
+        return _json({"error": "No hosts were provided."})
+    return await _start_audit_run_async(
+        hosts,
+        ["show chassis hardware"],
+        audit_profile="ptx_chassis_hardware",
+    )
 
 
 @mcp.tool()
@@ -1665,7 +1782,8 @@ def count_components(
     """
     Count components by name.
     match_mode must be one of: exact, prefix, contains
-    component_type examples: control_board, routing_engine, line_card, chassis
+    component_type examples: chassis, routing_engine, control_board, line_card, power_supply,
+    fabric, fan_controller, fan_tray, midplane, front_panel, mezzanine
     """
     run_data = _get_run_data(run_id)
     if not run_data:
