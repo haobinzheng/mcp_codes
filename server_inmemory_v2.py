@@ -25,6 +25,52 @@ BNG_FLAT_DIR = os.path.join(BNG_BASE_DIR, "configurations", "flat")
 SROS_ROOTIFIER_PATH = os.path.join(BNG_BASE_DIR, "tools", "sros_rootifier.py")
 FLAT_SROS_PATH = os.path.join(BNG_BASE_DIR, "tools", "flat_sros.py")
 
+_REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
+_RANCID_DEFAULT_SAMPLE_HOSTS = (
+    "cr01.atl103",
+    "dr01.cbf101",
+    "mgt01.atl103",
+    "sag01.cbf101",
+    "mar01.atl103",
+    "pr01.atl101",
+    "agg01.atl103",
+    "rr01.slc101",
+    "fw-vip.cbf101",
+    "fw01.cbf101",
+    "msr01.den103",
+    "mpr01.mci103",
+    "sar01.bna103",
+    "ssw02.atl103",
+    "sag91.atl151",
+    "sag81.atl151",
+    "cr02.mci102",
+    "dr02.slc101",
+    "mgt02.aus121",
+    "sag92.lax103",
+    "mar02.hsv107",
+    "pr02.ord101",
+    "agg02.bna103",
+    "rr01.cbf101",
+    "mgt01.cbf101",
+    "cr01.aus122",
+    "dr01.atl103",
+    "mgt03.sat103",
+    "sag01.atl103",
+    "fw-vip.slc103",
+    "dr02.rdu103",
+)
+_RANCID_NON_HOST_BASENAMES_LOWER = frozenset(
+    {
+        "router.db",
+        "cvs",
+        "cvswrappers",
+        ".gitignore",
+        "readme",
+        "changelog",
+        "makefile",
+    }
+)
+
 
 @dataclass
 class CommandResult:
@@ -331,6 +377,214 @@ def _parse_host_filter(hosts: str) -> set[str]:
     if not hosts.strip():
         return set()
     return {item.strip() for item in re.split(r"[,\s]+", hosts) if item.strip()}
+
+
+def _parse_rancid_folders_file() -> dict[str, str]:
+    """Parse repo rancid_folders mapping: flexible ``key: path`` lines."""
+    path = os.environ.get("RANCID_FOLDERS_FILE", os.path.join(_REPO_ROOT, "rancid_folders"))
+    mapping: dict[str, str] = {}
+    if not os.path.isfile(path):
+        return mapping
+    with open(path, "r", encoding="utf-8", errors="replace") as handle:
+        for raw_line in handle:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if ":" not in line:
+                continue
+            key, value = line.split(":", 1)
+            key = key.strip()
+            value = value.strip()
+            if key and value:
+                mapping[key] = value
+    return mapping
+
+
+def _rancid_allowed_depot_realpaths(mapping: dict[str, str]) -> set[str]:
+    roots: set[str] = set()
+    for configured in mapping.values():
+        try:
+            roots.add(os.path.realpath(configured))
+        except OSError:
+            continue
+    return roots
+
+
+def _rancid_resolve_family_key(mapping: dict[str, str], device_family: str) -> str | None:
+    if not device_family.strip():
+        return None
+    raw = device_family.strip()
+    if raw in mapping:
+        return raw
+    lowered = raw.lower()
+    for key in mapping:
+        if key.lower() == lowered:
+            return key
+    return None
+
+
+def _rancid_hostname_from_entry(name: str) -> str:
+    base = os.path.basename(name.strip())
+    if base.endswith(",v"):
+        base = base[:-2]
+    return base
+
+
+def _rancid_stem_from_hostname(hostname: str) -> str:
+    host = hostname.strip()
+    if not host:
+        return ""
+    dot = host.find(".")
+    if dot == -1:
+        return host
+    return host[:dot]
+
+
+def _rancid_function_code_from_hostname(hostname: str) -> str:
+    """Short function-style code from hostname (stem letters/hyphens before trailing digits).
+
+    Used only to *discover* category labels present in inventory (e.g. ``dr``, ``cr``, ``mar``).
+    Does not attach human descriptions (core router, etc.); those stay in ops/docs.
+    """
+    stem = _rancid_stem_from_hostname(hostname)
+    if not stem:
+        return "unknown"
+    match = re.match(r"^([A-Za-z][A-Za-z-]*?)(\d+)$", stem)
+    if match:
+        return match.group(1).lower()
+    return stem.lower()
+
+
+def _rancid_is_probable_host_file(filename: str) -> bool:
+    base = os.path.basename(filename)
+    if not base or base.startswith("."):
+        return False
+    lower = base.lower()
+    if lower in _RANCID_NON_HOST_BASENAMES_LOWER:
+        return False
+    if lower.endswith((".md", ".html", ".pdf")):
+        return False
+    if os.path.isdir(filename):
+        return False
+    return True
+
+
+def _rancid_list_depot_hostnames(depot_dir: str) -> list[str]:
+    names: list[str] = []
+    try:
+        for entry in sorted(os.listdir(depot_dir)):
+            path = os.path.join(depot_dir, entry)
+            if not _rancid_is_probable_host_file(path):
+                continue
+            if not os.path.isfile(path):
+                continue
+            names.append(_rancid_hostname_from_entry(entry))
+    except OSError:
+        return []
+    return sorted(set(names))
+
+
+def _rancid_read_sample_hostnames(sample_path: str) -> list[str]:
+    if not os.path.isfile(sample_path):
+        return []
+    hosts: list[str] = []
+    try:
+        with open(sample_path, "r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                item = line.strip()
+                if item and not item.startswith("#"):
+                    hosts.append(item)
+    except OSError:
+        return []
+    return sorted(set(hosts))
+
+
+def _rancid_ensure_sample_file(canonical_family: str) -> None:
+    """If ``rancid_samples/<family>/`` exists but ``ls_output_sample.txt`` is missing, seed ~30 lines."""
+    samples_dir = os.path.join(_REPO_ROOT, "rancid_samples", canonical_family)
+    sample_path = os.path.join(samples_dir, "ls_output_sample.txt")
+    if os.path.isfile(sample_path) or not os.path.isdir(samples_dir):
+        return
+    try:
+        os.makedirs(samples_dir, exist_ok=True)
+    except OSError:
+        return
+    lines = "\n".join(_RANCID_DEFAULT_SAMPLE_HOSTS) + "\n"
+    try:
+        with open(sample_path, "w", encoding="utf-8") as handle:
+            handle.write(lines)
+    except OSError:
+        return
+
+
+def _rancid_sample_paths_secure(canonical_family: str) -> tuple[str, str] | None:
+    """Return (samples_dir_real, sample_file_real) if paths stay under repo rancid_samples."""
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", canonical_family):
+        return None
+    samples_dir = os.path.join(_REPO_ROOT, "rancid_samples", canonical_family)
+    sample_path = os.path.join(samples_dir, "ls_output_sample.txt")
+    try:
+        dir_real = os.path.realpath(samples_dir)
+        file_real = os.path.realpath(sample_path)
+        root_real = os.path.realpath(os.path.join(_REPO_ROOT, "rancid_samples"))
+    except OSError:
+        return None
+    prefix = root_real.rstrip(os.sep) + os.sep
+    if not (dir_real == root_real or dir_real.startswith(prefix)):
+        return None
+    if not file_real.startswith(dir_real.rstrip(os.sep) + os.sep):
+        return None
+    return dir_real, file_real
+
+
+def _rancid_gather_hostnames(
+    mapping: dict[str, str], canonical_family: str, depot_path: str
+) -> tuple[list[str], str, str]:
+    """Return (hostnames, inventory_path_used, source) where source is depot, sample, or none."""
+    allowed = _rancid_allowed_depot_realpaths(mapping)
+    try:
+        depot_real = os.path.realpath(depot_path)
+    except OSError:
+        depot_real = ""
+    if depot_real and os.path.isdir(depot_path) and depot_real in allowed:
+        return _rancid_list_depot_hostnames(depot_path), depot_path, "depot"
+
+    _rancid_ensure_sample_file(canonical_family)
+    secured = _rancid_sample_paths_secure(canonical_family)
+    if not secured:
+        return [], "", "none"
+    _dir_real, sample_file = secured
+    hosts = _rancid_read_sample_hostnames(sample_file)
+    return hosts, sample_file, "sample"
+
+
+def _rancid_filter_hostnames_grep(hostnames: list[str], needle: str) -> list[str]:
+    """Keep hostnames whose line matches ``ls | grep needle`` (substring, case-insensitive)."""
+    n = needle.strip().lower()
+    if not n:
+        return list(hostnames)
+    return sorted(h for h in hostnames if n in h.lower())
+
+
+def _rancid_summarize_function_categories(
+    hostnames: list[str], *, max_samples_per_category: int
+) -> dict[str, Any]:
+    buckets: dict[str, list[str]] = {}
+    for h in hostnames:
+        code = _rancid_function_code_from_hostname(h)
+        buckets.setdefault(code, []).append(h)
+    for key in buckets:
+        buckets[key] = sorted(buckets[key])
+    categories = sorted(buckets.keys())
+    cap = max(0, int(max_samples_per_category))
+    samples = {c: buckets[c][:cap] if cap else [] for c in categories}
+    counts = {c: len(buckets[c]) for c in categories}
+    return {
+        "function_categories": categories,
+        "function_category_counts": counts,
+        "sample_hostnames_per_category": samples,
+        "category_derivation": "stem before first dot; letters/hyphens before trailing digits on stem (e.g. dr01 -> dr)",
+    }
 
 
 def _iter_results(
@@ -1485,6 +1739,98 @@ def get_audit_log_host_details(run_id: str, hostname: str, include_raw: bool = F
             "facts": result.get("facts", {}),
             "output": result.get("stdout", "") if include_raw else (result.get("filtered") or result.get("stdout", "")),
         }
+    return _json(payload)
+
+
+@mcp.tool()
+def list_rancid_devices(
+    device_family: str = "juniper",
+    list_function_categories: bool = False,
+    hostname_prefix: str = "",
+    max_devices: int = 20000,
+    max_samples_per_category: int = 5,
+) -> str:
+    """
+    Rancid device inventory (paths from repo ``rancid_folders``; sample fallback if depot missing).
+
+    **Two modes** (do not combine with ``hostname_prefix`` when listing categories—prefix is ignored then):
+
+    1. ``list_function_categories=True`` — scan the full listing and return distinct function-style
+       codes derived from hostnames (e.g. ``cr``, ``mar``, ``dr``, ``sar``), counts per code, and a
+       few sample hostnames per code. No hardcoded map to English role names.
+
+    2. ``list_function_categories=False`` — return device names; if ``hostname_prefix`` is set,
+       filter like ``ls | grep <prefix>`` (substring, case-insensitive), e.g. all ``dr`` lines.
+
+    If the depot path is missing locally, uses ``rancid_samples/<family>/ls_output_sample.txt``.
+    """
+    mapping = _parse_rancid_folders_file()
+    if not mapping:
+        return _json(
+            {
+                "error": "No rancid_folders mapping loaded",
+                "hint": f"Expected file at {os.environ.get('RANCID_FOLDERS_FILE', os.path.join(_REPO_ROOT, 'rancid_folders'))}",
+            }
+        )
+
+    canonical = _rancid_resolve_family_key(mapping, device_family)
+    if not canonical:
+        return _json(
+            {
+                "error": f"Unknown device_family: {device_family!r}",
+                "known_families": sorted(mapping.keys()),
+            }
+        )
+
+    depot_path = mapping[canonical]
+    hostnames, inventory_path, source = _rancid_gather_hostnames(mapping, canonical, depot_path)
+    if source == "none":
+        return _json(
+            {
+                "error": "No depot directory and no sample listing available",
+                "device_family": canonical,
+                "configured_depot_path": depot_path,
+                "sample_hint": os.path.join(_REPO_ROOT, "rancid_samples", canonical, "ls_output_sample.txt"),
+            }
+        )
+
+    base: dict[str, Any] = {
+        "device_family": canonical,
+        "inventory_path": inventory_path,
+        "source": source,
+        "configured_depot_path": depot_path,
+        "total_devices": len(hostnames),
+    }
+
+    if list_function_categories:
+        summary = _rancid_summarize_function_categories(
+            hostnames, max_samples_per_category=max_samples_per_category
+        )
+        base["mode"] = "function_categories"
+        base.update(summary)
+        if hostname_prefix.strip():
+            base["hostname_prefix_ignored"] = hostname_prefix.strip()
+        return _json(base)
+
+    total_before = len(hostnames)
+    filtered = _rancid_filter_hostnames_grep(hostnames, hostname_prefix)
+    cap = max(1, min(int(max_devices), 500_000))
+    truncated = len(filtered) > cap
+    devices = filtered[:cap]
+
+    payload: dict[str, Any] = {
+        **base,
+        "mode": "devices",
+        "hostname_prefix": hostname_prefix.strip(),
+        "filter": "substring case-insensitive on device name (ls | grep style)" if hostname_prefix.strip() else "none",
+        "total_devices_before_filter": total_before,
+        "total_devices": len(filtered),
+        "devices": devices,
+    }
+    if truncated:
+        payload["truncated"] = True
+        payload["max_devices"] = cap
+        payload["note"] = f"Returned first {cap} names after filter; increase max_devices if needed."
     return _json(payload)
 
 

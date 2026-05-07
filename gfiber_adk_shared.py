@@ -40,6 +40,7 @@ Use the MCP tools with this workflow:
 8. For commands without structured parsing, use list_run_commands and get_raw_analysis_context to retrieve raw evidence before answering.
 9. Use list_audit_log_runs, get_audit_log_summary, and get_audit_log_host_details when the user asks about prior runs.
 10. Do not ask the server to use local files for state exchange; the server stores audit data in memory and persists audit logs for later analysis.
+11. For Rancid-backed device inventories, use ``list_rancid_devices``. For "all devices by function/category codes" (agg, cr, dr, …), call with ``list_function_categories=True`` to get distinct codes plus counts (no English role names in the tool). For "list all dr devices", call with ``list_function_categories=False`` and ``hostname_prefix="dr"`` (``ls | grep`` style on filenames).
 
 When the user asks for analysis over multiple commands, prefer:
 - summary first
