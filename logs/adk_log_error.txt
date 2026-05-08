@@ -1,0 +1,85 @@
+2026-05-08 11:54:13,763 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.0-flash, backend: GoogleLLMVariant.GEMINI_API, stream: True
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py:233: UserWarning: [EXPERIMENTAL] feature FeatureName.PROGRESSIVE_SSE_STREAMING is enabled.
+  async for llm_response in aggregator_gen:
+2026-05-08 11:54:15,328 - WARNING - types.py:7966 - Warning: there are non-text parts in the response: ['function_call', 'function_call', 'function_call'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+2026-05-08 11:54:15,349 - ERROR - plugin_manager.py:304 - Error in plugin 'gfiber_adk_web_session_log' during 'before_tool_callback' callback: 'Context' object has no attribute 'invocation_context'
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/plugins/plugin_manager.py", line 289, in _run_callbacks
+    result = await callback_method(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/Coding/mcp_codes/gfiber_adk_web_session_logging.py", line 202, in before_tool_callback
+    session_id=tool_context.invocation_context.session.id,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Context' object has no attribute 'invocation_context'. Did you mean: '_invocation_context'?
+2026-05-08 11:54:15,353 - ERROR - plugin_manager.py:304 - Error in plugin 'gfiber_adk_web_session_log' during 'before_tool_callback' callback: 'Context' object has no attribute 'invocation_context'
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/plugins/plugin_manager.py", line 289, in _run_callbacks
+    result = await callback_method(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/Coding/mcp_codes/gfiber_adk_web_session_logging.py", line 202, in before_tool_callback
+    session_id=tool_context.invocation_context.session.id,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Context' object has no attribute 'invocation_context'. Did you mean: '_invocation_context'?
+2026-05-08 11:54:15,356 - ERROR - plugin_manager.py:304 - Error in plugin 'gfiber_adk_web_session_log' during 'before_tool_callback' callback: 'Context' object has no attribute 'invocation_context'
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/plugins/plugin_manager.py", line 289, in _run_callbacks
+    result = await callback_method(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/Coding/mcp_codes/gfiber_adk_web_session_logging.py", line 202, in before_tool_callback
+    session_id=tool_context.invocation_context.session.id,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Context' object has no attribute 'invocation_context'. Did you mean: '_invocation_context'?
+2026-05-08 11:54:15,363 - ERROR - adk_web_server.py:1976 - Error in event_generator: Error in plugin 'gfiber_adk_web_session_log' during 'before_tool_callback' callback: 'Context' object has no attribute 'invocation_context'
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/plugins/plugin_manager.py", line 289, in _run_callbacks
+    result = await callback_method(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/Coding/mcp_codes/gfiber_adk_web_session_logging.py", line 202, in before_tool_callback
+    session_id=tool_context.invocation_context.session.id,
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Context' object has no attribute 'invocation_context'. Did you mean: '_invocation_context'?
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 1948, in event_generator
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 632, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 617, in _run_with_trace
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 881, in _exec_with_plugin
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 606, in execute
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 297, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 487, in _run_async_impl
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 804, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 891, in _run_one_step_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 984, in _postprocess_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1111, in _postprocess_handle_function_calls_async
+    if function_response_event := await functions.handle_function_calls_async(
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 364, in handle_function_calls_async
+    return await handle_function_call_list_async(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 410, in handle_function_call_list_async
+    function_response_events = await asyncio.gather(*tasks)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 598, in _execute_single_function_call_async
+    function_response_event = await _run_with_trace()
+                              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 512, in _run_with_trace
+    await invocation_context.plugin_manager.run_before_tool_callback(
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/plugins/plugin_manager.py", line 184, in run_before_tool_callback
+    return await self._run_callbacks(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/plugins/plugin_manager.py", line 305, in _run_callbacks
+    raise RuntimeError(error_message) from e
+RuntimeError: Error in plugin 'gfiber_adk_web_session_log' during 'before_tool_callback' callback: 'Context' object has no attribute 'invocation_context'
+INFO:     127.0.0.1:34514 - "GET /debug/trace/session/f59ae578-547a-467b-a555-c6b8a94fe0b7 HTTP/1.1" 200 OK
