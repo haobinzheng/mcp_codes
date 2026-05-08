@@ -6,6 +6,8 @@ The API key is never stored in this file. You are prompted to enter it
 environment, if set.
 
 Also prints equivalent curl commands you can run manually.
+
+Shell-only variant: ``scripts/list_gemini_models.sh`` (same prompt semantics).
 """
 
 from __future__ import annotations
