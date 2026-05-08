@@ -2,6 +2,9 @@
 
 Run from repo root: ``./start_ai_tool_adk`` (or ``python -m google.adk.cli web … adk_agents``).
 In the UI, open app **gfiber_network**. ADK Web cannot load ``client_inmemory_v2_google_adk.py`` directly.
+
+Session logging (JSONL + ``.log``) is enabled via ``App`` plugins — see ``gfiber_adk_web_session_logging`` module.
+Files: ``session_logs/adk_web_session_<adk_session_id>.jsonl``. Disable with ``GFIBER_ADK_WEB_SESSION_LOG_DISABLE=1``.
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ import sys
 from pathlib import Path
 
 from google.adk.agents import LlmAgent
+from google.adk.apps.app import App
 from google.adk.tools.mcp_tool import McpToolset
 from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
 from mcp import StdioServerParameters
@@ -26,6 +30,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from gfiber_adk_shared import MODEL_ID, SYSTEM_INSTRUCTION, mcp_stdio_server_env
+from gfiber_adk_web_session_logging import GfiberAdkWebSessionLogPlugin
 
 _SERVER_PATH = str(_REPO_ROOT / "server_inmemory_v2.py")
 
@@ -44,4 +49,10 @@ root_agent = LlmAgent(
             ),
         )
     ],
+)
+
+app = App(
+    name="gfiber_network",
+    root_agent=root_agent,
+    plugins=[GfiberAdkWebSessionLogPlugin()],
 )
