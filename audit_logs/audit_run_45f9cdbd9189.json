@@ -1,0 +1,95 @@
+{
+  "commands": [
+    "show chassis hardware"
+  ],
+  "completed_at": 1778182096.6799328,
+  "completed_tasks": 1,
+  "created_at": 1778182095.7173831,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "cr01.ord101"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_45f9cdbd9189.json",
+  "results": {
+    "cr01.ord101": {
+      "show chassis hardware": {
+        "command": "show chassis hardware",
+        "completed_at": 1778182096.6790295,
+        "components": [
+          {
+            "component_type": "chassis",
+            "description": "JNP10008 [PTX10008]",
+            "part_number": "",
+            "serial_number": "ES062",
+            "slot": "Chassis"
+          },
+          {
+            "component_type": "line_card",
+            "description": "JNP10K-LC1201",
+            "part_number": "750-174926",
+            "serial_number": "BCFM5207",
+            "slot": "FPC 0"
+          },
+          {
+            "component_type": "line_card",
+            "description": "JNP10K-LC1201",
+            "part_number": "750-174926",
+            "serial_number": "BCFP3379",
+            "slot": "FPC 1"
+          }
+        ],
+        "duration_ms": 959,
+        "exit_code": 0,
+        "facts": {
+          "chassis_models": [
+            "[PTX10008]"
+          ],
+          "line_cards": [
+            "BCFM5207 JNP10K-LC1201",
+            "BCFP3379 JNP10K-LC1201"
+          ]
+        },
+        "filtered": "Chassis                                ES062             JNP10008 [PTX10008]\nFPC 0            REV 05   750-174926   BCFM5207          JNP10K-LC1201\nFPC 1            REV 05   750-174926   BCFP3379          JNP10K-LC1201",
+        "started_at": 1778182095.7197266,
+        "stderr": "",
+        "stdout": "Hardware inventory:\nItem             Version  Part number  Serial number     Description\nChassis                                ES062             JNP10008 [PTX10008]\nMidplane 0       REV 16   750-086802   BCBW3478          Midplane 8\nFPM 0            REV 02   711-086964   BCBW3618          Front Panel Display\nPSM 0            Rev 03   740-069994   1F21A460623       JNP10K 5500W AC/HVDC Power Supply Unit\nPSM 1            Rev 03   740-069994   1F21A460391       JNP10K 5500W AC/HVDC Power Supply Unit\nPSM 2            Rev 03   740-069994   1F21A460482       JNP10K 5500W AC/HVDC Power Supply Unit\nPSM 3            Rev 03   740-069994   1F21A460398       JNP10K 5500W AC/HVDC Power Supply Unit\nPSM 4            Rev 03   740-069994   1F21A460352       JNP10K 5500W AC/HVDC Power Supply Unit\nPSM 5            Rev 03   740-069994   1F21A460456       JNP10K 5500W AC/HVDC Power Supply Unit\nRouting Engine 0          BUILTIN      BUILTIN           JNP10K-RE1-E\nRouting Engine 1          BUILTIN      BUILTIN           JNP10K-RE1-E\nCB 0             REV 19   750-101345   BCGE7941          Control Board\nCB 1             REV 19   750-101345   BCGM4863          Control Board\nFPC 0            REV 05   750-174926   BCFM5207          JNP10K-LC1201\n  CPU            REV 11   750-087304   BCFM3687          JNP10K-LC1201 PMB Board\n  PIC 0                   BUILTIN      BUILTIN           JNP10K-36QDD-LC-PIC\n    Xcvr 0       0        NON-JNPR     L382002708        QSFP-100GBASE-LR4\n    Xcvr 1       0        NON-JNPR     LCB2005689        QSFP-100GBASE-LR4\n    Xcvr 2       0        NON-JNPR     KBV2000907        QSFP-100GBASE-LR4\n    Xcvr 3       0        NON-JNPR     KBV2000719        QSFP-100GBASE-LR4\n    Xcvr 4       0        NON-JNPR     L6R2003425        QSFP-100GBASE-LR4\n    Xcvr 5       0        NON-JNPR     LCB2006534        QSFP-100GBASE-LR4\n    Xcvr 6       0        NON-JNPR     KBV2000649        QSFP-100GBASE-LR4\n    Xcvr 7       0        NON-JNPR     KBV2000466        QSFP-100GBASE-LR4\n    Xcvr 8       0        NON-JNPR     KBV2000883        QSFP-100GBASE-LR4\n    Xcvr 9       0        NON-JNPR     L6D2008895        QSFP-100GBASE-LR4\n    Xcvr 10      0        NON-JNPR     L6D2008874        QSFP-100GBASE-LR4\n    Xcvr 11      0        NON-JNPR     KBV2000655        QSFP-100GBASE-LR4\n    Xcvr 12      0        NON-JNPR     2245308422        QSFP-100GBASE-LR4\n    Xcvr 13      0        NON-JNPR     KBV2000789        QSFP-100GBASE-LR4\n    Xcvr 14      0        NON-JNPR     KBV2000494        QSFP-100GBASE-LR4\n    Xcvr 15      0        NON-JNPR     KBV2000602        QSFP-100GBASE-LR4\n    Xcvr 16      0        NON-JNPR     2404A00425        QSFP-100GBASE-LR4\n    Xcvr 17      0        NON-JNPR     2509A00585        QSFP-100GBASE-LR4\n    Xcvr 18      0        NON-JNPR     2509A00588        QSFP-100GBASE-LR4\n    Xcvr 19      XXXX     NON-JNPR     LM2521100016      QSFP56-DD-400GBASE-LR4-10\n    Xcvr 20      XXXX     NON-JNPR     LM2521100017      QSFP56-DD-400GBASE-LR4-10\n    Xcvr 30      XXXX     NON-JNPR     LM2521100026      QSFP56-DD-400GBASE-LR4-10\n    Xcvr 31      XXXX     NON-JNPR     LM2521100029      QSFP56-DD-400GBASE-LR4-10\n    Xcvr 32      XXXX     NON-JNPR     LM2521100027      QSFP56-DD-400GBASE-LR4-10\n    Xcvr 33      XXXX     NON-JNPR     LM2521100028      QSFP56-DD-400GBASE-LR4-10\n    Xcvr 34      XXXX     NON-JNPR     LM2521100030      QSFP56-DD-400GBASE-LR4-10\n  MEZZ 0         REV 15   711-084968   BCFP3181          JNP10K-LC1201 MEZZ Board\nFPC 1            REV 05   750-174926   BCFP3379          JNP10K-LC1201\n  CPU            REV 11   750-087304   BCFM3917          JNP10K-LC1201 PMB Board\n  PIC 0                   BUILTIN      BUILTIN           JNP10K-36QDD-LC-PIC\n    Xcvr 0       0        NON-JNPR     KBV2000391        QSFP-100GBASE-LR4\n    Xcvr 1       0        NON-JNPR     LCB2005890        QSFP-100GBASE-LR4\n    Xcvr 2       0        NON-JNPR     L382002727        QSFP-100GBASE-LR4\n    Xcvr 3       0        NON-JNPR     KBV2000372        QSFP-100GBASE-LR4\n    Xcvr 4       0        NON-JNPR     L682009615        QSFP-100GBASE-LR4\n    Xcvr 5       0        NON-JNPR     LCB2006754        QSFP-100GBASE-LR4\n    Xcvr 6       0        NON-JNPR     2245308423        QSFP-100GBASE-LR4\n    Xcvr 7       0        NON-JNPR     2245308424        QSFP-100GBASE-LR4\n    Xcvr 8       0        NON-JNPR     L382002728        QSFP-100GBASE-LR4\n    Xcvr 9       0        NON-JNPR     KBV2000644        QSFP-100GBASE-LR4\n    Xcvr 10      0        NON-JNPR     L382002696        QSFP-100GBASE-LR4\n    Xcvr 11      0        NON-JNPR     2245308417        QSFP-100GBASE-LR4\n    Xcvr 12      0        NON-JNPR     2245308418        QSFP-100GBASE-LR4\n    Xcvr 13      0        NON-JNPR     KBV2000910        QSFP-100GBASE-LR4\n    Xcvr 14      0        NON-JNPR     KBV2000712        QSFP-100GBASE-LR4\n    Xcvr 15      0        NON-JNPR     KBV2000881        QSFP-100GBASE-LR4\n    Xcvr 16      0        NON-JNPR     2425A00051        QSFP-100GBASE-LR4\n    Xcvr 17      0        NON-JNPR     2509A00586        QSFP-100GBASE-LR4\n    Xcvr 18      0        NON-JNPR     2509A00587        QSFP-100GBASE-LR4\n    Xcvr 19      XXXX     NON-JNPR     LM2521100025      QSFP56-DD-400GBASE-LR4-10\n    Xcvr 30      XXXX     NON-JNPR     LM2521100023      QSFP56-DD-400GBASE-LR4-10\n    Xcvr 31      XXXX     NON-JNPR     LM2521100024      QSFP56-DD-400GBASE-LR4-10\n    Xcvr 32      XXXX     NON-JNPR     LM2521100022      QSFP56-DD-400GBASE-LR4-10\n    Xcvr 34      XXXX     NON-JNPR     LM2521100021      QSFP56-DD-400GBASE-LR4-10\n  MEZZ 0         REV 15   711-084968   BCFP3220          JNP10K-LC1201 MEZZ Board\nSIB 0            REV 38   750-083423   BCGM7974          SIB-JNP10008\nSIB 1            REV 38   750-083423   BCGM8026          SIB-JNP10008\nSIB 2            REV 38   750-083423   BCGD6400          SIB-JNP10008\nSIB 3            REV 38   750-083423   BCGD6417          SIB-JNP10008\nSIB 4            REV 38   750-083423   BCGM7963          SIB-JNP10008\nSIB 5            REV 38   750-083423   BCFY5241          SIB-JNP10008\nFTC 0            REV 18   750-083435   BCBW3929          Fan Controller 8\nFTC 1            REV 18   750-083435   BCBW3947          Fan Controller 8\nFan Tray 0       REV 09   750-103312   BCBW0678          Fan tray 8\nFan Tray 1       REV 09   750-103312   BCBW0813          Fan tray 8",
+        "structured_data_available": true
+      }
+    }
+  },
+  "run_id": "45f9cdbd9189",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {
+        "[PTX10008]": [
+          "cr01.ord101"
+        ]
+      },
+      "junos_versions": {},
+      "line_cards": {
+        "BCFM5207 JNP10K-LC1201": [
+          "cr01.ord101"
+        ],
+        "BCFP3379 JNP10K-LC1201": [
+          "cr01.ord101"
+        ]
+      },
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "45f9cdbd9189",
+    "state": "completed",
+    "success_hosts": [
+      "cr01.ord101"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}
