@@ -199,8 +199,8 @@ class GfiberAdkWebSessionLogPlugin(BasePlugin):
 
     async def before_tool_callback(self, *, tool, tool_args, tool_context) -> Any:
         rec = self._get_recorder(
-            session_id=tool_context.invocation_context.session.id,
-            app_name=tool_context.invocation_context.session.app_name,
+            session_id=tool_context.session.id,
+            app_name=tool_context.session.app_name,
         )
         if not rec:
             return None
@@ -216,8 +216,8 @@ class GfiberAdkWebSessionLogPlugin(BasePlugin):
 
     async def after_tool_callback(self, *, tool, tool_args, tool_context, result) -> Any:
         rec = self._get_recorder(
-            session_id=tool_context.invocation_context.session.id,
-            app_name=tool_context.invocation_context.session.app_name,
+            session_id=tool_context.session.id,
+            app_name=tool_context.session.app_name,
         )
         if not rec:
             return None
@@ -240,8 +240,8 @@ class GfiberAdkWebSessionLogPlugin(BasePlugin):
 
     async def on_tool_error_callback(self, *, tool, tool_args, tool_context, error) -> Any:
         rec = self._get_recorder(
-            session_id=tool_context.invocation_context.session.id,
-            app_name=tool_context.invocation_context.session.app_name,
+            session_id=tool_context.session.id,
+            app_name=tool_context.session.app_name,
         )
         if not rec:
             return None
