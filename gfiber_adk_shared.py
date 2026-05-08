@@ -70,3 +70,22 @@ def mcp_stdio_server_env() -> dict[str, str]:
     for key in _MCP_ENV_STRIP:
         env.pop(key, None)
     return env
+
+
+def mcp_stdio_read_timeout_seconds() -> float:
+    """Seconds the MCP *client* waits for each stdio JSON-RPC response (ADK ``StdioConnectionParams.timeout``).
+
+    For stdio, Google ADK passes this value as ``ClientSession.read_timeout_seconds``.
+    Long-running tools (e.g. multi-minute audits) must finish *one* MCP request/response
+    within this window or the client stops waiting and surfaces a timeout.
+
+    Override with env ``GFIBER_MCP_STDIO_READ_TIMEOUT_SEC`` (float, seconds). Minimum 5.
+    Default 900 (15 minutes) so 5–10 minute audits are covered with margin.
+    """
+    raw = os.environ.get("GFIBER_MCP_STDIO_READ_TIMEOUT_SEC", "").strip()
+    if not raw:
+        return 900.0
+    try:
+        return max(5.0, float(raw))
+    except ValueError:
+        return 900.0

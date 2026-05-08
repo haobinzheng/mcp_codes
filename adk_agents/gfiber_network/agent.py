@@ -29,7 +29,12 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from gfiber_adk_shared import MODEL_ID, SYSTEM_INSTRUCTION, mcp_stdio_server_env
+from gfiber_adk_shared import (
+    MODEL_ID,
+    SYSTEM_INSTRUCTION,
+    mcp_stdio_read_timeout_seconds,
+    mcp_stdio_server_env,
+)
 from gfiber_adk_web_session_logging import GfiberAdkWebSessionLogPlugin
 
 _SERVER_PATH = str(_REPO_ROOT / "server_inmemory_v2.py")
@@ -46,6 +51,7 @@ root_agent = LlmAgent(
                     args=[_SERVER_PATH],
                     env=mcp_stdio_server_env(),
                 ),
+                timeout=mcp_stdio_read_timeout_seconds(),
             ),
         )
     ],

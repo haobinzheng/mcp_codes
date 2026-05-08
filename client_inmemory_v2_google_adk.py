@@ -27,7 +27,12 @@ import traceback
 import uuid
 from typing import Any
 
-from gfiber_adk_shared import MODEL_ID, SYSTEM_INSTRUCTION, mcp_stdio_server_env
+from gfiber_adk_shared import (
+    MODEL_ID,
+    SYSTEM_INSTRUCTION,
+    mcp_stdio_read_timeout_seconds,
+    mcp_stdio_server_env,
+)
 from google import genai
 from google.genai import types
 from google.adk.agents import LlmAgent
@@ -1501,6 +1506,7 @@ async def run_intelligent_agent() -> None:
             args=[SERVER_PATH],
             env=mcp_stdio_server_env(),
         ),
+        timeout=mcp_stdio_read_timeout_seconds(),
     )
     mcp_manager = MCPSessionManager(connection_params)
     _ensure_session_log_dir()
