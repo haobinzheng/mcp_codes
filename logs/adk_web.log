@@ -6121,3 +6121,443 @@ INFO:     Application shutdown complete.
 INFO:     Finished server process [2521114]
 
 Aborted!
+==== 2026-05-08T18:57:18Z start_ai_tool_adk pid=2524716 ====
+PYTHON=python3
+ADK_WEB_HOST=127.0.0.1
+ADK_WEB_PORT=8787
+AGENTS_DIR=/usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents
+SESSION_URI=memory://
+ADK_LOG_FILE=/usr/local/google/home/mikezh/Coding/mcp_codes/logs/adk_web.log
+
+Starting ADK Web UI — agents from /usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents
+Listening on 127.0.0.1:8787 (set ADK_WEB_PORT to avoid clashes)
+Session storage: memory:// (not persisted unless you set ADK_SESSION_SERVICE_URI to a durable backend)
+SSH tunnel from laptop: use REMOTE_PORT=8787 with start_ai_tool_adk_tunnel
+Logging to: /usr/local/google/home/mikezh/Coding/mcp_codes/logs/adk_web.log (disable: START_AI_TOOL_LOG_DISABLE=1)
+Ensure GEMINI_API_KEY is set (see DESIGN_PIP_INSTALL.md).
+Custom UI logo: set both ADK_LOGO_TEXT and ADK_LOGO_IMAGE_URL (ADK rejects logo-text alone).
+Same agent as client_inmemory_v2_google_adk.py: open app gfiber_network in the ADK Web UI.
+Interactive CLI (stdio): python3 client_inmemory_v2_adk.py
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/authlib/_joserfc_helpers.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import ECKey
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/features/_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.PLUGGABLE_AUTH is enabled.
+  check_feature_enabled()
+2026-05-08 11:57:21,582 - INFO - service_factory.py:266 - Using in-memory memory service
+2026-05-08 11:57:21,582 - INFO - service_factory.py:189 - Using session service URI: memory:
+2026-05-08 11:57:21,582 - INFO - local_storage.py:110 - Using file artifact service at /usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents/.adk/artifacts
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/fast_api.py:204: UserWarning: [EXPERIMENTAL] InMemoryCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  credential_service = InMemoryCredentialService()
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/auth/credential_service/in_memory_credential_service.py:33: UserWarning: [EXPERIMENTAL] BaseCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  super().__init__()
+INFO:     Started server process [2524716]
+INFO:     Waiting for application startup.
+
++-----------------------------------------------------------------------------+
+| ADK Web Server started                                                      |
+|                                                                             |
+| For local testing, access at http://127.0.0.1:8787.                         |
++-----------------------------------------------------------------------------+
+
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8787 (Press CTRL+C to quit)
+INFO:     127.0.0.1:49080 - "GET /dev-ui/?app=gfiber_network&userId=user&session=f59ae578-547a-467b-a555-c6b8a94fe0b7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49080 - "GET /dev-ui/assets/config/runtime-config.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49080 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49086 - "GET /version HTTP/1.1" 200 OK
+2026-05-08 11:57:22,820 - INFO - envs.py:90 - No .env file found for gfiber_network
+2026-05-08 11:57:22,820 - INFO - envs.py:90 - No .env file found for gfiber_network
+2026-05-08 11:57:22,828 - INFO - plugin_manager.py:104 - Plugin 'gfiber_adk_web_session_log' registered.
+INFO:     127.0.0.1:49080 - "GET /dev/build_graph/gfiber_network HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49086 - "GET /apps/gfiber_network/users/user/sessions/f59ae578-547a-467b-a555-c6b8a94fe0b7 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49094 - "GET /dev/build_graph_image/gfiber_network?dark_mode=false HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49102 - "GET /dev/build_graph_image/gfiber_network?dark_mode=true HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49116 - "GET /builder/app/gfiber_network?ts=1778266642747 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49102 - "GET /apps/gfiber_network/eval_results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49116 - "GET /apps/gfiber_network/eval_sets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49130 - "GET /dev-ui/assets/config/runtime-config.json HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:49130 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49132 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49130 - "GET /dev/build_graph_image/gfiber_network?dark_mode=false HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49132 - "GET /dev/build_graph/gfiber_network HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49142 - "GET /dev/build_graph_image/gfiber_network?dark_mode=true HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:49146 - "GET /builder/app/gfiber_network?ts=1778266650611 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49142 - "GET /apps/gfiber_network/eval_results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49146 - "GET /apps/gfiber_network/eval_sets HTTP/1.1" 200 OK
+2026-05-08 11:57:35,311 - INFO - adk_web_server.py:867 - New session created: 5670cdbb-2c1e-4d24-8c47-6b0449de5a19
+INFO:     127.0.0.1:49146 - "POST /apps/gfiber_network/users/user/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49146 - "POST /run_sse HTTP/1.1" 200 OK
+[05/08/26 11:57:36] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/features/_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.BASE_AUTHENTICATED_TOOL is enabled.
+  check_feature_enabled()
+2026-05-08 11:57:36,278 - INFO - types.py:2818 - 
+Note: Conversion of fields that are not included in the JSONSchema class are ignored.
+Json Schema is now supported natively by both Vertex AI and Gemini API. Users
+are recommended to pass/receive Json Schema directly to/from the API. For example:
+1. the counter part of GenerateContentConfig.response_schema is
+   GenerateContentConfig.response_json_schema, which accepts [JSON
+  Schema](https://json-schema.org/)
+2. the counter part of FunctionDeclaration.parameters is
+   FunctionDeclaration.parameters_json_schema, which accepts [JSON
+   Schema](https://json-schema.org/)
+3. the counter part of FunctionDeclaration.response is
+   FunctionDeclaration.response_json_schema, which accepts [JSON
+   Schema](https://json-schema.org/)
+
+2026-05-08 11:57:36,336 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.0-flash, backend: GoogleLLMVariant.GEMINI_API, stream: True
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py:233: UserWarning: [EXPERIMENTAL] feature FeatureName.PROGRESSIVE_SSE_STREAMING is enabled.
+  async for llm_response in aggregator_gen:
+INFO:     127.0.0.1:49146 - "GET /debug/trace/session/5670cdbb-2c1e-4d24-8c47-6b0449de5a19 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52184 - "POST /run_sse HTTP/1.1" 200 OK
+[05/08/26 11:58:14] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-08 11:58:14,202 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.0-flash, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:52184 - "GET /debug/trace/session/5670cdbb-2c1e-4d24-8c47-6b0449de5a19 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55008 - "POST /run_sse HTTP/1.1" 200 OK
+[05/08/26 11:58:40] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-08 11:58:40,284 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.0-flash, backend: GoogleLLMVariant.GEMINI_API, stream: True
+2026-05-08 11:58:41,201 - WARNING - types.py:7966 - Warning: there are non-text parts in the response: ['function_call'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+[05/08/26 11:58:41] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-08 11:58:46,221 - ERROR - adk_web_server.py:1976 - Error in event_generator: Timed out while waiting for response to ClientRequest. Waited 5.0 seconds.
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/streams/memory.py", line 111, in receive
+    return self.receive_nowait()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/streams/memory.py", line 106, in receive_nowait
+    raise WouldBlock
+anyio.WouldBlock
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/_core/_tasks.py", line 115, in fail_after
+    yield cancel_scope
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/shared/session.py", line 292, in send_request
+    response_or_error = await response_stream_reader.receive()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/streams/memory.py", line 119, in receive
+    await receive_event.wait()
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1774, in wait
+    await self._event.wait()
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError: Cancelled by cancel scope 7fb8df054d70
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/shared/session.py", line 291, in send_request
+    with anyio.fail_after(timeout):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/_core/_tasks.py", line 118, in fail_after
+    raise TimeoutError
+TimeoutError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 1948, in event_generator
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 632, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 617, in _run_with_trace
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 881, in _exec_with_plugin
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 606, in execute
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 297, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 487, in _run_async_impl
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 804, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 891, in _run_one_step_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 984, in _postprocess_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1111, in _postprocess_handle_function_calls_async
+    if function_response_event := await functions.handle_function_calls_async(
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 364, in handle_function_calls_async
+    return await handle_function_call_list_async(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 410, in handle_function_call_list_async
+    function_response_events = await asyncio.gather(*tasks)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 598, in _execute_single_function_call_async
+    function_response_event = await _run_with_trace()
+                              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 545, in _run_with_trace
+    raise tool_error
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 532, in _run_with_trace
+    function_response = await __call_tool_async(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 1117, in __call_tool_async
+    return await tool.run_async(args=args, tool_context=tool_context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/mcp_tool/mcp_tool.py", line 342, in run_async
+    return await super().run_async(args=args, tool_context=tool_context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/base_authenticated_tool.py", line 94, in run_async
+    return await self._run_async_impl(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/mcp_tool/mcp_session_manager.py", line 170, in wrapper
+    return await func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/mcp_tool/mcp_tool.py", line 387, in _run_async_impl
+    response = await session.call_tool(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/client/session.py", line 383, in call_tool
+    result = await self.send_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/shared/session.py", line 294, in send_request
+    raise McpError(
+mcp.shared.exceptions.McpError: Timed out while waiting for response to ClientRequest. Waited 5.0 seconds.
+INFO:     127.0.0.1:55008 - "GET /debug/trace/session/5670cdbb-2c1e-4d24-8c47-6b0449de5a19 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60034 - "POST /run_sse HTTP/1.1" 200 OK
+[05/08/26 11:58:59] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-08 11:58:59,071 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.0-flash, backend: GoogleLLMVariant.GEMINI_API, stream: True
+                    INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-08 11:59:04,635 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.0-flash, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:60034 - "GET /debug/trace/session/5670cdbb-2c1e-4d24-8c47-6b0449de5a19 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49494 - "POST /run_sse HTTP/1.1" 200 OK
+[05/08/26 11:59:38] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-08 11:59:38,098 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.0-flash, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/08/26 11:59:40] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-08 11:59:45,140 - ERROR - adk_web_server.py:1976 - Error in event_generator: Timed out while waiting for response to ClientRequest. Waited 5.0 seconds.
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/streams/memory.py", line 111, in receive
+    return self.receive_nowait()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/streams/memory.py", line 106, in receive_nowait
+    raise WouldBlock
+anyio.WouldBlock
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/_core/_tasks.py", line 115, in fail_after
+    yield cancel_scope
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/shared/session.py", line 292, in send_request
+    response_or_error = await response_stream_reader.receive()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/streams/memory.py", line 119, in receive
+    await receive_event.wait()
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1774, in wait
+    await self._event.wait()
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError: Cancelled by cancel scope 7fb8df169b20
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/shared/session.py", line 291, in send_request
+    with anyio.fail_after(timeout):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/_core/_tasks.py", line 118, in fail_after
+    raise TimeoutError
+TimeoutError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 1948, in event_generator
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 632, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 617, in _run_with_trace
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 881, in _exec_with_plugin
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 606, in execute
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 297, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 487, in _run_async_impl
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 804, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 891, in _run_one_step_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 984, in _postprocess_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1111, in _postprocess_handle_function_calls_async
+    if function_response_event := await functions.handle_function_calls_async(
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 364, in handle_function_calls_async
+    return await handle_function_call_list_async(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 410, in handle_function_call_list_async
+    function_response_events = await asyncio.gather(*tasks)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 598, in _execute_single_function_call_async
+    function_response_event = await _run_with_trace()
+                              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 545, in _run_with_trace
+    raise tool_error
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 532, in _run_with_trace
+    function_response = await __call_tool_async(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 1117, in __call_tool_async
+    return await tool.run_async(args=args, tool_context=tool_context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/mcp_tool/mcp_tool.py", line 342, in run_async
+    return await super().run_async(args=args, tool_context=tool_context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/base_authenticated_tool.py", line 94, in run_async
+    return await self._run_async_impl(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/mcp_tool/mcp_session_manager.py", line 170, in wrapper
+    return await func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/mcp_tool/mcp_tool.py", line 387, in _run_async_impl
+    response = await session.call_tool(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/client/session.py", line 383, in call_tool
+    result = await self.send_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/shared/session.py", line 294, in send_request
+    raise McpError(
+mcp.shared.exceptions.McpError: Timed out while waiting for response to ClientRequest. Waited 5.0 seconds.
+INFO:     127.0.0.1:49494 - "GET /debug/trace/session/5670cdbb-2c1e-4d24-8c47-6b0449de5a19 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55722 - "POST /run_sse HTTP/1.1" 200 OK
+[05/08/26 11:59:58] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-08 11:59:58,620 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.0-flash, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/08/26 12:00:00] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-08 12:00:05,994 - ERROR - adk_web_server.py:1976 - Error in event_generator: Timed out while waiting for response to ClientRequest. Waited 5.0 seconds.
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/streams/memory.py", line 111, in receive
+    return self.receive_nowait()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/streams/memory.py", line 106, in receive_nowait
+    raise WouldBlock
+anyio.WouldBlock
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/_core/_tasks.py", line 115, in fail_after
+    yield cancel_scope
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/shared/session.py", line 292, in send_request
+    response_or_error = await response_stream_reader.receive()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/streams/memory.py", line 119, in receive
+    await receive_event.wait()
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1774, in wait
+    await self._event.wait()
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError: Cancelled by cancel scope 7fb8df13a960
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/shared/session.py", line 291, in send_request
+    with anyio.fail_after(timeout):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/anyio/_core/_tasks.py", line 118, in fail_after
+    raise TimeoutError
+TimeoutError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 1948, in event_generator
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 632, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 617, in _run_with_trace
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 881, in _exec_with_plugin
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 606, in execute
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 297, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 487, in _run_async_impl
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 804, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 891, in _run_one_step_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 984, in _postprocess_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1111, in _postprocess_handle_function_calls_async
+    if function_response_event := await functions.handle_function_calls_async(
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 364, in handle_function_calls_async
+    return await handle_function_call_list_async(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 410, in handle_function_call_list_async
+    function_response_events = await asyncio.gather(*tasks)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 598, in _execute_single_function_call_async
+    function_response_event = await _run_with_trace()
+                              ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 545, in _run_with_trace
+    raise tool_error
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 532, in _run_with_trace
+    function_response = await __call_tool_async(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/functions.py", line 1117, in __call_tool_async
+    return await tool.run_async(args=args, tool_context=tool_context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/mcp_tool/mcp_tool.py", line 342, in run_async
+    return await super().run_async(args=args, tool_context=tool_context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/base_authenticated_tool.py", line 94, in run_async
+    return await self._run_async_impl(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/mcp_tool/mcp_session_manager.py", line 170, in wrapper
+    return await func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/tools/mcp_tool/mcp_tool.py", line 387, in _run_async_impl
+    response = await session.call_tool(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/client/session.py", line 383, in call_tool
+    result = await self.send_request(
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/mcp/shared/session.py", line 294, in send_request
+    raise McpError(
+mcp.shared.exceptions.McpError: Timed out while waiting for response to ClientRequest. Waited 5.0 seconds.
+INFO:     127.0.0.1:55722 - "GET /debug/trace/session/5670cdbb-2c1e-4d24-8c47-6b0449de5a19 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33620 - "POST /run_sse HTTP/1.1" 200 OK
+[05/08/26 12:00:12] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-08 12:00:12,890 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.0-flash, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/08/26 12:00:16] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-08 12:00:20,842 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.0-flash, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:33620 - "GET /debug/trace/session/5670cdbb-2c1e-4d24-8c47-6b0449de5a19 HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+
++-----------------------------------------------------------------------------+
+| ADK Web Server shutting down...                                             |
++-----------------------------------------------------------------------------+
+
+2026-05-08 12:00:29,806 - INFO - runners.py:1600 - Closing runner...
+2026-05-08 12:00:29,806 - INFO - runners.py:1576 - Closing toolset: McpToolset
+2026-05-08 12:00:29,957 - INFO - runners.py:1579 - Successfully closed toolset: McpToolset
+2026-05-08 12:00:29,957 - INFO - runners.py:1608 - Runner closed.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [2524716]
+
+Aborted!
