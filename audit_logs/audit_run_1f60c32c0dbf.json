@@ -1,0 +1,56 @@
+{
+  "commands": [
+    "show chassis hardware"
+  ],
+  "completed_at": 1778267559.1131098,
+  "completed_tasks": 1,
+  "created_at": 1778267558.4407113,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "<devices>"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_1f60c32c0dbf.json",
+  "results": {
+    "<devices>": {
+      "show chassis hardware": {
+        "command": "show chassis hardware",
+        "completed_at": 1778267559.1123638,
+        "components": [],
+        "duration_ms": 668,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1778267558.4434907,
+        "stderr": "W0508 12:12:38.996602 2527524 stubby.cc:1690] Stream was closed with status: NOT_FOUND: invalid status gnetch::5: http://go/gnetch-errors: device \"<devices>\" not known to Device Metadata Server\n=== Source Location Trace: ===\nnet/rpc/common/stream/stream-context.cc:1470\nSend(/Gnetch2.Command) returned error NOT_FOUND:\n /Gnetch2.Command to [2002:a05:6a00:4fcb:b0:835:4469:2e60]:9801 : APP_ERROR(5) invalid status gnetch::5: http://go/gnetch-errors: device \"<devices>\" not known to Device Metadata Server",
+        "stdout": "",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "1f60c32c0dbf",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "fabric_modules": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "power_modules": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "1f60c32c0dbf",
+    "state": "completed",
+    "success_hosts": [
+      "<devices>"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}

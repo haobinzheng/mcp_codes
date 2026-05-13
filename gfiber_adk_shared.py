@@ -34,6 +34,9 @@ Use the MCP tools with this workflow:
 4c. If the user asks to convert hierarchical SR OS configuration into flat format, use flatten_sros_config.
     If the pasted text includes [gl:/configure ...] or /configure ..., use that hierarchy automatically.
     If no hierarchy is present, ask the user for the current /configure hierarchy.
+4d. If the user asks to audit the core capacity, core link utilization, or ISIS adjacencies of one or a list of network devices, use audit_core_capacity.
+    That tool runs network commands to collect ISIS adjacencies and detailed interface utilization statistics (speed, input/output bps/pps, utilization percentages, aggregate links) for core links.
+    Summarize the audit results for the device(s) and highlight any core interfaces that exceed 50% utilization.
 5. For hardware component questions and totals, use count_components or list_components instead of reasoning from raw text.
 6. Default to exact matching for component names. Only use prefix or contains matching if the user explicitly asks for variants, prefixes, or fuzzy matches.
 7. When you need evidence for a host or command, prefer get_analysis_context. It returns structured data when a parser exists and raw output otherwise.

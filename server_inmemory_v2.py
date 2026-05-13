@@ -2293,5 +2293,362 @@ def list_rancid_juniper_platform_models(
     return _json(payload)
 
 
+def _core_capacity_extract_metro(device_name: str) -> str:
+    match = re.search(r"\.(\D{3})\d*", device_name)
+    return match.group(1) if match else "unknown"
+
+
+def _core_capacity_get_pacific_timestamp() -> str:
+    try:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        utc_now = datetime.now(tz=ZoneInfo("UTC"))
+        pacific_time = utc_now.astimezone(ZoneInfo("America/Los_Angeles"))
+        return pacific_time.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        import time
+        return time.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _core_capacity_parse_isis_adj(output: list[str]) -> list[dict[str, Any]]:
+    adjacency_list = []
+    if not output:
+        return []
+    start_idx = 1 if any(h in output[0] for h in ("Interface", "System", "State")) else 0
+    for line in output[start_idx:]:
+        line_str = line.strip()
+        if not line_str or "Warning: License key missing" in line_str:
+            continue
+        fields = line_str.split()
+        if len(fields) < 5:
+            continue
+        adjacency_list.append({
+            "Interface": fields[0],
+            "System": fields[1],
+            "L": fields[2],
+            "State": fields[3],
+            "Hold (secs)": fields[4],
+        })
+    return adjacency_list
+
+
+def _core_capacity_save_high_interfaces(audit_result: dict[str, Any], json_file_path: str) -> dict[str, Any]:
+    high_utilization_data = {}
+    if os.path.exists(json_file_path):
+        with open(json_file_path, "r") as json_file:
+            try:
+                high_utilization_data = json.load(json_file)
+            except Exception:
+                pass
+
+    high_devices_existed = False
+    for device, interfaces in audit_result.items():
+        metro = _core_capacity_extract_metro(device)
+        device_data = high_utilization_data.get(metro, {}).get(device, {})
+        for key, details in interfaces.items():
+            if key in ["role", "year"]:
+                continue
+            interface = key
+            input_bps = round(details.get("input_bps", 0))
+            input_percent = round(details.get("input_bps_percent", 0))
+            output_bps = round(details.get("output_bps", 0))
+            output_percent = round(details.get("output_bps_percent", 0))
+            neighbor = details.get("neighbor", "Unknown")
+            speed = details.get("speed", "Unknown")
+            timestamp = _core_capacity_get_pacific_timestamp()
+
+            if input_percent > 50 or output_percent > 50:
+                high_devices_existed = True
+                if interface not in device_data:
+                    device_data[interface] = []
+                device_data[interface].append({
+                    "neighbor": neighbor,
+                    "input_util": input_bps,
+                    "input_percent": input_percent,
+                    "output_util": output_bps,
+                    "output_percent": output_percent,
+                    "speed": speed,
+                    "timestamp": timestamp
+                })
+        if device_data:
+            high_utilization_data.setdefault(metro, {})[device] = device_data
+
+    if high_utilization_data and high_devices_existed:
+        try:
+            with open(json_file_path, "w") as json_file:
+                json.dump(high_utilization_data, json_file, indent=4)
+        except Exception:
+            pass
+    return high_utilization_data
+
+
+@mcp.tool()
+async def audit_core_capacity(devices: str) -> str:
+    """
+    Audit core network capacity of GFiber/Juniper devices.
+    Runs network commands to collect ISIS adjacencies and interface utilization data for core/backbone links,
+    identifying interfaces with high utilization (>50%).
+
+    This tool can audit a single device or a list of devices.
+    - devices: a filename containing device hostnames, or a comma/space-separated list of hostnames.
+    """
+    hosts = _parse_devices(devices)
+    if not hosts:
+        return _json({"error": "No devices specified or found."})
+
+    # Try to import dynamic device attributes from setup_db
+    device_info_cache = {}
+    try:
+        import sys
+        gfiber_path = "/usr/local/google/home/mikezh/Coding/gfiber"
+        if gfiber_path not in sys.path:
+            sys.path.append(gfiber_path)
+        from utils_gfiber import setup_db
+        setup = setup_db("rancid_juniper_core.yaml")
+        if setup and hasattr(setup, "setupdb") and hasattr(setup.setupdb, "Device_list"):
+            for dev in setup.setupdb.Device_list:
+                device_info_cache[dev.hostname.strip().lower()] = {
+                    "role": getattr(dev, "role", "metro"),
+                    "year": getattr(dev, "year", 2024),
+                }
+    except Exception:
+        pass
+
+    def get_device_meta(hostname: str) -> dict[str, Any]:
+        h = hostname.strip().lower()
+        if h in device_info_cache:
+            return device_info_cache[h]
+        role = "metro"
+        if h.startswith("cr") or "core" in h:
+            role = "backbone"
+        return {"role": role, "year": 2024}
+
+    # Create log folder matching setupdb behavior
+    log_folder = os.path.join(CURRENT_DIR, "audit_logs_core")
+    os.makedirs(log_folder, exist_ok=True)
+
+    semaphore = asyncio.Semaphore(SEMAPHORE_LIMIT)
+
+    async def process_device(hostname: str) -> tuple[str, dict[str, Any]]:
+        meta = get_device_meta(hostname)
+        role = meta["role"]
+        year = meta["year"]
+
+        local_device_site = hostname.split(".")[1] if "." in hostname else hostname
+        matched = re.search(r"([a-zA-Z]+)[0-9]+", local_device_site)
+        local_site = matched.group(1).strip() if matched else "Unknown"
+
+        bundle_dict = {
+            "role": role,
+            "year": year
+        }
+        device_log_file = os.path.join(log_folder, f"{hostname}.log")
+
+        try:
+            # Write initial log entry
+            with open(device_log_file, 'a') as log_file:
+                log_file.write(f"Processing device: {hostname}\n")
+
+            async with semaphore:
+                # Fetch 'show version'
+                proc = await asyncio.create_subprocess_exec(
+                    GNETCH_PATH, "show version", hostname,
+                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                )
+                stdout, _ = await proc.communicate()
+                version_result = stdout.decode(errors="replace").strip().splitlines()
+
+                with open(device_log_file, 'a') as log_file:
+                    log_file.write("\n--- show version ---\n")
+                    log_file.write("\n".join(version_result) + "\n")
+
+                # Fetch 'show isis adjacency'
+                proc = await asyncio.create_subprocess_exec(
+                    GNETCH_PATH, "show isis adjacency", hostname,
+                    stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                )
+                stdout, _ = await proc.communicate()
+                adj_result = stdout.decode(errors="replace").strip().splitlines()
+
+                with open(device_log_file, 'a') as log_file:
+                    log_file.write("\n--- show isis adjacency ---\n")
+                    log_file.write("\n".join(adj_result) + "\n")
+
+            adj_list = _core_capacity_parse_isis_adj(adj_result)
+
+            for adj in adj_list:
+                sys_name = adj.get("System", "")
+                state = adj.get("State", "")
+                if ("dr" in sys_name or "cr" in sys_name or "pr" in sys_name) and state == "Up":
+                    intf = adj.get("Interface", "").split(".")[0]
+                    if not intf:
+                        continue
+                    bundle_dict.setdefault(intf, {"neighbor": sys_name})
+
+                    remote_device_site = sys_name.split(".")[1] if "." in sys_name else sys_name
+                    matched = re.search(r"([a-zA-Z]+)[0-9]+", remote_device_site)
+                    remote_site = matched.group(1).strip() if matched else "Unknown"
+
+                    bundle_dict[intf]["Circuit"] = "SR" if local_site.upper() == remote_site.upper() else "LR"
+
+                    # Fetch 'show interfaces extensive'
+                    async with semaphore:
+                        proc = await asyncio.create_subprocess_exec(
+                            GNETCH_PATH, f"show interfaces {intf} extensive", hostname,
+                            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                        )
+                        stdout, _ = await proc.communicate()
+                        intf_result = stdout.decode(errors="replace").strip().splitlines()
+
+                    with open(device_log_file, 'a') as log_file:
+                        log_file.write(f"\n--- show interfaces {intf} extensive ---\n")
+                        log_file.write("\n".join(intf_result) + "\n")
+
+                    # Parse interface details
+                    speed_in_bps = 100_000_000_000
+                    speed_str = "100Gbps"
+                    description = ""
+                    input_bps = 0
+                    input_bps_percent = 0.0
+                    output_bps = 0
+                    output_bps_percent = 0.0
+                    input_pps = 0
+                    output_pps = 0
+                    agg_member_links = 0
+                    agg_members = []
+
+                    for line in intf_result:
+                        line_str = line.strip()
+                        if "Description: " in line_str:
+                            description = line_str
+                        elif "Link-level type: Ethernet, MTU" in line_str or "Speed:" in line_str:
+                            regex_speed = r"Speed: ([0-9]+Gbps)"
+                            matched = re.search(regex_speed, line_str)
+                            if matched:
+                                speed_str = matched.group(1)
+                                try:
+                                    speed_in_bps = int(speed_str.replace("Gbps", "")) * 1_000_000_000
+                                except ValueError:
+                                    pass
+                        elif "Traffic statistics:" in line_str:
+                            try:
+                                idx = intf_result.index(line)
+                                if idx + 1 < len(intf_result):
+                                    parts = intf_result[idx + 1].split(":")
+                                    if len(parts) > 1:
+                                        subparts = parts[1].split()
+                                        if len(subparts) > 1:
+                                            input_bps = int(subparts[1].strip())
+                                if idx + 2 < len(intf_result):
+                                    parts = intf_result[idx + 2].split(":")
+                                    if len(parts) > 1:
+                                        subparts = parts[1].split()
+                                        if len(subparts) > 1:
+                                            output_bps = int(subparts[1].strip())
+                                if idx + 3 < len(intf_result):
+                                    parts = intf_result[idx + 3].split(":")
+                                    if len(parts) > 1:
+                                        subparts = parts[1].split()
+                                        if len(subparts) > 1:
+                                            input_pps = int(subparts[1].strip())
+                                if idx + 4 < len(intf_result):
+                                    parts = intf_result[idx + 4].split(":")
+                                    if len(parts) > 1:
+                                        subparts = parts[1].split()
+                                        if len(subparts) > 1:
+                                            output_pps = int(subparts[1].strip())
+
+                                if speed_in_bps > 0:
+                                    input_bps_percent = (input_bps / speed_in_bps) * 100
+                                    output_bps_percent = (output_bps / speed_in_bps) * 100
+                            except Exception:
+                                pass
+                        elif "Aggregate member links:" in line_str:
+                            try:
+                                agg_member_links = int(line_str.split(":")[1].strip())
+                            except Exception:
+                                pass
+
+                    agg_link_found = False
+                    for i in range(len(intf_result)):
+                        if "Link:" in intf_result[i]:
+                            num = 0
+                            agg_link_found = True
+                            continue
+                        if agg_link_found and "et-" in intf_result[i]:
+                            agg_members.append(intf_result[i].strip())
+                            num += 1
+                            if num == agg_member_links:
+                                break
+
+                    bundle_dict[intf]["description"] = description
+                    bundle_dict[intf]["speed"] = speed_str
+                    bundle_dict[intf]["speed_human"] = speed_in_bps
+                    bundle_dict[intf]["input_bps"] = input_bps
+                    bundle_dict[intf]["input_bps_percent"] = input_bps_percent
+                    bundle_dict[intf]["output_bps"] = output_bps
+                    bundle_dict[intf]["output_bps_percent"] = output_bps_percent
+                    bundle_dict[intf]["input_pps"] = input_pps
+                    bundle_dict[intf]["output_pps"] = output_pps
+                    bundle_dict[intf]["ae_list"] = agg_members
+
+            with open(device_log_file, 'a') as log_file:
+                log_file.write("\n--- Processed Data ---\n")
+                log_file.write(json.dumps(bundle_dict, indent=4) + "\n")
+
+        except Exception as exc:
+            with open(device_log_file, 'a') as log_file:
+                log_file.write(f"\nError processing device {hostname}: {exc}\n")
+
+        return hostname, bundle_dict
+
+    # Execute concurrent processing
+    tasks = [process_device(h) for h in hosts]
+    results = await asyncio.gather(*tasks)
+    audit_result = {h: d for h, d in results}
+
+    # Save high utilization interfaces history
+    json_file_path = os.path.join(CURRENT_DIR, "high_utilization_history.json")
+    high_util_data = _core_capacity_save_high_interfaces(audit_result, json_file_path)
+
+    # Dump snapshot json file matching main() date format
+    from datetime import datetime
+    now_str = datetime.now().strftime("%Y_%m_%d_%H_%M")
+    json_folder = os.path.join(CURRENT_DIR, "Json_core_folder")
+    os.makedirs(json_folder, exist_ok=True)
+    
+    snapshot_filename = f"core_high_{now_str}.json"
+    with open(os.path.join(json_folder, snapshot_filename), "w") as f:
+        json.dump(audit_result, f, indent=4)
+
+    # Format high utilization report lists for return
+    high_util_list = []
+    for metro, metro_devices in high_util_data.items():
+        for dev_name, dev_intfs in metro_devices.items():
+            if dev_name in audit_result:
+                for intf_name, history in dev_intfs.items():
+                    if history:
+                        latest = history[-1]
+                        high_util_list.append({
+                            "device": dev_name,
+                            "interface": intf_name,
+                            "metro": metro,
+                            "speed": latest.get("speed", "Unknown"),
+                            "neighbor": latest.get("neighbor", "Unknown"),
+                            "input_percent": latest.get("input_percent", 0),
+                            "output_percent": latest.get("output_percent", 0),
+                            "timestamp": latest.get("timestamp", "")
+                        })
+
+    return _json({
+        "status": "completed",
+        "total_devices": len(hosts),
+        "devices": audit_result,
+        "high_utilization_interfaces": high_util_list,
+        "snapshot_file": os.path.join(json_folder, snapshot_filename),
+        "history_file": json_file_path
+    })
+
+
 if __name__ == "__main__":
     mcp.run()

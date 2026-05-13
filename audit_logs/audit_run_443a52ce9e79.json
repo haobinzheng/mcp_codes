@@ -1,0 +1,158 @@
+{
+  "commands": [
+    "show chassis power"
+  ],
+  "completed_at": 1778545023.0214896,
+  "completed_tasks": 7,
+  "created_at": 1778545016.148242,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "sar01.bna103",
+    "sar01.dsm102",
+    "sar01.dsm103",
+    "sar01.hsv107",
+    "sar01.oma102",
+    "sar01.oma103",
+    "sar02.bna103"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_443a52ce9e79.json",
+  "results": {
+    "sar01.bna103": {
+      "show chassis power": {
+        "command": "show chassis power",
+        "completed_at": 1778545021.9719205,
+        "components": [],
+        "duration_ms": 5813,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1778545016.1577902,
+        "stderr": "",
+        "stdout": "PEM 0:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 741 W (zone 0         V, 18% of capacity)\n\nPEM 1:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 1064 W (zone 1        V, 25% of capacity)\n\nPEM 2:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 798 W (zone 0         V, 19% of capacity)\n\nPEM 3:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 1140 W (zone 1        V, 27% of capacity)\n\nSystem:\n  Zone 0:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   2462 W (1638 W remaining)\n      Actual usage:      1539 W\n  Zone 1:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   3380 W (720 W remaining)\n      Actual usage:      2204 W\n  Total system capacity: 8200 W (maximum 8200 W)\n  Total remaining power: 2358 W",
+        "structured_data_available": false
+      }
+    },
+    "sar01.dsm102": {
+      "show chassis power": {
+        "command": "show chassis power",
+        "completed_at": 1778545022.5048575,
+        "components": [],
+        "duration_ms": 6343,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1778545016.1613595,
+        "stderr": "",
+        "stdout": "PEM 0:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 171 W (zone 0         V, 4% of capacity)\n\nPEM 1:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 570 W (zone 1         V, 13% of capacity)\n\nPEM 2:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 171 W (zone 0         V, 4% of capacity)\n\nPEM 3:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 627 W (zone 1         V, 15% of capacity)\n\nSystem:\n  Zone 0:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   710 W (3390 W remaining)\n      Actual usage:      342 W\n  Zone 1:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   1970 W (2130 W remaining)\n      Actual usage:      1197 W\n  Total system capacity: 8200 W (maximum 8200 W)\n  Total remaining power: 5520 W",
+        "structured_data_available": false
+      }
+    },
+    "sar01.dsm103": {
+      "show chassis power": {
+        "command": "show chassis power",
+        "completed_at": 1778545021.8887913,
+        "components": [],
+        "duration_ms": 5726,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1778545016.1622677,
+        "stderr": "",
+        "stdout": "PEM 0:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 741 W (zone 0         V, 18% of capacity)\n\nPEM 1:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 855 W (zone 1         V, 20% of capacity)\n\nPEM 2:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 741 W (zone 0         V, 18% of capacity)\n\nPEM 3:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 1083 W (zone 1        V, 26% of capacity)\n\nSystem:\n  Zone 0:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   2363 W (1737 W remaining)\n      Actual usage:      1482 W\n  Zone 1:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   2895 W (1205 W remaining)\n      Actual usage:      1938 W\n  Total system capacity: 8200 W (maximum 8200 W)\n  Total remaining power: 2942 W",
+        "structured_data_available": false
+      }
+    },
+    "sar01.hsv107": {
+      "show chassis power": {
+        "command": "show chassis power",
+        "completed_at": 1778545021.9535327,
+        "components": [],
+        "duration_ms": 5790,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1778545016.1630766,
+        "stderr": "",
+        "stdout": "PEM 0:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 812 W (zone 0         V, 19% of capacity)\n\nPEM 1:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 969 W (zone 1         V, 23% of capacity)\n\nPEM 2:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 336 W (zone 0         V, 8% of capacity)\n\nPEM 3:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 1176 W (zone 1        V, 28% of capacity)\n\nSystem:\n  Zone 0:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   1878 W (2222 W remaining)\n      Actual usage:      1148 W\n  Zone 1:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   3336 W (764 W remaining)\n      Actual usage:      2145 W\n  Total system capacity: 8200 W (maximum 8200 W)\n  Total remaining power: 2986 W",
+        "structured_data_available": false
+      }
+    },
+    "sar01.oma102": {
+      "show chassis power": {
+        "command": "show chassis power",
+        "completed_at": 1778545023.0206666,
+        "components": [],
+        "duration_ms": 6856,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1778545016.16396,
+        "stderr": "",
+        "stdout": "PEM 0:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 280 W (zone 0         V, 6% of capacity)\n\nPEM 1:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 684 W (zone 1         V, 16% of capacity)\n\nPEM 2:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 114 W (zone 0         V, 2% of capacity)\n\nPEM 3:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 969 W (zone 1         V, 23% of capacity)\n\nSystem:\n  Zone 0:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   710 W (3390 W remaining)\n      Actual usage:      394 W\n  Zone 1:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   2554 W (1546 W remaining)\n      Actual usage:      1653 W\n  Total system capacity: 8200 W (maximum 8200 W)\n  Total remaining power: 4936 W",
+        "structured_data_available": false
+      }
+    },
+    "sar01.oma103": {
+      "show chassis power": {
+        "command": "show chassis power",
+        "completed_at": 1778545022.3012502,
+        "components": [],
+        "duration_ms": 6134,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1778545016.1669717,
+        "stderr": "",
+        "stdout": "PEM 0:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 228 W (zone 0         V, 5% of capacity)\n\nPEM 1:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 1026 W (zone 1        V, 25% of capacity)\n\nPEM 2:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 114 W (zone 0         V, 2% of capacity)\n\nPEM 3:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 870 W (zone 1         V, 21% of capacity)\n\nSystem:\n  Zone 0:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   710 W (3390 W remaining)\n      Actual usage:      342 W\n  Zone 1:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   2994 W (1106 W remaining)\n      Actual usage:      1896 W\n  Total system capacity: 8200 W (maximum 8200 W)\n  Total remaining power: 4496 W",
+        "structured_data_available": false
+      }
+    },
+    "sar02.bna103": {
+      "show chassis power": {
+        "command": "show chassis power",
+        "completed_at": 1778545022.8455088,
+        "components": [],
+        "duration_ms": 6672,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1778545016.1725175,
+        "stderr": "",
+        "stdout": "PEM 0:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 754 W (zone 0         V, 18% of capacity)\n\nPEM 1:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 1026 W (zone 1        V, 25% of capacity)\n\nPEM 2:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 798 W (zone 0         V, 19% of capacity)\n\nPEM 3:\n  State:     Online\n  AC input:  OK (2 feed expected, 2 feed connected)\n  Capacity:  4100 W (maximum 4100 W)\n  DC output: 1140 W (zone 1        V, 27% of capacity)\n\nSystem:\n  Zone 0:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   2462 W (1638 W remaining)\n      Actual usage:      1552 W\n  Zone 1:\n      Capacity:          4100 W (maximum 4100 W)\n      Allocated power:   3380 W (720 W remaining)\n      Actual usage:      2166 W\n  Total system capacity: 8200 W (maximum 8200 W)\n  Total remaining power: 2358 W",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "443a52ce9e79",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "fabric_modules": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "power_modules": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 7,
+    "run_id": "443a52ce9e79",
+    "state": "completed",
+    "success_hosts": [
+      "sar01.bna103",
+      "sar01.dsm102",
+      "sar01.dsm103",
+      "sar01.hsv107",
+      "sar01.oma102",
+      "sar01.oma103",
+      "sar02.bna103"
+    ],
+    "tasks_completed": 7,
+    "tasks_failed": 0,
+    "tasks_total": 7
+  },
+  "total_tasks": 7
+}
