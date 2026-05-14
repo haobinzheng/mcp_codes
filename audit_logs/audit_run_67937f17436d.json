@@ -1,0 +1,56 @@
+{
+  "commands": [
+    "show interface et-0/0/14"
+  ],
+  "completed_at": 1778798952.599017,
+  "completed_tasks": 1,
+  "created_at": 1778798951.433261,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "cr01.iad101"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_67937f17436d.json",
+  "results": {
+    "cr01.iad101": {
+      "show interface et-0/0/14": {
+        "command": "show interface et-0/0/14",
+        "completed_at": 1778798952.5981407,
+        "components": [],
+        "duration_ms": 1162,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1778798951.4361026,
+        "stderr": "",
+        "stdout": "Physical interface: et-0/0/14, Enabled, Physical link is Up\n  Interface index: 1301, SNMP ifIndex: 576\n  Description: [R=CR01.ATL103][I=ET-0/0/14][A=AE7][C=LEVL3:448687739][S=ACTIVE][U=CORE]\n  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 400Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber\n  Device flags   : Present Running\n  Interface flags: SNMP-Traps\n  CoS queues     : 8 supported, 8 maximum usable queues\n  Current address: 40:7f:5f:5b:68:87, Hardware address: 40:7f:5f:5b:5d:9c\n  Last flapped   : 2026-05-11 02:03:00 UTC (3d 20:46 ago)\n  Input rate     : 1545369416 bps (307027 pps)\n  Output rate    : 30418093528 bps (4349454 pps)\n  Active alarms  : None\n  Active defects : None\n  PCS statistics                      Seconds\n    Bit errors                             0\n    Errored blocks                         0\n  Ethernet FEC Mode  :                 FEC119\n    FEC Codeword size                     544\n    FEC Codeword rate                   0.945\n  Ethernet FEC statistics              Errors\n    FEC Corrected Errors         343711857532\n    FEC Uncorrected Errors                264\n    FEC Corrected Errors Rate           46294\n    FEC Uncorrected Errors Rate             0\n  PRBS Mode : Disabled\n  Interface transmit statistics: Disabled\n  Link Degrade :                      \n    Link Monitoring                   :  Disable\n\n  Logical interface et-0/0/14.0 (Index 1085) (SNMP ifIndex 631)\n    Flags: Up SNMP-Traps Encapsulation: ENET2 DF\n    Protocol aenet, AE bundle: ae7.0",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "67937f17436d",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "fabric_modules": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "power_modules": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "67937f17436d",
+    "state": "completed",
+    "success_hosts": [
+      "cr01.iad101"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}

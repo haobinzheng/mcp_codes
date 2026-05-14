@@ -2571,15 +2571,38 @@ async def audit_core_capacity(devices: str) -> str:
 
                     agg_link_found = False
                     for i in range(len(intf_result)):
-                        if "Link:" in intf_result[i]:
+                        if "Link:" in intf_result[i] or "Members:" in intf_result[i]:
                             num = 0
                             agg_link_found = True
                             continue
-                        if agg_link_found and "et-" in intf_result[i]:
-                            agg_members.append(intf_result[i].strip())
+                        if agg_link_found and intf_result[i].strip().startswith(("et-", "xe-", "ge-")):
+                            agg_members.append(intf_result[i].strip().split()[0])
                             num += 1
-                            if num == agg_member_links:
+                            if agg_member_links > 0 and num == agg_member_links:
                                 break
+
+                    member_speeds = {}
+                    for member in agg_members:
+                        async with semaphore:
+                            proc = await asyncio.create_subprocess_exec(
+                                GNETCH_PATH, f"show interfaces {member}", hostname,
+                                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                            )
+                            stdout, _ = await proc.communicate()
+                            member_result = stdout.decode(errors="replace").strip().splitlines()
+
+                        with open(device_log_file, 'a') as log_file:
+                            log_file.write(f"\n--- show interfaces {member} ---\n")
+                            log_file.write("\n".join(member_result) + "\n")
+
+                        member_speed = "Unknown"
+                        for m_line in member_result:
+                            if "Speed:" in m_line or "Link-level type: Ethernet, MTU" in m_line:
+                                matched = re.search(r"Speed: ([0-9]+Gbps)", m_line)
+                                if matched:
+                                    member_speed = matched.group(1)
+                                    break
+                        member_speeds[member] = member_speed
 
                     bundle_dict[intf]["description"] = description
                     bundle_dict[intf]["speed"] = speed_str
@@ -2591,6 +2614,10 @@ async def audit_core_capacity(devices: str) -> str:
                     bundle_dict[intf]["input_pps"] = input_pps
                     bundle_dict[intf]["output_pps"] = output_pps
                     bundle_dict[intf]["ae_list"] = agg_members
+                    bundle_dict[intf]["member_speeds"] = member_speeds
+                    is_400g = any("400g" in sp.lower() for sp in member_speeds.values())
+                    bundle_dict[intf]["is_400g_upgraded"] = is_400g
+                    bundle_dict[intf]["upgrade_status"] = "400G upgraded" if is_400g else "Not upgraded"
 
             with open(device_log_file, 'a') as log_file:
                 log_file.write("\n--- Processed Data ---\n")

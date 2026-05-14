@@ -1,0 +1,56 @@
+{
+  "commands": [
+    "show interface ae7"
+  ],
+  "completed_at": 1778798874.7342272,
+  "completed_tasks": 1,
+  "created_at": 1778798873.5716512,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "cr01.iad101"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_929376676492.json",
+  "results": {
+    "cr01.iad101": {
+      "show interface ae7": {
+        "command": "show interface ae7",
+        "completed_at": 1778798874.7333324,
+        "components": [],
+        "duration_ms": 1152,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1778798873.5809767,
+        "stderr": "",
+        "stdout": "Physical interface: ae7, Enabled, Physical link is Up\n  Interface index: 1299, SNMP ifIndex: 634\n  Description: [R=CR01.ATL103][A=AE7][S=ACTIVE][U=CORE]\n  Link-level type: Ethernet, MTU: 9212, Speed: 400Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps\n  Device flags   : Present Running\n  Interface flags: SNMP-Traps\n  Current address: 40:7f:5f:5b:68:87, Hardware address: 40:7f:5f:5b:68:87\n  Last flapped   : 2026-05-11 02:03:02 UTC (3d 20:44 ago)\n  Input rate     : 1048138256 bps (263924 pps)\n  Output rate    : 27181786784 bps (4075113 pps)\n  Members:\n      Statistics        Packets       pps          Bytes         bps\n      et-0/0/14\n        Input : 2823419963704     263924 2056384818026192   1048138256\n        Output: 26109340206088    4075113 24996767825122764  27181786784\n\n  Logical interface ae7.0 (Index 1068) (SNMP ifIndex 635)\n    Flags: Up SNMP-Traps Encapsulation: ENET2 DF\n    Statistics        Packets        pps         Bytes          bps\n    Bundle:\n        Input : 5130937975857     275182 3604128355275256   1066303296\n        Output: 46351714503305    4149155 42958533159159519  27157558248\n    Protocol inet\n    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0\n    MTU: 9198\n      Flags: Sendbcast-pkt-to-re\n      Addresses, Flags: Is-Preferred Is-Primary\n        Destination: 23.255.224.66/31, Local: 23.255.224.67\n    Protocol iso, MTU: 9195\n      Flags: None\n    Protocol inet6\n    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0\n    MTU: 9198\n      Flags: None\n      Addresses, Flags: Is-Preferred\n        Destination: fe80::/64, Local: fe80::427f:5fff:fe5b:6887\n        INET6 Address Flags: None\n    Protocol mpls, MTU: 9178, Maximum labels: 5\n      Flags: None\n    Protocol multiservice, MTU: Unlimited\n      Flags: None",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "929376676492",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "fabric_modules": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "power_modules": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "929376676492",
+    "state": "completed",
+    "success_hosts": [
+      "cr01.iad101"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}
