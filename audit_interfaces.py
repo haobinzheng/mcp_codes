@@ -395,6 +395,43 @@ class CustomArgumentParser(argparse.ArgumentParser):
         print("Note #2: if you want to collect LSP data, you need to run it with -d")
         print("Note #3: If you don't provide any arugment in CLI, by default you are using SSH to access devices")
 
+def parse_duration(duration_str: str) -> float:
+    if not duration_str:
+        return 0.0
+    match = re.match(r"^(\d+)([smhd])?$", duration_str.strip(), re.IGNORECASE)
+    if not match:
+        raise ValueError(f"Invalid duration format: {duration_str}")
+    val = float(match.group(1))
+    unit = (match.group(2) or "s").lower()
+    multipliers = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+    return val * multipliers[unit]
+
+async def run_audit_cycle(device_list, folder_name, regex_site, args):
+    async_start = time.time()
+    tasks = [process_device_interfaces(device, folder_name, regex_site) for device in device_list]
+    results = await asyncio.gather(*tasks)
+
+    audit_result = {host: data for device_result in results for host, data in device_result.items()}
+    print(f"Total number of devices: {len(audit_result)}")
+
+    json_file_path = "high_utilization_interfaces_history.json"
+    save_high_interfaces_core(audit_result, json_file_path)
+    print("You can run 'python convert_core_high_interfaces_excel.py' to convert json to excel file")
+
+    root_folder = args.json_folder if args.json_folder else "Audit_interfaces_data"
+    pt_now = datetime.now(tz=ZoneInfo("America/Los_Angeles"))
+    date_folder = pt_now.strftime("%Y-%m-%d")
+    time_stamp = pt_now.strftime("%Y_%m_%d_%H_%M")
+
+    for host, data in audit_result.items():
+        host_folder = os.path.join(root_folder, date_folder, host)
+        os.makedirs(host_folder, exist_ok=True)
+        json_filename = f"{host}_{time_stamp}.json"
+        dump_json_file(host_folder, json_filename, data)
+     
+    async_duration = time.time() - async_start
+    print(f"Asynchronous execution time: {async_duration:.2f} seconds\n")
+
 async def main():
     parser = CustomArgumentParser()
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose debug output')
@@ -409,6 +446,11 @@ async def main():
         nargs="?",  # Makes the argument optional
         default=None,  # Default value when not provided
         help="Specify the json folder name (optional). If used, a folder name must be provided."
+    )
+    parser.add_argument(
+        "--duration",
+        required=False,
+        help="Run continuously every 5 minutes for a specified duration (e.g., '5h', '30m', '2d')"
     )
 
     args = parser.parse_args()
@@ -466,32 +508,40 @@ async def main():
     else:
         device_list = [d for d in all_devices if d.lower().startswith(("cr", "pr", "dr", "mar", "core", "metro"))]
 
-    async_start = time.time()
-    tasks = [process_device_interfaces(device, folder_name, regex_site) for device in device_list]
-    # Run tasks concurrently
-    results = await asyncio.gather(*tasks)
-
-    # Aggregate results
-    audit_result = {host: data for device_result in results for host, data in device_result.items()}
-    print(f"Total number of devices: {len(audit_result)}")
-
-    json_file_path = "high_utilization_interfaces_history.json"
-    save_high_interfaces_core(audit_result, json_file_path)
-    print("You can run 'python convert_core_high_interfaces_excel.py' to convert json to excel file")
-
-    # Get the current date and time
-    now = datetime.now()
-    date_string = now.strftime("%Y_%m_%d_%H_%M")
-
-    output_file = f'interfaces_high_{date_string}.json'
-    if args.json_folder:
-        json_folder_name = args.json_folder
+    if args.duration:
+        try:
+            total_duration = parse_duration(args.duration)
+        except ValueError as e:
+            print(f"Error: {e}")
+            exit(-1)
     else:
-        json_folder_name = "Json_interfaces_folder"
-    dump_json_file(json_folder_name, output_file, audit_result)
-     
-    async_duration = time.time() - async_start
-    print(f"Asynchronous execution time: {async_duration:.2f} seconds\n")
+        total_duration = 0.0
+
+    if total_duration > 0:
+        start_time = time.time()
+        interval = 300  # 5 minutes in seconds
+        print(f"Starting periodic audit every 5 minutes for duration: {args.duration}")
+        while True:
+            elapsed = time.time() - start_time
+            if elapsed >= total_duration:
+                print("Total duration reached. Exiting.")
+                break
+
+            cycle_start = time.time()
+            print(f"\n=== Starting audit cycle at {get_pacific_timestamp()} ===")
+            await run_audit_cycle(device_list, folder_name, regex_site, args)
+
+            cycle_elapsed = time.time() - cycle_start
+            sleep_needed = interval - cycle_elapsed
+
+            if (time.time() - start_time + sleep_needed) >= total_duration:
+                sleep_needed = total_duration - (time.time() - start_time)
+
+            if sleep_needed > 0:
+                print(f"Audit cycle finished. Sleeping for {sleep_needed:.1f} seconds until next cycle...")
+                await asyncio.sleep(sleep_needed)
+    else:
+        await run_audit_cycle(device_list, folder_name, regex_site, args)
 
 
 if __name__ == "__main__":
