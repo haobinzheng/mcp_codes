@@ -427,6 +427,7 @@ async def run_audit_cycle(device_list, folder_name, regex_site, args):
         host_folder = os.path.join(root_folder, date_folder, host)
         os.makedirs(host_folder, exist_ok=True)
         json_filename = f"{host}_{time_stamp}.json"
+        data["audit_timestamp"] = pt_now.strftime("%Y-%m-%d %H:%M:%S")
         dump_json_file(host_folder, json_filename, data)
      
     async_duration = time.time() - async_start
@@ -519,26 +520,23 @@ async def main():
 
     if total_duration > 0:
         start_time = time.time()
-        interval = 300  # 5 minutes in seconds
-        print(f"Starting periodic audit every 5 minutes for duration: {args.duration}")
+        sleep_interval = 300.0  # 5 minutes in seconds
+        print(f"Starting periodic audit with 5-minute rest interval for duration: {args.duration}")
         while True:
             elapsed = time.time() - start_time
             if elapsed >= total_duration:
                 print("Total duration reached. Exiting.")
                 break
 
-            cycle_start = time.time()
             print(f"\n=== Starting audit cycle at {get_pacific_timestamp()} ===")
             await run_audit_cycle(device_list, folder_name, regex_site, args)
 
-            cycle_elapsed = time.time() - cycle_start
-            sleep_needed = interval - cycle_elapsed
-
+            sleep_needed = sleep_interval
             if (time.time() - start_time + sleep_needed) >= total_duration:
                 sleep_needed = total_duration - (time.time() - start_time)
 
             if sleep_needed > 0:
-                print(f"Audit cycle finished. Sleeping for {sleep_needed:.1f} seconds until next cycle...")
+                print(f"Audit cycle finished. Waiting 5 minutes ({sleep_needed:.1f} seconds) before next audit...")
                 await asyncio.sleep(sleep_needed)
     else:
         await run_audit_cycle(device_list, folder_name, regex_site, args)
