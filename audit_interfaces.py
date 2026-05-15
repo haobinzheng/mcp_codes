@@ -220,28 +220,54 @@ async def process_device_interfaces(hostname, folder_name, regex_site):
             log_file.write("\n--- show version ---\n")
             log_file.write("\n".join(version_result) + "\n")
 
-        # Fetch 'show interfaces terse' to discover all active interfaces
-        terse_result = await rate_limited_gnetch_command("show interfaces terse", host)
-        with open(device_log_file, 'a') as log_file:
-            log_file.write("\n--- show interfaces terse ---\n")
-            log_file.write("\n".join(terse_result) + "\n")
-
         active_intfs = []
-        for line in terse_result:
-            parts = line.strip().split()
-            if len(parts) >= 3:
-                intf_name = parts[0]
-                admin = parts[1].lower()
-                link = parts[2].lower()
-                # Match physical or bundle interfaces (no subinterfaces like .0)
-                if admin == "up" and link == "up" and "." not in intf_name:
-                    if intf_name.startswith(("ae", "et-", "xe-", "ge-")):
-                        active_intfs.append(intf_name)
+        isis_neighbors = {}
+
+        if host.startswith("cr") or "core" in host:
+            # For CR routers, only audit interfaces shown in 'show isis adjacency'
+            adj_result = await rate_limited_gnetch_command("show isis adjacency", host)
+            with open(device_log_file, 'a') as log_file:
+                log_file.write("\n--- show isis adjacency ---\n")
+                log_file.write("\n".join(adj_result) + "\n")
+
+            adj_list = parse_isis_adj(adj_result)
+            for adj in adj_list:
+                if "dr" in adj["System"] or "cr" in adj["System"] or "pr" in adj["System"]:
+                    if adj["State"] == "Up":
+                        intf = adj['Interface'].split(".")[0]
+                        if intf not in active_intfs:
+                            active_intfs.append(intf)
+                        isis_neighbors[intf] = adj["System"]
+        else:
+            # For PR and other routers, discover active bundle (ae) interfaces that are up/up
+            terse_result = await rate_limited_gnetch_command("show interfaces terse", host)
+            with open(device_log_file, 'a') as log_file:
+                log_file.write("\n--- show interfaces terse ---\n")
+                log_file.write("\n".join(terse_result) + "\n")
+
+            for line in terse_result:
+                parts = line.strip().split()
+                if len(parts) >= 3:
+                    intf_name = parts[0]
+                    admin = parts[1].lower()
+                    link = parts[2].lower()
+                    # Match bundle interfaces (no subinterfaces like .0)
+                    if admin == "up" and link == "up" and "." not in intf_name:
+                        if intf_name.startswith("ae"):
+                            active_intfs.append(intf_name)
 
         for intf in active_intfs:
             agg_members = []
             neighbor = "Unknown"
-            bundle_dict.setdefault(intf, {"neighbor": neighbor, "Circuit": "Unknown"})
+            circuit = "Unknown"
+            if (host.startswith("cr") or "core" in host) and intf in isis_neighbors:
+                neighbor = isis_neighbors[intf]
+                remote_device_site = neighbor.split(".")[1] if "." in neighbor else neighbor
+                matched_rem = re.search(regex_site, remote_device_site)
+                remote_site = matched_rem.group(1).strip() if matched_rem else "Unknown"
+                circuit = "SR" if local_site.upper() == remote_site.upper() else "LR"
+
+            bundle_dict.setdefault(intf, {"neighbor": neighbor, "Circuit": circuit})
 
             # Fetch 'show interfaces extensive'
             intf_result = await rate_limited_gnetch_command(f"show interfaces {intf} extensive", host)
