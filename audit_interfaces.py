@@ -395,14 +395,6 @@ class CustomArgumentParser(argparse.ArgumentParser):
         print("Note #2: if you want to collect LSP data, you need to run it with -d")
         print("Note #3: If you don't provide any arugment in CLI, by default you are using SSH to access devices")
 
-async def process_device_interfaces_with_sem(hostname, folder_name, regex_site, semaphore):
-    """
-    Wrapper to limit the number of concurrent devices being processed, preventing
-    subprocess/network bottlenecking when auditing many devices at once.
-    """
-    async with semaphore:
-        return await process_device_interfaces(hostname, folder_name, regex_site)
-
 async def main():
     parser = CustomArgumentParser()
     parser.add_argument('-v', '--verbose', action='store_true', help='Enable verbose debug output')
@@ -475,9 +467,7 @@ async def main():
         device_list = [d for d in all_devices if d.lower().startswith(("cr", "pr", "dr", "mar", "core", "metro"))]
 
     async_start = time.time()
-    # Limit concurrent device audits to 10 to prevent stubby/network bottlenecking
-    sem = asyncio.Semaphore(10)
-    tasks = [process_device_interfaces_with_sem(device, folder_name, regex_site, sem) for device in device_list]
+    tasks = [process_device_interfaces(device, folder_name, regex_site) for device in device_list]
     # Run tasks concurrently
     results = await asyncio.gather(*tasks)
 
