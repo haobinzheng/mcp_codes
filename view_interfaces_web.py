@@ -496,8 +496,8 @@ HTML_TEMPLATE = """<!doctype html>
                   <th>Neighbor</th>
                   <th>Circuit</th>
                   <th>Speed</th>
-                  <th>Input %</th>
-                  <th>Output %</th>
+                  <th>Latest (In / Out)</th>
+                  <th>Daily Peak (In / Out)</th>
                   <th>Upgrade Status</th>
                 </tr>
               </thead>
@@ -639,14 +639,19 @@ HTML_TEMPLATE = """<!doctype html>
       if (!currentRouterData || !currentRouterData.interfaces) return;
       const intfs = currentRouterData.interfaces;
       const keys = Object.keys(intfs);
+      const seriesMap = currentRouterData.series || {};
 
       // Update metrics
       let upgraded = 0;
       let highUtil = 0;
       keys.forEach(k => {
         const info = intfs[k];
+        const s = seriesMap[k] || { input: [0], output: [0] };
+        const pIn = s.input.length > 0 ? Math.max(...s.input) : info.input_percent;
+        const pOut = s.output.length > 0 ? Math.max(...s.output) : info.output_percent;
+
         if (info.is_400g_upgraded) upgraded++;
-        if (info.input_percent > 50 || info.output_percent > 50) highUtil++;
+        if (pIn > 50 || pOut > 50) highUtil++;
       });
       document.getElementById('metric-total').textContent = keys.length;
       document.getElementById('metric-upgraded').textContent = upgraded;
@@ -670,6 +675,12 @@ HTML_TEMPLATE = """<!doctype html>
 
       keys.forEach((k, index) => {
         const info = intfs[k];
+        const s = seriesMap[k] || { input: [0], output: [0] };
+        const peakIn = Math.round(s.input.length > 0 ? Math.max(...s.input) : info.input_percent);
+        const peakOut = Math.round(s.output.length > 0 ? Math.max(...s.output) : info.output_percent);
+        const latestIn = Math.round(info.input_percent);
+        const latestOut = Math.round(info.output_percent);
+
         const tr = document.createElement('tr');
         tr.id = `row-${k}`;
         tr.onclick = () => selectInterface(k);
@@ -688,17 +699,37 @@ HTML_TEMPLATE = """<!doctype html>
         const tdSpd = document.createElement('td');
         tdSpd.textContent = info.speed || 'Unknown';
 
-        const tdIn = document.createElement('td');
-        const spanIn = document.createElement('span');
-        spanIn.className = `badge ${info.input_percent > 50 ? (info.input_percent > 80 ? 'badge-high' : 'badge-warn') : 'badge-ok'}`;
-        spanIn.textContent = `${Math.round(info.input_percent)}%`;
-        tdIn.appendChild(spanIn);
+        // Latest In/Out cell
+        const tdLatest = document.createElement('td');
+        const badgeLatestIn = document.createElement('span');
+        badgeLatestIn.className = `badge ${latestIn > 50 ? (latestIn > 80 ? 'badge-high' : 'badge-warn') : 'badge-ok'}`;
+        badgeLatestIn.textContent = `${latestIn}%`;
+        
+        const spanSlash1 = document.createElement('span');
+        spanSlash1.style.margin = "0 6px";
+        spanSlash1.style.color = "var(--text-muted)";
+        spanSlash1.textContent = "/";
 
-        const tdOut = document.createElement('td');
-        const spanOut = document.createElement('span');
-        spanOut.className = `badge ${info.output_percent > 50 ? (info.output_percent > 80 ? 'badge-high' : 'badge-warn') : 'badge-ok'}`;
-        spanOut.textContent = `${Math.round(info.output_percent)}%`;
-        tdOut.appendChild(spanOut);
+        const badgeLatestOut = document.createElement('span');
+        badgeLatestOut.className = `badge ${latestOut > 50 ? (latestOut > 80 ? 'badge-high' : 'badge-warn') : 'badge-ok'}`;
+        badgeLatestOut.textContent = `${latestOut}%`;
+        tdLatest.append(badgeLatestIn, spanSlash1, badgeLatestOut);
+
+        // Daily Peak In/Out cell
+        const tdPeak = document.createElement('td');
+        const badgePeakIn = document.createElement('span');
+        badgePeakIn.className = `badge ${peakIn > 50 ? (peakIn > 80 ? 'badge-high' : 'badge-warn') : 'badge-ok'}`;
+        badgePeakIn.textContent = `${peakIn}%`;
+
+        const spanSlash2 = document.createElement('span');
+        spanSlash2.style.margin = "0 6px";
+        spanSlash2.style.color = "var(--text-muted)";
+        spanSlash2.textContent = "/";
+
+        const badgePeakOut = document.createElement('span');
+        badgePeakOut.className = `badge ${peakOut > 50 ? (peakOut > 80 ? 'badge-high' : 'badge-warn') : 'badge-ok'}`;
+        badgePeakOut.textContent = `${peakOut}%`;
+        tdPeak.append(badgePeakIn, spanSlash2, badgePeakOut);
 
         const tdUpg = document.createElement('td');
         const spanUpg = document.createElement('span');
@@ -706,7 +737,7 @@ HTML_TEMPLATE = """<!doctype html>
         spanUpg.textContent = info.upgrade_status || 'Not upgraded';
         tdUpg.appendChild(spanUpg);
 
-        tr.append(tdIntf, tdNeigh, tdCirc, tdSpd, tdIn, tdOut, tdUpg);
+        tr.append(tdIntf, tdNeigh, tdCirc, tdSpd, tdLatest, tdPeak, tdUpg);
         tbody.appendChild(tr);
       });
 
