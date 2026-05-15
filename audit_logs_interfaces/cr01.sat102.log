@@ -17645,3 +17645,1319 @@ data: "Physical interface: ae4, Enabled, Physical link is Up
     Protocol mpls, MTU: 9178, Maximum labels: 5, Generation: 168
     Protocol multiservice, MTU: Unlimited, Generation: 179, Route table: 0
     Generation: 180, Route table: 0
+
+--- show interfaces et-0/0/3.0 ---
+iming_metrics {
+  queue_time_seconds: 3.927003126591444e-05
+  execution_time_seconds: 2.4854082679958083
+}
+data: "  Logical interface et-0/0/3.0 (Index 86) (SNMP ifIndex 590)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Input packets : 67247955123
+    Output packets: 21127196385
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces et-0/0/9.0 ---
+iming_metrics {
+  queue_time_seconds: 4.4950051233172417e-05
+  execution_time_seconds: 2.4774700690177269
+}
+data: "  Logical interface et-0/0/9.0 (Index 101) (SNMP ifIndex 613)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Input packets : 66660179319
+    Output packets: 21346657922
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces et-1/0/4.0 ---
+iming_metrics {
+  queue_time_seconds: 4.2330008000135422e-05
+  execution_time_seconds: 2.47779511497356
+}
+data: "  Logical interface et-1/0/4.0 (Index 105) (SNMP ifIndex 545)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Input packets : 989883870
+    Output packets: 4405356
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces ae5 extensive ---
+iming_metrics {
+  queue_time_seconds: 3.9070029743015766e-05
+  execution_time_seconds: 2.5630183790344745
+}
+data: "Physical interface: ae5, Enabled, Physical link is Up
+  Interface index: 203, SNMP ifIndex: 649, Generation: 206
+  Description: [R=PR01.SAT102][I=AE1][S=TESTING][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, Speed: 200Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Disabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps Internal: 0x4000
+  Current address: 50:c7:09:c6:c4:28, Hardware address: 50:c7:09:c6:c4:28
+  Last flapped   : 2024-04-15 06:37:31 UTC (108w3d 21:43 ago)
+  Statistics last cleared: Never
+  Traffic statistics:
+   Input  bytes  :         520144154993               273288 bps
+   Output bytes  :         805192144877               161984 bps
+   Input  packets:           4375019338                   95 pps
+   Output packets:           4377076267                   91 pps
+   IPv6 transit statistics:
+   Input  bytes  :                    0
+   Output bytes  :                    0
+   Input  packets:                    0
+   Output packets:                    0
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                   144290           144391
+    Multicast packets                293705464        266163536
+  Input errors:
+    Errors: 0, Drops: 0, Framing errors: 0, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 2, Errors: 0, Drops: 0, MTU errors: 0, Resource errors: 0
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                        653235019            653235019                    0
+    1                             3119                 3119                    0
+    2                                0                    0                    0
+    3                       3884700412           3884700412                    0
+    4                                4                    4                    0
+    5                            55761                55761                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+
+  Logical interface ae5.0 (Index 91) (SNMP ifIndex 650) (Generation 168)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input :    4375019338         95  520144154993       273288
+        Output:    4248742425         90  786572982994       160352
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+    Link:
+      et-0/0/8.0
+        Input :    3677934683         95  440820526024       273288
+        Output:    1903730100         57  335991344495        67216
+      et-1/0/8.0
+        Input :     697084655          0   79323628969            0
+        Output:    2346489909         33  451190403107        93136
+
+
+    Aggregate member links: 2
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-0/0/8.0     Actor        127  50:c7:09:c6:c4:26        127       18       6
+      et-0/0/8.0   Partner        127  64:64:9b:ba:eb:c0        127        1       2
+      et-1/0/8.0     Actor        127  50:c7:09:c6:c4:26        127       19       6
+      et-1/0/8.0   Partner        127  64:64:9b:ba:eb:c0        127        2       2
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx 
+      et-0/0/8.0          20506189    20488274            0            0
+      et-1/0/8.0          20506075    20489601            0            0
+    Marker Statistics:   Marker Rx     Resp Tx   Unknown Rx   Illegal Rx
+      et-0/0/8.0                 0           0            0            0
+      et-1/0/8.0                 0           0            0            0
+    Protocol inet, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 217, Route table: 0
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 23.255.224.70/31, Local: 23.255.224.70, Broadcast: Unspecified, Generation: 176
+    Protocol iso, MTU: 9195, Generation: 218, Route table: 0
+    Protocol inet6, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 219, Route table: 0
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::52c7:9ff:fec6:c428
+    Protocol mpls, MTU: 9178, Maximum labels: 5, Generation: 178
+    Protocol multiservice, MTU: Unlimited, Generation: 220, Route table: 0
+    Generation: 221, Route table: 0
+
+--- show interfaces et-0/0/8.0 ---
+iming_metrics {
+  queue_time_seconds: 4.5819964725524187e-05
+  execution_time_seconds: 2.4825732100289315
+}
+data: "  Logical interface et-0/0/8.0 (Index 74) (SNMP ifIndex 612)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 3678673729
+    Output packets: 1903730262
+    Protocol aenet, AE bundle: ae5.0
+
+--- show interfaces et-1/0/8.0 ---
+iming_metrics {
+  queue_time_seconds: 4.5019958633929491e-05
+  execution_time_seconds: 2.4713793600094505
+}
+data: "  Logical interface et-1/0/8.0 (Index 90) (SNMP ifIndex 549)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 697823420
+    Output packets: 2346490156
+    Protocol aenet, AE bundle: ae5.0
+
+--- Processed Data ---
+{
+    "role": "backbone",
+    "year": 2024,
+    "ae1": {
+        "neighbor": "CR01.SAT103",
+        "Circuit": "SR",
+        "description": "  Description: [R=CR01.SAT103][I=AE1][S=ACTIVE][U=CORE]",
+        "speed": "600Gbps",
+        "speed_human": 600000000000,
+        "input_bps": 41559736088,
+        "input_bps_percent": 6.926622681333333,
+        "output_bps": 8086728,
+        "output_bps_percent": 0.001347788,
+        "input_pps": 9850090,
+        "output_pps": 4394,
+        "ae_list": [
+            "et-0/0/1.0",
+            "et-0/0/5.0",
+            "et-1/0/1.0",
+            "et-1/0/5.0",
+            "et-0/0/12.0",
+            "et-1/0/9.0"
+        ],
+        "member_speeds": {
+            "et-0/0/1.0": "Unknown",
+            "et-0/0/5.0": "Unknown",
+            "et-1/0/1.0": "Unknown",
+            "et-1/0/5.0": "Unknown",
+            "et-0/0/12.0": "Unknown",
+            "et-1/0/9.0": "Unknown"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae2": {
+        "neighbor": "CR01.AUS122",
+        "Circuit": "LR",
+        "description": "  Description: [R=CR01.AUS122][I=AE4][S=ACTIVE][U=CORE]",
+        "speed": "700Gbps",
+        "speed_human": 700000000000,
+        "input_bps": 325094167808,
+        "input_bps_percent": 46.44202397257143,
+        "output_bps": 57054859040,
+        "output_bps_percent": 8.150694148571429,
+        "input_pps": 31874853,
+        "output_pps": 12313013,
+        "ae_list": [
+            "et-0/0/2.0",
+            "et-0/0/15.0",
+            "et-0/0/11.0",
+            "et-1/0/11.0",
+            "et-1/0/0.0",
+            "et-0/0/14.0",
+            "et-1/0/15.0"
+        ],
+        "member_speeds": {
+            "et-0/0/2.0": "Unknown",
+            "et-0/0/15.0": "Unknown",
+            "et-0/0/11.0": "Unknown",
+            "et-1/0/11.0": "Unknown",
+            "et-1/0/0.0": "Unknown",
+            "et-0/0/14.0": "Unknown",
+            "et-1/0/15.0": "Unknown"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae3": {
+        "neighbor": "DR01.SAT103",
+        "Circuit": "SR",
+        "description": "  Description: [R=DR01.SAT103][I=AE0][S=ACTIVE][U=CORE]",
+        "speed": "300Gbps",
+        "speed_human": 300000000000,
+        "input_bps": 55359901640,
+        "input_bps_percent": 18.453300546666668,
+        "output_bps": 37752649432,
+        "output_bps_percent": 12.584216477333332,
+        "input_pps": 5402197,
+        "output_pps": 4532893,
+        "ae_list": [
+            "et-0/0/10.0",
+            "et-1/0/10.0",
+            "et-0/0/13.0"
+        ],
+        "member_speeds": {
+            "et-0/0/10.0": "Unknown",
+            "et-1/0/10.0": "Unknown",
+            "et-0/0/13.0": "Unknown"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae4": {
+        "neighbor": "CR02.MCI102",
+        "Circuit": "LR",
+        "description": "  Description: [R=CR02.MCI102][I=AE11][A=AE4][S=ACTIVE][U=CORE]",
+        "speed": "300Gbps",
+        "speed_human": 300000000000,
+        "input_bps": 1264,
+        "input_bps_percent": 4.2133333333333335e-07,
+        "output_bps": 1336,
+        "output_bps_percent": 4.4533333333333335e-07,
+        "input_pps": 1,
+        "output_pps": 1,
+        "ae_list": [
+            "et-0/0/3.0",
+            "et-0/0/9.0",
+            "et-1/0/4.0"
+        ],
+        "member_speeds": {
+            "et-0/0/3.0": "Unknown",
+            "et-0/0/9.0": "Unknown",
+            "et-1/0/4.0": "Unknown"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae5": {
+        "neighbor": "PR01.SAT102",
+        "Circuit": "SR",
+        "description": "  Description: [R=PR01.SAT102][I=AE1][S=TESTING][U=CORE]",
+        "speed": "200Gbps",
+        "speed_human": 200000000000,
+        "input_bps": 273288,
+        "input_bps_percent": 0.000136644,
+        "output_bps": 161984,
+        "output_bps_percent": 8.0992e-05,
+        "input_pps": 95,
+        "output_pps": 91,
+        "ae_list": [
+            "et-0/0/8.0",
+            "et-1/0/8.0"
+        ],
+        "member_speeds": {
+            "et-0/0/8.0": "Unknown",
+            "et-1/0/8.0": "Unknown"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    }
+}
+Processing device: cr01.sat102
+
+--- show version ---
+iming_metrics {
+  queue_time_seconds: 3.7599995266646147e-05
+  execution_time_seconds: 2.6244854409596883
+}
+data: "Hostname: re1-cr01.sat102
+Model: ptx10008
+Junos: 19.4R3.11
+JUNOS OS Kernel 64-bit  [20200922.4042921_builder_stable_11]
+JUNOS OS libs [20200922.4042921_builder_stable_11]
+JUNOS OS runtime [20200922.4042921_builder_stable_11]
+JUNOS OS time zone information [20200922.4042921_builder_stable_11]
+JUNOS network stack and utilities [20201008.203813_builder_junos_194_r3]
+JUNOS libs [20201008.203813_builder_junos_194_r3]
+JUNOS OS libs compat32 [20200922.4042921_builder_stable_11]
+JUNOS OS 32-bit compatibility [20200922.4042921_builder_stable_11]
+JUNOS libs compat32 [20201008.203813_builder_junos_194_r3]
+JUNOS runtime [20201008.203813_builder_junos_194_r3]
+Junos vmguest package [20201008.203813_builder_junos_194_r3]
+JUNOS sflow ptx [20201008.203813_builder_junos_194_r3]
+JUNOS py extensions2 [20201008.203813_builder_junos_194_r3]
+JUNOS py extensions [20201008.203813_builder_junos_194_r3]
+JUNOS py base2 [20201008.203813_builder_junos_194_r3]
+JUNOS py base [20201008.203813_builder_junos_194_r3]
+JUNOS OS vmguest [20200922.4042921_builder_stable_11]
+JUNOS OS crypto [20200922.4042921_builder_stable_11]
+JUNOS OS boot-ve files [20200922.4042921_builder_stable_11]
+JUNOS na telemetry [19.4R3.11]
+JUNOS mx libs compat32 [20201008.203813_builder_junos_194_r3]
+JUNOS mx runtime [20201008.203813_builder_junos_194_r3]
+JUNOS RPD Telemetry Application [19.4R3.11]
+Redis [20201008.203813_builder_junos_194_r3]
+JUNOS common platform support [20201008.203813_builder_junos_194_r3]
+JUNOS Openconfig [19.4R3.11]
+JUNOS mtx network modules [20201008.203813_builder_junos_194_r3]
+JUNOS modules [20201008.203813_builder_junos_194_r3]
+JUNOS mx modules [20201008.203813_builder_junos_194_r3]
+JUNOS mx libs [20201008.203813_builder_junos_194_r3]
+JUNOS SQL Sync Daemon [20201008.203813_builder_junos_194_r3]
+JUNOS mtx Data Plane Crypto Support [20201008.203813_builder_junos_194_r3]
+JUNOS daemons [20201008.203813_builder_junos_194_r3]
+JUNOS mx daemons [20201008.203813_builder_junos_194_r3]
+JUNOS appidd-mx application-identification daemon [20201008.203813_builder_junos_194_r3]
+JUNOS Services URL Filter package [20201008.203813_builder_junos_194_r3]
+JUNOS Services TLB Service PIC package [20201008.203813_builder_junos_194_r3]
+JUNOS Services Telemetry [20201008.203813_builder_junos_194_r3]
+JUNOS Services TCP-LOG [20201008.203813_builder_junos_194_r3]
+JUNOS Services SSL [20201008.203813_builder_junos_194_r3]
+JUNOS Services SOFTWIRE [20201008.203813_builder_junos_194_r3]
+JUNOS Services Stateful Firewall [20201008.203813_builder_junos_194_r3]
+JUNOS Services RTCOM [20201008.203813_builder_junos_194_r3]
+JUNOS Services RPM [20201008.203813_builder_junos_194_r3]
+JUNOS Services PCEF package [20201008.203813_builder_junos_194_r3]
+JUNOS Services NAT [20201008.203813_builder_junos_194_r3]
+JUNOS Services Mobile Subscriber Service Container package [20201008.203813_builder_junos_194_r3]
+JUNOS Services MobileNext Software package [20201008.203813_builder_junos_194_r3]
+JUNOS Services Logging Report Framework package [20201008.203813_builder_junos_194_r3]
+JUNOS Services LL-PDF Container package [20201008.203813_builder_junos_194_r3]
+JUNOS Services Jflow Container package [20201008.203813_builder_junos_194_r3]
+JUNOS Services Deep Packet Inspection package [20201008.203813_builder_junos_194_r3]
+JUNOS Services IPSec [20201008.203813_builder_junos_194_r3]
+JUNOS Services IDS [20201008.203813_builder_junos_194_r3]
+JUNOS IDP Services [20201008.203813_builder_junos_194_r3]
+JUNOS Services HTTP Content Management package [20201008.203813_builder_junos_194_r3]
+JUNOS Services Crypto [20201008.203813_builder_junos_194_r3]
+JUNOS Services Captive Portal and Content Delivery Container package [20201008.203813_builder_junos_194_r3]
+JUNOS Services COS [20201008.203813_builder_junos_194_r3]
+JUNOS AppId Services [20201008.203813_builder_junos_194_r3]
+JUNOS Services Application Level Gateways [20201008.203813_builder_junos_194_r3]
+JUNOS Services AACL Container package [20201008.203813_builder_junos_194_r3]
+JUNOS Extension Toolkit [20201008.203813_builder_junos_194_r3]
+JUNOS Packet Forwarding Engine Support (wrlinux) [20201008.203813_builder_junos_194_r3]
+JUNOS Packet Forwarding Engine Support (PTX10008/PTX10016) [20201008.203813_builder_junos_194_r3]
+JUNOS Packet Forwarding Engine Support (T-Series) [20201008.203813_builder_junos_194_r3]
+JUNOS Packet Forwarding Engine FIPS Support [19.4R3.11]
+JUNOS Packet Forwarding Engine Support (M/T Common) [20201008.203813_builder_junos_194_r3]
+JUNOS Juniper Malware Removal Tool (JMRT) [1.0.0+20201008.203813_builder_junos_194_r3]
+JUNOS J-Insight [20201008.203813_builder_junos_194_r3]
+JUNOS jfirmware [20201008.203813_builder_junos_194_r3]
+JUNOS Online Documentation [20201008.203813_builder_junos_194_r3]
+JUNOS jail runtime [20200922.4042921_builder_stable_11]
+
+--- show isis adjacency ---
+iming_metrics {
+  queue_time_seconds: 4.1649036575108767e-05
+  execution_time_seconds: 2.4933891969849356
+}
+data: "Interface             System         L State        Hold (secs) SNPA
+ae0.0                 re0-rr01.sat102 2 Up                    3
+ae1.0                 re0-cr01.sat103 2 Up                    3
+ae10.0                bng02.sat102   2  Up                    2
+ae2.0                 re0-cr01.aus122 2 Up                    3
+ae3.0                 re0-dr01.sat103 2 Up                    3
+ae4.0                 re0-cr02.mci102 2 Up                    3
+ae5.0                 re0-pr01.sat102 2 Up                    3
+
+--- show interfaces ae1 extensive ---
+iming_metrics {
+  queue_time_seconds: 4.0790007915347815e-05
+  execution_time_seconds: 2.5808568529901095
+}
+data: "Physical interface: ae1, Enabled, Physical link is Up
+  Interface index: 129, SNMP ifIndex: 636, Generation: 132
+  Description: [R=CR01.SAT103][I=AE1][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, Speed: 600Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Disabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps Internal: 0x4000
+  Current address: 50:c7:09:c6:c4:27, Hardware address: 50:c7:09:c6:c4:27
+  Last flapped   : 2023-12-01 08:02:30 UTC (127w6d 20:24 ago)
+  Statistics last cleared: Never
+  Traffic statistics:
+   Input  bytes  :    95624037495212681          41910349360 bps
+   Output bytes  :    35432371276491750             10753240 bps
+   Input  packets:      204505870867680              9485996 pps
+   Output packets:       28004517150116                 5204 pps
+   IPv6 transit statistics:
+   Input  bytes  :                    0
+   Output bytes  :                    0
+   Input  packets:                    0
+   Output packets:                    0
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                   204555           204270
+    Multicast packets                681127179        679138228
+  Input errors:
+    Errors: 8361, Drops: 0, Framing errors: 8361, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 0, Errors: 0, Drops: 0, MTU errors: 0, Resource errors: 0
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                   27994864438556       27994864438556                    0
+    1                          4375079              4375079                    0
+    2                         58544330             58544330                    0
+    3                       9833950102           9833950102                    0
+    4                        150587908            150587908                    0
+    5                        122835020            122835020                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+
+  Logical interface ae1.0 (Index 69) (SNMP ifIndex 638) (Generation 134)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input : 277817538157051    9485996 125757597166441070  41910349360
+        Output: 38455588264616       5200 48581104888598491     10748744
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+    Link:
+      et-0/0/1.0
+        Input : 46681613192118    1811561 21671544131039983   8793882232
+        Output: 6423679070913        737 8102332400501154      4056200
+      et-0/0/5.0
+        Input : 46331041676148    1469292 21189300994045580   6361722504
+        Output: 6428680750448        262 8113998191940782       799808
+      et-1/0/1.0
+        Input : 13615229881779    1555756 8253663485692253   6981117088
+        Output: 1710269502058        525 2202583530287618      1350216
+      et-1/0/5.0
+        Input : 13783176439597    1628332 8486264042497004   7535715344
+        Output: 1712187234778       1118 2199238195681867       901472
+      et-0/0/12.0
+        Input : 9944562498013    1551587 5452576811060994   6608278568
+        Output: 1261708006089        324 1645652291051547       238776
+      et-1/0/9.0
+        Input :  838579890654    1469468 437128359648478   5629633624
+        Output:   15599497620       2234 19649056330484      3402272
+
+
+    Aggregate member links: 6
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-0/0/1.0     Actor        127  50:c7:09:c6:c4:26        127        2       2
+      et-0/0/1.0   Partner        127  00:cc:34:60:eb:1a        127        2       2
+      et-0/0/5.0     Actor        127  50:c7:09:c6:c4:26        127        6       2
+      et-0/0/5.0   Partner        127  00:cc:34:60:eb:1a        127        3       2
+      et-1/0/1.0     Actor        127  50:c7:09:c6:c4:26        127       21       2
+      et-1/0/1.0   Partner        127  00:cc:34:60:eb:1a        127       22       2
+      et-1/0/5.0     Actor        127  50:c7:09:c6:c4:26        127       22       2
+      et-1/0/5.0   Partner        127  00:cc:34:60:eb:1a        127       23       2
+      et-0/0/12.0    Actor        127  50:c7:09:c6:c4:26        127       38       2
+      et-0/0/12.0  Partner        127  00:cc:34:60:eb:1a        127       34       2
+      et-1/0/9.0     Actor        127  50:c7:09:c6:c4:26        127       66       2
+      et-1/0/9.0   Partner        127  00:cc:34:60:eb:1a        127       42       2
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx 
+      et-0/0/1.0          20491188    20488645            0            0
+      et-0/0/5.0          20491190    20488644            0            0
+      et-1/0/1.0          20451502    20449352            0            0
+      et-1/0/5.0          20451742    20449586            0            0
+      et-0/0/12.0         20449713    20447175            0            0
+      et-1/0/9.0            675490      675450            0            0
+    Marker Statistics:   Marker Rx     Resp Tx   Unknown Rx   Illegal Rx
+      et-0/0/1.0                 0           0            0            0
+      et-0/0/5.0                 0           0            0            0
+      et-1/0/1.0                 0           0            0            0
+      et-1/0/5.0                 0           0            0            0
+      et-0/0/12.0                0           0            0            0
+      et-1/0/9.0                 0           0            0            0
+    Protocol inet, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 156, Route table: 0
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 23.255.226.58/31, Local: 23.255.226.58, Broadcast: Unspecified, Generation: 150
+    Protocol iso, MTU: 9195, Generation: 157, Route table: 0
+    Protocol inet6, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 158, Route table: 0
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::52c7:9ff:fec6:c427
+    Protocol mpls, MTU: 9178, Maximum labels: 5, Generation: 152
+    Protocol multiservice, MTU: Unlimited, Generation: 159, Route table: 0
+    Generation: 160, Route table: 0
+
+--- show interfaces et-0/0/1.0 ---
+iming_metrics {
+  queue_time_seconds: 5.854899063706398e-05
+  execution_time_seconds: 2.4726891909958795
+}
+data: "  Logical interface et-0/0/1.0 (Index 84) (SNMP ifIndex 581)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 46681624625869
+    Output packets: 6423679074752
+    Protocol aenet, AE bundle: ae1.0
+
+--- show interfaces et-0/0/5.0 ---
+iming_metrics {
+  queue_time_seconds: 3.4150027204304934e-05
+  execution_time_seconds: 2.4769475109642372
+}
+data: "  Logical interface et-0/0/5.0 (Index 88) (SNMP ifIndex 603)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 46331060132376
+    Output packets: 6428680753299
+    Protocol aenet, AE bundle: ae1.0
+
+--- show interfaces et-1/0/1.0 ---
+iming_metrics {
+  queue_time_seconds: 4.1559978853911161e-05
+  execution_time_seconds: 2.472679705999326
+}
+data: "  Logical interface et-1/0/1.0 (Index 93) (SNMP ifIndex 640)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 13615255637693
+    Output packets: 1710269512858
+    Protocol aenet, AE bundle: ae1.0
+
+--- show interfaces et-1/0/5.0 ---
+iming_metrics {
+  queue_time_seconds: 3.6080018617212772e-05
+  execution_time_seconds: 2.5013371660024859
+}
+data: "  Logical interface et-1/0/5.0 (Index 95) (SNMP ifIndex 546)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 13783212978982
+    Output packets: 1712187253169
+    Protocol aenet, AE bundle: ae1.0
+
+--- show interfaces et-0/0/12.0 ---
+iming_metrics {
+  queue_time_seconds: 3.7449004594236612e-05
+  execution_time_seconds: 2.4740381449810229
+}
+data: "  Logical interface et-0/0/12.0 (Index 102) (SNMP ifIndex 616)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 9944612323116
+    Output packets: 1261708019467
+    Protocol aenet, AE bundle: ae1.0
+
+--- show interfaces et-1/0/9.0 ---
+iming_metrics {
+  queue_time_seconds: 3.7899997550994158e-05
+  execution_time_seconds: 2.4962275729631074
+}
+data: "  Logical interface et-1/0/9.0 (Index 107) (SNMP ifIndex 550)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Input packets : 836113064040
+    Output packets: 15549880252
+    Protocol aenet, AE bundle: ae1.0
+
+--- show interfaces ae2 extensive ---
+iming_metrics {
+  queue_time_seconds: 3.9139995351433754e-05
+  execution_time_seconds: 2.5863816709606908
+}
+data: "Physical interface: ae2, Enabled, Physical link is Up
+  Interface index: 130, SNMP ifIndex: 639, Generation: 133
+  Description: [R=CR01.AUS122][I=AE4][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, Speed: 700Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Disabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps Internal: 0x4000
+  Current address: 50:c7:09:c6:c4:34, Hardware address: 50:c7:09:c6:c4:34
+  Last flapped   : 2026-05-14 08:48:04 UTC (19:39:24 ago)
+  Statistics last cleared: 2026-05-14 11:04:15 UTC (17:23:13 ago)
+  Traffic statistics:
+   Input  bytes  :     2018444610805365         311654812832 bps
+   Output bytes  :      334895226906442          54324406832 bps
+   Input  packets:        1578843738361             30498580 pps
+   Output packets:         623281978725             11893361 pps
+   IPv6 transit statistics:
+   Input  bytes  :                    0
+   Output bytes  :                    0
+   Input  packets:                    0
+   Output packets:                    0
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                        0              206
+    Multicast packets                   536608           541370
+  Input errors:
+    Errors: 0, Drops: 0, Framing errors: 0, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 0, Errors: 0, Drops: 0, MTU errors: 0, Resource errors: 0
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                     623156470746         623156470746                    0
+    1                          1113219              1113219                    0
+    2                          4021175              4021175                    0
+    3                        107949958            107949958                    0
+    4                           492338               492338                    0
+    5                          1260601              1260601                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+
+  Logical interface ae2.0 (Index 71) (SNMP ifIndex 643) (Generation 136)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input : 1578843738361   30498580 2018444610805365 311654812832
+        Output:  623281962867   11893345 334895221033251  54324388368
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+    Link:
+      et-0/0/2.0
+        Input :  225202483367    4252436 287795654938657  43364518376
+        Output:   88361554098    1620112 46547872276239   6777806888
+      et-0/0/15.0
+        Input :  226212504720    4341352 289572402293550  44871040616
+        Output:   87437106250    1664124 46841772709127   6969681648
+      et-0/0/11.0
+        Input :  224500205727    4287199 287677882349956  43740282352
+        Output:   90763521645    1677565 50548344699973   7891777240
+      et-1/0/11.0
+        Input :  226717741332    4221073 288983540395013  42819258912
+        Output:   87963381846    1777211 46576370774808   8275094648
+      et-1/0/0.0
+        Input :  224829963415    4465503 287888127227568  45495756560
+        Output:   90075759589    1716561 48996458077022   8510110512
+      et-0/0/14.0
+        Input :  224806342663    4564335 287168837573997  47296517552
+        Output:   87622782773    1703551 45702770579447   7754144272
+      et-1/0/15.0
+        Input :  226574497137    4366682 289358166026624  44067438464
+        Output:   91057872453    1734221 49681638639628   8145773160
+
+
+    Aggregate member links: 7
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-0/0/2.0     Actor        127  50:c7:09:c6:c4:26        127       54       3
+      et-0/0/2.0   Partner        127  ac:78:d1:55:61:51        127       49       5
+      et-0/0/15.0    Actor        127  50:c7:09:c6:c4:26        127       67       3
+      et-0/0/15.0  Partner        127  ac:78:d1:55:61:51        127       59       5
+      et-0/0/11.0    Actor        127  50:c7:09:c6:c4:26        127       16       3
+      et-0/0/11.0  Partner        127  ac:78:d1:55:61:51        127       12       5
+      et-1/0/11.0    Actor        127  50:c7:09:c6:c4:26        127       29       3
+      et-1/0/11.0  Partner        127  ac:78:d1:55:61:51        127       34       5
+      et-1/0/0.0     Actor        127  50:c7:09:c6:c4:26        127       39       3
+      et-1/0/0.0   Partner        127  ac:78:d1:55:61:51        127       35       5
+      et-0/0/14.0    Actor        127  50:c7:09:c6:c4:26        127       44       3
+      et-0/0/14.0  Partner        127  ac:78:d1:55:61:51        127       17       5
+      et-1/0/15.0    Actor        127  50:c7:09:c6:c4:26        127       68       3
+      et-1/0/15.0  Partner        127  ac:78:d1:55:61:51        127       60       5
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx 
+      et-0/0/2.0             62599       62547            0            0
+      et-0/0/15.0            62599       62547            0            0
+      et-0/0/11.0            62598       62547            0            0
+      et-1/0/11.0            62598       62551            0            0
+      et-1/0/0.0             62598       62551            0            0
+      et-0/0/14.0            62598       62547            0            0
+      et-1/0/15.0            62599       62551            0            0
+    Marker Statistics:   Marker Rx     Resp Tx   Unknown Rx   Illegal Rx
+      et-0/0/2.0                 0           0            0            0
+      et-0/0/15.0                0           0            0            0
+      et-0/0/11.0                0           0            0            0
+      et-1/0/11.0                0           0            0            0
+      et-1/0/0.0                 0           0            0            0
+      et-0/0/14.0                0           0            0            0
+      et-1/0/15.0                0           0            0            0
+    Protocol inet, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 166, Route table: 0
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 23.255.224.182/31, Local: 23.255.224.182, Broadcast: Unspecified, Generation: 158
+    Protocol iso, MTU: 9195, Generation: 167, Route table: 0
+    Protocol inet6, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 168, Route table: 0
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::52c7:9ff:fec6:c434
+    Protocol mpls, MTU: 9178, Maximum labels: 5, Generation: 160
+    Protocol multiservice, MTU: Unlimited, Generation: 169, Route table: 0
+    Generation: 170, Route table: 0
+
+--- show interfaces et-0/0/2.0 ---
+iming_metrics {
+  queue_time_seconds: 4.116998752579093e-05
+  execution_time_seconds: 2.4859774130163714
+}
+data: "  Logical interface et-0/0/2.0 (Index 85) (SNMP ifIndex 585)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Input packets : 37373653638531
+    Output packets: 14405801857608
+    Protocol aenet, AE bundle: ae2.0
+
+--- show interfaces et-0/0/15.0 ---
+iming_metrics {
+  queue_time_seconds: 4.0040002204477787e-05
+  execution_time_seconds: 2.4790057520149276
+}
+data: "  Logical interface et-0/0/15.0 (Index 111) (SNMP ifIndex 619)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Input packets : 226232798667
+    Output packets: 87442466935
+    Protocol aenet, AE bundle: ae2.0
+
+--- show interfaces et-0/0/11.0 ---
+iming_metrics {
+  queue_time_seconds: 2.9110000468790531e-05
+  execution_time_seconds: 2.4828992140246555
+}
+data: "  Logical interface et-0/0/11.0 (Index 99) (SNMP ifIndex 615)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 55936938576665
+    Output packets: 21457950983600
+    Protocol aenet, AE bundle: ae2.0
+
+--- show interfaces et-1/0/11.0 ---
+iming_metrics {
+  queue_time_seconds: 3.2990006729960442e-05
+  execution_time_seconds: 2.4873071500333026
+}
+data: "  Logical interface et-1/0/11.0 (Index 100) (SNMP ifIndex 552)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 55960067869202
+    Output packets: 21546735277737
+    Protocol aenet, AE bundle: ae2.0
+
+--- show interfaces et-1/0/0.0 ---
+iming_metrics {
+  queue_time_seconds: 3.1239993404597044e-05
+  execution_time_seconds: 2.4745574730332009
+}
+data: "  Logical interface et-1/0/0.0 (Index 106) (SNMP ifIndex 535)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 55963658359445
+    Output packets: 21918479215337
+    Protocol aenet, AE bundle: ae2.0
+
+--- show interfaces et-0/0/14.0 ---
+iming_metrics {
+  queue_time_seconds: 4.1040009818971157e-05
+  execution_time_seconds: 2.4860987990396097
+}
+data: "  Logical interface et-0/0/14.0 (Index 109) (SNMP ifIndex 618)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 55970501190853
+    Output packets: 21568183593115
+    Protocol aenet, AE bundle: ae2.0
+
+--- show interfaces et-1/0/15.0 ---
+iming_metrics {
+  queue_time_seconds: 4.3590029235929251e-05
+  execution_time_seconds: 2.4741366429952905
+}
+data: "  Logical interface et-1/0/15.0 (Index 112) (SNMP ifIndex 556)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Input packets : 226696672163
+    Output packets: 91105073268
+    Protocol aenet, AE bundle: ae2.0
+
+--- show interfaces ae3 extensive ---
+iming_metrics {
+  queue_time_seconds: 5.1730021368712187e-05
+  execution_time_seconds: 2.5921711120172404
+}
+data: "Physical interface: ae3, Enabled, Physical link is Up
+  Interface index: 131, SNMP ifIndex: 542, Generation: 134
+  Description: [R=DR01.SAT103][I=AE0][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, Speed: 300Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Disabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps Internal: 0x4000
+  Current address: 50:c7:09:c6:c4:38, Hardware address: 50:c7:09:c6:c4:38
+  Last flapped   : 2026-05-01 03:06:03 UTC (2w0d 01:22 ago)
+  Statistics last cleared: Never
+  Traffic statistics:
+   Input  bytes  :   340842907128587602          52059406696 bps
+   Output bytes  :   194938827427682923          39543028248 bps
+   Input  packets:      259399130741986              5031622 pps
+   Output packets:      191127447292498              4667736 pps
+   IPv6 transit statistics:
+   Input  bytes  :                    0
+   Output bytes  :                    0
+   Input  packets:                    0
+   Output packets:                    0
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                       11           374739
+    Multicast packets                443322314        426634699
+  Input errors:
+    Errors: 590375457, Drops: 0, Framing errors: 590375457, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 4, Errors: 0, Drops: 1454410863, MTU errors: 0, Resource errors: 0
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                  191139710670859      191125371358108          14339312751
+    1                          2952135              2952135                    0
+    2                           462544               462544                    0
+    3                       2101364775           2101364775                    0
+    4                              316                  316                    0
+    5                         33134295             33134295                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+
+  Logical interface ae3.0 (Index 72) (SNMP ifIndex 551) (Generation 137)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input : 351825385461077    5031622 462157033456563485  52059406696
+        Output: 265608749915225    4667735 270495890133906471  39543025600
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+    Link:
+      et-0/0/10.0
+        Input : 2857456303778    1676427 3696224537698403  17432080824
+        Output: 2713357449033    1567857 2867887527294153  13210993328
+      et-1/0/10.0
+        Input : 95107646628568    1772626 124774580820608957  18449015176
+        Output: 76928622008464    1586821 78034795434899492  13433326008
+      et-0/0/13.0
+        Input : 69007773090549    1582569 91057975442304359  16178310696
+        Output: 37003786695626    1513057 38479021541197815  12898706264
+
+
+    Aggregate member links: 3
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-0/0/10.0    Actor        127  50:c7:09:c6:c4:26        127       64       4
+      et-0/0/10.0  Partner        127  54:4b:8c:96:db:c0        127       26       1
+      et-1/0/10.0    Actor        127  50:c7:09:c6:c4:26        127       15       4
+      et-1/0/10.0  Partner        127  54:4b:8c:96:db:c0        127       16       1
+      et-0/0/13.0    Actor        127  50:c7:09:c6:c4:26        127       34       4
+      et-0/0/13.0  Partner        127  54:4b:8c:96:db:c0        127       21       1
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx 
+      et-0/0/10.0          2112680     2111029            0            0
+      et-1/0/10.0         20442994    20439784            0            0
+      et-0/0/13.0         20442833    20437371            0            0
+    Marker Statistics:   Marker Rx     Resp Tx   Unknown Rx   Illegal Rx
+      et-0/0/10.0                0           0            0            0
+      et-1/0/10.0                0           0            0            0
+      et-0/0/13.0                0           0            0            0
+    Protocol inet, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 171, Route table: 0
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 23.255.224.164/31, Local: 23.255.224.164, Broadcast: Unspecified, Generation: 162
+    Protocol iso, MTU: 9195, Generation: 172, Route table: 0
+    Protocol inet6, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 173, Route table: 0
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::52c7:9ff:fec6:c438
+    Protocol mpls, MTU: 9178, Maximum labels: 5, Generation: 164
+    Protocol multiservice, MTU: Unlimited, Generation: 174, Route table: 0
+    Generation: 175, Route table: 0
+
+--- show interfaces et-0/0/10.0 ---
+iming_metrics {
+  queue_time_seconds: 4.7339999582618475e-05
+  execution_time_seconds: 2.4737055919831619
+}
+data: "  Logical interface et-0/0/10.0 (Index 92) (SNMP ifIndex 614)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Input packets : 1582769234369
+    Output packets: 1517909558355
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-1/0/10.0 ---
+iming_metrics {
+  queue_time_seconds: 5.6800025049597025e-05
+  execution_time_seconds: 2.5016291330102831
+}
+data: "  Logical interface et-1/0/10.0 (Index 97) (SNMP ifIndex 644)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 1607081964036
+    Output packets: 1512017660114
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-0/0/13.0 ---
+iming_metrics {
+  queue_time_seconds: 4.7750014346092939e-05
+  execution_time_seconds: 2.4766577400150709
+}
+data: "  Logical interface et-0/0/13.0 (Index 104) (SNMP ifIndex 617)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 69007801357106
+    Output packets: 37003811486333
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces ae4 extensive ---
+iming_metrics {
+  queue_time_seconds: 4.727998748421669e-05
+  execution_time_seconds: 2.5867577759781852
+}
+data: "Physical interface: ae4, Enabled, Physical link is Up
+  Interface index: 132, SNMP ifIndex: 641, Generation: 135
+  Description: [R=CR02.MCI102][I=AE11][A=AE4][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, Speed: 300Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Disabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps Internal: 0x4000
+  Current address: 50:c7:09:c6:c4:35, Hardware address: 50:c7:09:c6:c4:35
+  Last flapped   : 2026-04-20 15:32:17 UTC (3w3d 12:56 ago)
+  Statistics last cleared: Never
+  Traffic statistics:
+   Input  bytes  :     6049412661326389                 1016 bps
+   Output bytes  :      503422948611585                  888 bps
+   Input  packets:        4646796795067                    0 pps
+   Output packets:         837982018681                    0 pps
+   IPv6 transit statistics:
+   Input  bytes  :                    0
+   Output bytes  :                    0
+   Input  packets:                    0
+   Output packets:                    0
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                    32204           346431
+    Multicast packets                335080200        338614640
+  Input errors:
+    Errors: 1079, Drops: 0, Framing errors: 1079, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 20, Errors: 0, Drops: 164482, MTU errors: 0, Resource errors: 0
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                     837726496181         837726331699               164482
+    1                           805824               805824                    0
+    2                          8137684              8137684                    0
+    3                        433153183            433153183                    0
+    4                          1231201              1231201                    0
+    5                           978990               978990                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+
+  Logical interface ae4.0 (Index 73) (SNMP ifIndex 645) (Generation 138)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input : 9158695886609          0 11930120866286773         1016
+        Output: 1633189764549          0 986526956873348            0
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+    Link:
+      et-0/0/3.0
+        Input :   67247862403          0 84169785996671            0
+        Output:   21127197177          0 9988964278897            0
+      et-0/0/9.0
+        Input :   66660114272          0 83250578287561          152
+        Output:   21346657939          0 10277849538842            0
+      et-1/0/4.0
+        Input :     989726850          0 1284092081773          864
+        Output:       4405373          0     757016470            0
+
+
+    Aggregate member links: 3
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-0/0/3.0     Actor        127  50:c7:09:c6:c4:26        127       63       5
+      et-0/0/3.0   Partner        127  b0:eb:7f:96:50:7f        127      106      12
+      et-0/0/9.0     Actor        127  50:c7:09:c6:c4:26        127       65       5
+      et-0/0/9.0   Partner        127  b0:eb:7f:96:50:7f        127      111      12
+      et-1/0/4.0     Actor        127  50:c7:09:c6:c4:26        127       57       5
+      et-1/0/4.0   Partner        127  b0:eb:7f:96:50:7f        127       98      12
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx 
+      et-0/0/3.0           2573519     2571486            0            0
+      et-0/0/9.0           1806754     1805236            0            0
+      et-1/0/4.0           4374408     4372818            0            0
+    Marker Statistics:   Marker Rx     Resp Tx   Unknown Rx   Illegal Rx
+      et-0/0/3.0                 0           0            0            0
+      et-0/0/9.0                 0           0            0            0
+      et-1/0/4.0                 0           0            0            0
+    Protocol inet, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 176, Route table: 0
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 23.255.224.222/31, Local: 23.255.224.223, Broadcast: Unspecified, Generation: 166
+    Protocol iso, MTU: 9195, Generation: 177, Route table: 0
+    Protocol inet6, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 178, Route table: 0
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::52c7:9ff:fec6:c435
+    Protocol mpls, MTU: 9178, Maximum labels: 5, Generation: 168
+    Protocol multiservice, MTU: Unlimited, Generation: 179, Route table: 0
+    Generation: 180, Route table: 0
+
+--- show interfaces et-0/0/3.0 ---
+iming_metrics {
+  queue_time_seconds: 3.9289996493607759e-05
+  execution_time_seconds: 2.47040010697674
+}
+data: "  Logical interface et-0/0/3.0 (Index 86) (SNMP ifIndex 590)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Input packets : 67247955180
+    Output packets: 21127197191
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces et-0/0/9.0 ---
+iming_metrics {
+  queue_time_seconds: 3.9510021451860666e-05
+  execution_time_seconds: 2.5017456359928474
+}
+data: "  Logical interface et-0/0/9.0 (Index 101) (SNMP ifIndex 613)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Input packets : 66660179485
+    Output packets: 21346657939
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces et-1/0/4.0 ---
+iming_metrics {
+  queue_time_seconds: 0.00039619999006390572
+  execution_time_seconds: 2.4809444599668495
+}
+data: "  Logical interface et-1/0/4.0 (Index 105) (SNMP ifIndex 545)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Input packets : 989884584
+    Output packets: 4405374
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces ae5 extensive ---
+iming_metrics {
+  queue_time_seconds: 4.3830019421875477e-05
+  execution_time_seconds: 2.615334965987131
+}
+data: "Physical interface: ae5, Enabled, Physical link is Up
+  Interface index: 203, SNMP ifIndex: 649, Generation: 206
+  Description: [R=PR01.SAT102][I=AE1][S=TESTING][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, Speed: 200Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Disabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps Internal: 0x4000
+  Current address: 50:c7:09:c6:c4:28, Hardware address: 50:c7:09:c6:c4:28
+  Last flapped   : 2024-04-15 06:37:31 UTC (108w3d 21:51 ago)
+  Statistics last cleared: Never
+  Traffic statistics:
+   Input  bytes  :         520150094396                86144 bps
+   Output bytes  :         805198836675               198712 bps
+   Input  packets:           4375051875                   75 pps
+   Output packets:           4377109735                   96 pps
+   IPv6 transit statistics:
+   Input  bytes  :                    0
+   Output bytes  :                    0
+   Input  packets:                    0
+   Output packets:                    0
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                   144291           144391
+    Multicast packets                293707319        266165155
+  Input errors:
+    Errors: 0, Drops: 0, Framing errors: 0, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 2, Errors: 0, Drops: 0, MTU errors: 0, Resource errors: 0
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                        653241729            653241729                    0
+    1                             3119                 3119                    0
+    2                                0                    0                    0
+    3                       3884728213           3884728213                    0
+    4                                4                    4                    0
+    5                            55761                55761                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+
+  Logical interface ae5.0 (Index 91) (SNMP ifIndex 650) (Generation 168)
+    Flags: Up SNMP-Traps 0x4004000 Encapsulation: ENET2
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input :    4375051875         75  520150094396        86144
+        Output:    4248775909         67  786579671153       127392
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+    Link:
+      et-0/0/8.0
+        Input :    3677967196         75  440826461203        86144
+        Output:    1903749545         44  335995312054        95176
+      et-1/0/8.0
+        Input :     697084679          0   79323633193            0
+        Output:    2346503982         23  451193137715        32216
+
+
+    Aggregate member links: 2
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-0/0/8.0     Actor        127  50:c7:09:c6:c4:26        127       18       6
+      et-0/0/8.0   Partner        127  64:64:9b:ba:eb:c0        127        1       2
+      et-1/0/8.0     Actor        127  50:c7:09:c6:c4:26        127       19       6
+      et-1/0/8.0   Partner        127  64:64:9b:ba:eb:c0        127        2       2
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx 
+      et-0/0/8.0          20506669    20488754            0            0
+      et-1/0/8.0          20506556    20490081            0            0
+    Marker Statistics:   Marker Rx     Resp Tx   Unknown Rx   Illegal Rx
+      et-0/0/8.0                 0           0            0            0
+      et-1/0/8.0                 0           0            0            0
+    Protocol inet, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 217, Route table: 0
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 23.255.224.70/31, Local: 23.255.224.70, Broadcast: Unspecified, Generation: 176
+    Protocol iso, MTU: 9195, Generation: 218, Route table: 0
+    Protocol inet6, MTU: 9198
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0
+    Generation: 219, Route table: 0
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::52c7:9ff:fec6:c428
+    Protocol mpls, MTU: 9178, Maximum labels: 5, Generation: 178
+    Protocol multiservice, MTU: Unlimited, Generation: 220, Route table: 0
+    Generation: 221, Route table: 0
+
+--- show interfaces et-0/0/8.0 ---
+iming_metrics {
+  queue_time_seconds: 4.0100014302879572e-05
+  execution_time_seconds: 2.480932324018795
+}
+data: "  Logical interface et-0/0/8.0 (Index 74) (SNMP ifIndex 612)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 3678706388
+    Output packets: 1903749806
+    Protocol aenet, AE bundle: ae5.0
+
+--- show interfaces et-1/0/8.0 ---
+iming_metrics {
+  queue_time_seconds: 3.8600002881139517e-05
+  execution_time_seconds: 2.47479846799979
+}
+data: "  Logical interface et-1/0/8.0 (Index 90) (SNMP ifIndex 549)
+    Flags: Up SNMP-Traps 0x4000 Encapsulation: ENET2
+    Input packets : 697823461
+    Output packets: 2346504256
+    Protocol aenet, AE bundle: ae5.0
+
+--- Processed Data ---
+{
+    "role": "backbone",
+    "year": 2024,
+    "ae1": {
+        "neighbor": "CR01.SAT103",
+        "Circuit": "SR",
+        "description": "  Description: [R=CR01.SAT103][I=AE1][S=ACTIVE][U=CORE]",
+        "speed": "600Gbps",
+        "speed_human": 600000000000,
+        "input_bps": 41910349360,
+        "input_bps_percent": 6.985058226666667,
+        "output_bps": 10753240,
+        "output_bps_percent": 0.0017922066666666665,
+        "input_pps": 9485996,
+        "output_pps": 5204,
+        "ae_list": [
+            "et-0/0/1.0",
+            "et-0/0/5.0",
+            "et-1/0/1.0",
+            "et-1/0/5.0",
+            "et-0/0/12.0",
+            "et-1/0/9.0"
+        ],
+        "member_speeds": {
+            "et-0/0/1.0": "Unknown",
+            "et-0/0/5.0": "Unknown",
+            "et-1/0/1.0": "Unknown",
+            "et-1/0/5.0": "Unknown",
+            "et-0/0/12.0": "Unknown",
+            "et-1/0/9.0": "Unknown"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae2": {
+        "neighbor": "CR01.AUS122",
+        "Circuit": "LR",
+        "description": "  Description: [R=CR01.AUS122][I=AE4][S=ACTIVE][U=CORE]",
+        "speed": "700Gbps",
+        "speed_human": 700000000000,
+        "input_bps": 311654812832,
+        "input_bps_percent": 44.52211611885714,
+        "output_bps": 54324406832,
+        "output_bps_percent": 7.760629547428572,
+        "input_pps": 30498580,
+        "output_pps": 11893361,
+        "ae_list": [
+            "et-0/0/2.0",
+            "et-0/0/15.0",
+            "et-0/0/11.0",
+            "et-1/0/11.0",
+            "et-1/0/0.0",
+            "et-0/0/14.0",
+            "et-1/0/15.0"
+        ],
+        "member_speeds": {
+            "et-0/0/2.0": "Unknown",
+            "et-0/0/15.0": "Unknown",
+            "et-0/0/11.0": "Unknown",
+            "et-1/0/11.0": "Unknown",
+            "et-1/0/0.0": "Unknown",
+            "et-0/0/14.0": "Unknown",
+            "et-1/0/15.0": "Unknown"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae3": {
+        "neighbor": "DR01.SAT103",
+        "Circuit": "SR",
+        "description": "  Description: [R=DR01.SAT103][I=AE0][S=ACTIVE][U=CORE]",
+        "speed": "300Gbps",
+        "speed_human": 300000000000,
+        "input_bps": 52059406696,
+        "input_bps_percent": 17.353135565333332,
+        "output_bps": 39543028248,
+        "output_bps_percent": 13.181009416,
+        "input_pps": 5031622,
+        "output_pps": 4667736,
+        "ae_list": [
+            "et-0/0/10.0",
+            "et-1/0/10.0",
+            "et-0/0/13.0"
+        ],
+        "member_speeds": {
+            "et-0/0/10.0": "Unknown",
+            "et-1/0/10.0": "Unknown",
+            "et-0/0/13.0": "Unknown"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae4": {
+        "neighbor": "CR02.MCI102",
+        "Circuit": "LR",
+        "description": "  Description: [R=CR02.MCI102][I=AE11][A=AE4][S=ACTIVE][U=CORE]",
+        "speed": "300Gbps",
+        "speed_human": 300000000000,
+        "input_bps": 1016,
+        "input_bps_percent": 3.3866666666666663e-07,
+        "output_bps": 888,
+        "output_bps_percent": 2.96e-07,
+        "input_pps": 0,
+        "output_pps": 0,
+        "ae_list": [
+            "et-0/0/3.0",
+            "et-0/0/9.0",
+            "et-1/0/4.0"
+        ],
+        "member_speeds": {
+            "et-0/0/3.0": "Unknown",
+            "et-0/0/9.0": "Unknown",
+            "et-1/0/4.0": "Unknown"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae5": {
+        "neighbor": "PR01.SAT102",
+        "Circuit": "SR",
+        "description": "  Description: [R=PR01.SAT102][I=AE1][S=TESTING][U=CORE]",
+        "speed": "200Gbps",
+        "speed_human": 200000000000,
+        "input_bps": 86144,
+        "input_bps_percent": 4.3072e-05,
+        "output_bps": 198712,
+        "output_bps_percent": 9.9356e-05,
+        "input_pps": 75,
+        "output_pps": 96,
+        "ae_list": [
+            "et-0/0/8.0",
+            "et-1/0/8.0"
+        ],
+        "member_speeds": {
+            "et-0/0/8.0": "Unknown",
+            "et-1/0/8.0": "Unknown"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    }
+}
