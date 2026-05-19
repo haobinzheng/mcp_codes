@@ -17,9 +17,9 @@ if [[ "${REMOTE_TARGET}" == "your-ssh-user@your-remote-host" ]]; then
   exit 1
 fi
 
-LOCAL_PORT="${LOCAL_PORT:-8789}"
+LOCAL_PORT="${LOCAL_PORT:-8792}"
 REMOTE_HOST="${REMOTE_HOST:-127.0.0.1}"
-REMOTE_PORT="${REMOTE_PORT:-8789}"
+REMOTE_PORT="${REMOTE_PORT:-8792}"
 
 echo "Opening SSH tunnel to ${REMOTE_TARGET} for Interface Audit Dashboard (FastAPI)"
 echo "Keep this terminal open. Open this URL in your Mac browser:"

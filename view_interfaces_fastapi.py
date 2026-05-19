@@ -11,7 +11,7 @@ import uvicorn
 app = FastAPI(title="GFiber Interface Audit Dashboard")
 
 WEB_HOST = os.environ.get("WEB_HOST", "127.0.0.1")
-WEB_PORT = int(os.environ.get("WEB_PORT", "8789"))
+WEB_PORT = int(os.environ.get("WEB_PORT", "8792"))
 ROOT_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "Audit_interfaces_data"))
 
 def get_safe_path(*subpaths: str) -> str:
@@ -29,25 +29,25 @@ HTML_TEMPLATE = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>GFiber Interface Audit Dashboard</title>
+  <title>GFiber Interface Audit Dashboard (FastAPI Engine)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --surface-card: rgba(30, 41, 59, 0.7);
-      --surface-hover: rgba(51, 65, 85, 0.8);
-      --border: #334155;
+      --bg: #0b0f19;
+      --surface: #1e1b4b;
+      --surface-card: rgba(30, 27, 75, 0.7);
+      --surface-hover: rgba(49, 46, 129, 0.8);
+      --border: #312e81;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
-      --accent-cyan: #06b6d4;
-      --accent-emerald: #10b981;
+      --accent-purple: #a855f7;
+      --accent-indigo: #6366f1;
       --accent-amber: #f59e0b;
       --accent-rose: #f43f5e;
-      --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+      --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
     }
 
     body {
@@ -55,8 +55,8 @@ HTML_TEMPLATE = """<!doctype html>
       font-family: 'Inter', sans-serif;
       background-color: var(--bg);
       background-image: 
-        radial-gradient(circle at 0% 0%, rgba(6, 182, 212, 0.15), transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.12), transparent 40%);
+        radial-gradient(circle at 0% 0%, rgba(168, 85, 247, 0.16), transparent 40%),
+        radial-gradient(circle at 100% 100%, rgba(99, 102, 241, 0.12), transparent 40%);
       background-attachment: fixed;
       color: var(--text-main);
       min-height: 100vh;
@@ -65,7 +65,7 @@ HTML_TEMPLATE = """<!doctype html>
     }
 
     header {
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(11, 15, 25, 0.85);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
@@ -91,9 +91,9 @@ HTML_TEMPLATE = """<!doctype html>
     .logo-dot {
       width: 12px;
       height: 12px;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald));
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-indigo));
       border-radius: 50%;
-      box-shadow: 0 0 16px var(--accent-cyan);
+      box-shadow: 0 0 16px var(--accent-purple);
     }
 
     .tabs {
@@ -103,6 +103,7 @@ HTML_TEMPLATE = """<!doctype html>
       padding: 6px;
       border-radius: 12px;
       border: 1px solid var(--border);
+      align-items: center;
     }
 
     .tab-btn {
@@ -125,8 +126,8 @@ HTML_TEMPLATE = """<!doctype html>
 
     .tab-btn.active {
       color: white;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-emerald));
-      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-indigo));
+      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
     }
 
     .container {
@@ -182,7 +183,7 @@ HTML_TEMPLATE = """<!doctype html>
     }
 
     select:hover, select:focus {
-      border-color: var(--accent-cyan);
+      border-color: var(--accent-purple);
     }
 
     .metrics-grid {
@@ -211,8 +212,8 @@ HTML_TEMPLATE = """<!doctype html>
       height: 4px;
     }
 
-    .metric-card.total::before { background: var(--accent-cyan); }
-    .metric-card.upgraded::before { background: var(--accent-emerald); }
+    .metric-card.total::before { background: var(--accent-purple); }
+    .metric-card.upgraded::before { background: var(--accent-indigo); }
     .metric-card.alert::before { background: var(--accent-rose); }
 
     .metric-title {
@@ -314,8 +315,8 @@ HTML_TEMPLATE = """<!doctype html>
     }
 
     tr.selected {
-      background-color: rgba(6, 182, 212, 0.12);
-      border-left: 4px solid var(--accent-cyan);
+      background-color: rgba(168, 85, 247, 0.12);
+      border-left: 4px solid var(--accent-purple);
     }
 
     .badge {
@@ -327,9 +328,9 @@ HTML_TEMPLATE = """<!doctype html>
     }
 
     .badge-ok {
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--accent-emerald);
-      border: 1px solid rgba(16, 185, 129, 0.3);
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--accent-indigo);
+      border: 1px solid rgba(99, 102, 241, 0.3);
     }
 
     .badge-warn {
@@ -381,7 +382,7 @@ HTML_TEMPLATE = """<!doctype html>
     .high-util-card .router-name {
       font-size: 18px;
       font-weight: 700;
-      color: var(--accent-cyan);
+      color: var(--accent-purple);
     }
 
     .high-util-card .intf-name {
@@ -425,7 +426,7 @@ HTML_TEMPLATE = """<!doctype html>
       height: 32px;
       border: 3px solid rgba(255,255,255,0.1);
       border-radius: 50%;
-      border-top-color: var(--accent-cyan);
+      border-top-color: var(--accent-purple);
       animation: spin 1s ease-in-out infinite;
     }
 
@@ -443,11 +444,12 @@ HTML_TEMPLATE = """<!doctype html>
   <header>
     <div class="logo">
       <div class="logo-dot"></div>
-      <span>GFiber Network Auditor</span>
+      <span>GFiber Network Auditor (FastAPI Engine)</span>
     </div>
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('inspector')">Router Inspector</button>
       <button class="tab-btn" onclick="switchTab('overview')">High Utilization (>50%)</button>
+      <a href="/docs" target="_blank" class="tab-btn" style="text-decoration: none; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: var(--accent-purple); display: inline-flex; align-items: center;">Interactive API Docs ⚡</a>
     </div>
   </header>
 
@@ -462,7 +464,7 @@ HTML_TEMPLATE = """<!doctype html>
         <span class="filter-label">Router</span>
         <select id="router-select" onchange="onRouterChange()"></select>
       </div>
-      <div id="loading-indicator" style="display: none; align-items: center; gap: 10px; color: var(--accent-cyan);">
+      <div id="loading-indicator" style="display: none; align-items: center; gap: 10px; color: var(--accent-purple);">
         <div class="spinner"></div>
         <span style="font-size: 14px; font-weight: 500;">Loading data...</span>
       </div>
@@ -773,24 +775,24 @@ HTML_TEMPLATE = """<!doctype html>
             {
               label: 'Input %',
               data: series.input,
-              borderColor: '#06b6d4',
-              backgroundColor: 'rgba(6, 182, 212, 0.1)',
+              borderColor: '#a855f7',
+              backgroundColor: 'rgba(168, 85, 247, 0.1)',
               fill: true,
               tension: 0.3,
               borderWidth: 3,
-              pointBackgroundColor: '#06b6d4',
+              pointBackgroundColor: '#a855f7',
               pointRadius: 4,
               pointHoverRadius: 6
             },
             {
               label: 'Output %',
               data: series.output,
-              borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              borderColor: '#6366f1',
+              backgroundColor: 'rgba(99, 102, 241, 0.1)',
               fill: true,
               tension: 0.3,
               borderWidth: 3,
-              pointBackgroundColor: '#10b981',
+              pointBackgroundColor: '#6366f1',
               pointRadius: 4,
               pointHoverRadius: 6
             }
@@ -890,8 +892,8 @@ HTML_TEMPLATE = """<!doctype html>
                 {
                   label: 'In %',
                   data: item.series.input,
-                  borderColor: '#06b6d4',
-                  backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                  borderColor: '#a855f7',
+                  backgroundColor: 'rgba(168, 85, 247, 0.1)',
                   fill: true,
                   tension: 0.3,
                   pointRadius: 3
@@ -899,8 +901,8 @@ HTML_TEMPLATE = """<!doctype html>
                 {
                   label: 'Out %',
                   data: item.series.output,
-                  borderColor: '#10b981',
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  borderColor: '#6366f1',
+                  backgroundColor: 'rgba(99, 102, 241, 0.1)',
                   fill: true,
                   tension: 0.3,
                   pointRadius: 3
