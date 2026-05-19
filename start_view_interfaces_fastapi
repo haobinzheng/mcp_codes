@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export WEB_HOST="${WEB_HOST:-127.0.0.1}"
-export WEB_PORT="${WEB_PORT:-8792}"
+export WEB_PORT="${WEB_PORT:-9000}"
 
 cd "${SCRIPT_DIR}"
 

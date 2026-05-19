@@ -11,7 +11,7 @@ import uvicorn
 app = FastAPI(title="GFiber Interface Audit Dashboard")
 
 WEB_HOST = os.environ.get("WEB_HOST", "127.0.0.1")
-WEB_PORT = int(os.environ.get("WEB_PORT", "8792"))
+WEB_PORT = int(os.environ.get("WEB_PORT", "9000"))
 ROOT_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "Audit_interfaces_data"))
 
 def get_safe_path(*subpaths: str) -> str:
@@ -449,6 +449,7 @@ HTML_TEMPLATE = """<!doctype html>
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('inspector')">Router Inspector</button>
       <button class="tab-btn" onclick="switchTab('overview')">High Utilization (>50%)</button>
+      <button class="tab-btn" onclick="switchTab('history')">Utilization History</button>
       <a href="/docs" target="_blank" class="tab-btn" style="text-decoration: none; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: var(--accent-purple); display: inline-flex; align-items: center;">Interactive API Docs ⚡</a>
     </div>
   </header>
@@ -456,7 +457,7 @@ HTML_TEMPLATE = """<!doctype html>
   <div class="container">
     <!-- Filter Bar -->
     <div class="filter-bar">
-      <div class="filter-group">
+      <div id="standard-filter-group" class="filter-group">
         <span class="filter-label">Audit Date</span>
         <select id="date-select" onchange="onDateChange()"></select>
       </div>
@@ -464,6 +465,18 @@ HTML_TEMPLATE = """<!doctype html>
         <span class="filter-label">Router</span>
         <select id="router-select" onchange="onRouterChange()"></select>
       </div>
+      
+      <!-- History Range Filters -->
+      <div id="history-filter-group" class="filter-group" style="display: none; gap: 16px; align-items: center;">
+        <span class="filter-label">Start Date</span>
+        <select id="start-date-select"></select>
+        <span class="filter-label">End Date</span>
+        <select id="end-date-select"></select>
+        <span class="filter-label">Threshold %</span>
+        <input type="number" id="history-threshold-input" value="50" min="1" max="100" style="background: #0f172a; color: var(--text-main); border: 1px solid var(--border); padding: 10px; border-radius: 10px; width: 70px; font-family: inherit; font-size: 15px; outline: none; text-align: center;">
+        <button class="tab-btn active" onclick="loadHighUtilizationHistory()" style="padding: 10px 20px; font-size: 14px;">Apply Filters</button>
+      </div>
+
       <div id="loading-indicator" style="display: none; align-items: center; gap: 10px; color: var(--accent-purple);">
         <div class="spinner"></div>
         <span style="font-size: 14px; font-weight: 500;">Loading data...</span>
@@ -529,6 +542,13 @@ HTML_TEMPLATE = """<!doctype html>
         <div class="empty-state" style="grid-column: 1/-1;">Loading high utilization data...</div>
       </div>
     </div>
+
+    <!-- Section 3: High Utilization History -->
+    <div id="section-history" class="view-section">
+      <div id="history-util-container" class="high-util-grid">
+        <div class="empty-state" style="grid-column: 1/-1;">Select a date range and click Apply Filters above to view historical trends.</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -543,19 +563,34 @@ HTML_TEMPLATE = """<!doctype html>
 
     function switchTab(tab) {
       activeTab = tab;
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
 
+      // Clear existing mini charts
+      miniChartInstances.forEach(inst => inst.destroy());
+      miniChartInstances = [];
+
       if (tab === 'inspector') {
-        document.querySelector('.tabs .tab-btn:nth-child(1)').classList.add('active');
+        document.querySelector('.tabs button:nth-child(1)').classList.add('active');
         document.getElementById('section-inspector').classList.add('active');
+        document.getElementById('standard-filter-group').style.display = 'flex';
         document.getElementById('router-filter-group').style.display = 'flex';
+        document.getElementById('history-filter-group').style.display = 'none';
         onRouterChange();
-      } else {
-        document.querySelector('.tabs .tab-btn:nth-child(2)').classList.add('active');
+      } else if (tab === 'overview') {
+        document.querySelector('.tabs button:nth-child(2)').classList.add('active');
         document.getElementById('section-overview').classList.add('active');
+        document.getElementById('standard-filter-group').style.display = 'flex';
         document.getElementById('router-filter-group').style.display = 'none';
+        document.getElementById('history-filter-group').style.display = 'none';
         loadHighUtilization();
+      } else if (tab === 'history') {
+        document.querySelector('.tabs button:nth-child(3)').classList.add('active');
+        document.getElementById('section-history').classList.add('active');
+        document.getElementById('standard-filter-group').style.display = 'none';
+        document.getElementById('router-filter-group').style.display = 'none';
+        document.getElementById('history-filter-group').style.display = 'flex';
+        loadHighUtilizationHistory();
       }
     }
 
@@ -568,8 +603,15 @@ HTML_TEMPLATE = """<!doctype html>
       try {
         const resp = await fetch('/api/dates');
         const data = await resp.json();
+        
         const select = document.getElementById('date-select');
+        const startSelect = document.getElementById('start-date-select');
+        const endSelect = document.getElementById('end-date-select');
+        
         select.replaceChildren();
+        startSelect.replaceChildren();
+        endSelect.replaceChildren();
+        
         if (data.dates.length === 0) {
           const opt = document.createElement('option');
           opt.textContent = "No data available";
@@ -577,12 +619,34 @@ HTML_TEMPLATE = """<!doctype html>
           showLoading(false);
           return;
         }
+        
+        // Sort dates chronologically for the history dropdowns
+        const chronologicalDates = [...data.dates].reverse();
+        
+        chronologicalDates.forEach((d, idx) => {
+          const optStart = document.createElement('option');
+          optStart.value = d;
+          optStart.textContent = d;
+          startSelect.appendChild(optStart);
+
+          const optEnd = document.createElement('option');
+          optEnd.value = d;
+          optEnd.textContent = d;
+          endSelect.appendChild(optEnd);
+        });
+        
+        if (chronologicalDates.length > 0) {
+          startSelect.value = chronologicalDates[0];
+          endSelect.value = chronologicalDates[chronologicalDates.length - 1];
+        }
+
         data.dates.forEach(d => {
           const opt = document.createElement('option');
           opt.value = d;
           opt.textContent = d;
           select.appendChild(opt);
         });
+        
         await onDateChange();
       } catch (err) {
         console.error("Failed to load dates", err);
@@ -924,6 +988,106 @@ HTML_TEMPLATE = """<!doctype html>
       } catch (err) {
         console.error("Failed to load high utilization data", err);
       }
+    async function loadHighUtilizationHistory() {
+      if (activeTab !== 'history') return;
+      const startDate = document.getElementById('start-date-select').value;
+      const endDate = document.getElementById('end-date-select').value;
+      const threshold = document.getElementById('history-threshold-input').value || 50;
+      
+      showLoading(true);
+      try {
+        const query = `/api/high_utilization_history?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&threshold_percent=${encodeURIComponent(threshold)}`;
+        const resp = await fetch(query);
+        const data = await resp.json();
+
+        const container = document.getElementById('history-util-container');
+        container.replaceChildren();
+
+        miniChartInstances.forEach(inst => inst.destroy());
+        miniChartInstances = [];
+
+        if (data.high_interfaces_history.length === 0) {
+          const div = document.createElement('div');
+          div.className = 'empty-state';
+          div.style.gridColumn = '1/-1';
+          div.textContent = "🎉 Excellent! No interfaces crossed the threshold across this date range.";
+          container.appendChild(div);
+          showLoading(false);
+          return;
+        }
+
+        data.high_interfaces_history.forEach((item, i) => {
+          const card = document.createElement('div');
+          card.className = 'high-util-card';
+          
+          const header = document.createElement('div');
+          header.className = 'header';
+          const routerSpan = document.createElement('span');
+          routerSpan.className = 'router-name';
+          routerSpan.textContent = item.router;
+          const intfSpan = document.createElement('span');
+          intfSpan.className = 'intf-name';
+          intfSpan.textContent = item.interface;
+          header.append(routerSpan, intfSpan);
+
+          const details = document.createElement('div');
+          details.className = 'details';
+          const divN = document.createElement('div'); divN.innerHTML = `Neighbor: <strong>${item.neighbor}</strong>`;
+          const divS = document.createElement('div'); divS.innerHTML = `Speed: <strong>${item.speed}</strong>`;
+          const divI = document.createElement('div'); divI.innerHTML = `Max In: <strong style="color: ${item.peak_input > 80 ? '#f43f5e' : '#f59e0b'}">${Math.round(item.peak_input)}%</strong>`;
+          const divO = document.createElement('div'); divO.innerHTML = `Max Out: <strong style="color: ${item.peak_output > 80 ? '#f43f5e' : '#f59e0b'}">${Math.round(item.peak_output)}%</strong>`;
+          details.append(divN, divS, divI, divO);
+
+          const chartWrap = document.createElement('div');
+          chartWrap.className = 'mini-chart-wrapper';
+          const canvas = document.createElement('canvas');
+          canvas.id = `history-chart-${i}`;
+          chartWrap.appendChild(canvas);
+
+          card.append(header, details, chartWrap);
+          container.appendChild(card);
+
+          const ctx = canvas.getContext('2d');
+          const inst = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: item.timestamps,
+              datasets: [
+                {
+                  label: 'In %',
+                  data: item.series.input,
+                  borderColor: '#a855f7',
+                  backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                  fill: true,
+                  tension: 0.3,
+                  pointRadius: 3
+                },
+                {
+                  label: 'Out %',
+                  data: item.series.output,
+                  borderColor: '#6366f1',
+                  backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                  fill: true,
+                  tension: 0.3,
+                  pointRadius: 3
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: { max: 100, grid: { color: 'rgba(51,65,85,0.2)' }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
+                x: { grid: { color: 'rgba(51,65,85,0.2)' }, ticks: { font: { size: 10 }, color: '#94a3b8' } }
+              },
+              plugins: { legend: { display: false } }
+            }
+          });
+          miniChartInstances.push(inst);
+        });
+      } catch (err) {
+        console.error("Failed to load high utilization history", err);
+      }
       showLoading(false);
     }
   </script>
@@ -1112,6 +1276,96 @@ def route_api_high_utilization(date: str = Query("", pattern=r"^\d{4}-\d{2}-\d{2
                 })
 
     return {"high_interfaces": high_items}
+
+@app.get("/api/high_utilization_history")
+def route_api_high_utilization_history(
+    start_date: str = Query("", pattern=r"^(\d{4}-\d{2}-\d{2})?$"),
+    end_date: str = Query("", pattern=r"^(\d{4}-\d{2}-\d{2})?$"),
+    threshold_percent: float = Query(50.0)
+):
+    try:
+        safe_root = get_safe_path()
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Access Denied")
+
+    if not safe_root or not os.path.exists(safe_root):
+        return {"high_interfaces_history": []}
+
+    entries = os.listdir(safe_root)
+    date_folders = [d for d in entries if os.path.isdir(os.path.join(safe_root, d)) and re.match(r"^\d{4}-\d{2}-\d{2}$", d)]
+    date_folders.sort()
+
+    filtered_dates = []
+    for d in date_folders:
+        if start_date and d < start_date:
+            continue
+        if end_date and d > end_date:
+            continue
+        filtered_dates.append(d)
+
+    interface_map = {}
+
+    for d in filtered_dates:
+        date_path = os.path.join(safe_root, d)
+        routers = [r for r in os.listdir(date_path) if os.path.isdir(os.path.join(date_path, r))]
+        
+        for r in routers:
+            router_path = os.path.join(date_path, r)
+            files = glob.glob(os.path.join(router_path, f"{r}_*.json"))
+            files.sort()
+
+            for f in files:
+                basename = os.path.basename(f)
+                match = re.search(r"_(\d{4}_\d{2}_\d{2}_\d{2}_\d{2})\.json$", basename)
+                if not match:
+                    continue
+                ts_raw = match.group(1)
+                parts = ts_raw.split("_")
+                ts_label = f"{parts[0]}-{parts[1]}-{parts[2]} {parts[3]}:{parts[4]}"
+
+                try:
+                    with open(f, "r") as fh:
+                        data = json.load(fh)
+                except Exception:
+                    continue
+
+                for k, v in data.items():
+                    if k in ["role", "year", "audit_timestamp"] or not isinstance(v, dict):
+                        continue
+                    
+                    in_pct = round(v.get("input_bps_percent", 0), 1)
+                    out_pct = round(v.get("output_bps_percent", 0), 1)
+
+                    key = (r, k)
+                    if key not in interface_map:
+                        interface_map[key] = {
+                            "router": r,
+                            "interface": k,
+                            "neighbor": v.get("neighbor", "Unknown"),
+                            "speed": v.get("speed", "Unknown"),
+                            "timestamps": [],
+                            "series": {"input": [], "output": []},
+                            "peak_input": 0,
+                            "peak_output": 0
+                        }
+
+                    interface_map[key]["timestamps"].append(ts_label)
+                    interface_map[key]["series"]["input"].append(in_pct)
+                    interface_map[key]["series"]["output"].append(out_pct)
+                    
+                    if in_pct > interface_map[key]["peak_input"]:
+                        interface_map[key]["peak_input"] = in_pct
+                    if out_pct > interface_map[key]["peak_output"]:
+                        interface_map[key]["peak_output"] = out_pct
+
+    high_history = []
+    for key, val in interface_map.items():
+        if val["peak_input"] > threshold_percent or val["peak_output"] > threshold_percent:
+            high_history.append(val)
+
+    high_history.sort(key=lambda x: (x["router"], x["interface"]))
+    return {"high_interfaces_history": high_history}
+
 
 def main() -> None:
     print(f"GFiber Interface Audit Dashboard (FastAPI) running on http://{WEB_HOST}:{WEB_PORT}")
