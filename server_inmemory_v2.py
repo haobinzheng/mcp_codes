@@ -2677,5 +2677,102 @@ async def audit_core_capacity(devices: str) -> str:
     })
 
 
+@mcp.tool()
+def scan_high_utilization_interfaces(
+    threshold_percent: float = 50.0,
+    date_filter: str = "",
+    router_filter: str = ""
+) -> str:
+    """
+    Scan all historical interface audit logs inside `Audit_interfaces_data` to identify
+    interfaces exceeding a certain utilization threshold.
+    - threshold_percent: float/int, only return interfaces where input or output utilization exceeds this (default is 50.0).
+    - date_filter: optional string (e.g., '2026-05-14') to check a specific date.
+    - router_filter: optional string (e.g., 'cr01' or 'iad101') to check a specific router name or prefix.
+    """
+    import glob
+    root_dir = os.path.abspath(os.path.join(CURRENT_DIR, "Audit_interfaces_data"))
+    if not os.path.exists(root_dir):
+        return _json({"error": f"Directory {root_dir} does not exist."})
+
+    # Path validation to prevent directory traversal
+    def is_safe_subpath(target_path: str) -> bool:
+        canonical_root = os.path.realpath(root_dir)
+        canonical_target = os.path.realpath(target_path)
+        return canonical_target == canonical_root or canonical_target.startswith(canonical_root + os.sep)
+
+    matches = []
+    
+    # Scan date directories
+    for date_folder in os.listdir(root_dir):
+        date_path = os.path.join(root_dir, date_folder)
+        if not os.path.isdir(date_path):
+            continue
+        if not is_safe_subpath(date_path):
+            continue
+        if date_filter and date_filter not in date_folder:
+            continue
+            
+        # Scan router directories
+        for router_folder in os.listdir(date_path):
+            router_path = os.path.join(date_path, router_folder)
+            if not os.path.isdir(router_path):
+                continue
+            if not is_safe_subpath(router_path):
+                continue
+            if router_filter and router_filter not in router_folder:
+                continue
+                
+            # Scan JSON files
+            json_files = glob.glob(os.path.join(router_path, f"{router_folder}_*.json"))
+            for f in json_files:
+                if not is_safe_subpath(f):
+                    continue
+                
+                # Extract timestamp from filename (e.g. router_2026_05_14_21_10.json)
+                basename = os.path.basename(f)
+                match_ts = re.search(r"_(\d{4}_\d{2}_\d{2}_\d{2}_\d{2})\.json$", basename)
+                ts_label = "Unknown"
+                if match_ts:
+                    parts = match_ts.group(1).split("_")
+                    if len(parts) >= 5:
+                        ts_label = f"{parts[3]}:{parts[4]}"
+                
+                try:
+                    with open(f, "r") as fh:
+                        data = json.load(fh)
+                except Exception:
+                    continue
+                    
+                for k, v in data.items():
+                    if k in ["role", "year", "audit_timestamp"] or not isinstance(v, dict):
+                        continue
+                        
+                    in_pct = round(v.get("input_bps_percent", 0), 1)
+                    out_pct = round(v.get("output_bps_percent", 0), 1)
+                    
+                    if in_pct > threshold_percent or out_pct > threshold_percent:
+                        matches.append({
+                            "date": date_folder,
+                            "router": router_folder,
+                            "interface": k,
+                            "neighbor": v.get("neighbor", "Unknown"),
+                            "circuit": v.get("Circuit", "Unknown"),
+                            "speed": v.get("speed", "Unknown"),
+                            "input_percent": in_pct,
+                            "output_percent": out_pct,
+                            "timestamp": ts_label
+                        })
+                        
+    # Sort matches by date, then router, then timestamp, then interface
+    matches.sort(key=lambda x: (x["date"], x["router"], x["timestamp"], x["interface"]), reverse=True)
+    
+    return _json({
+        "total_matches": len(matches),
+        "threshold_percent": threshold_percent,
+        "high_utilization_interfaces": matches
+    })
+
+
 if __name__ == "__main__":
     mcp.run()
