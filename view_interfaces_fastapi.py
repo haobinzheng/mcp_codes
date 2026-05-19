@@ -570,22 +570,24 @@ HTML_TEMPLATE = """<!doctype html>
       miniChartInstances.forEach(inst => inst.destroy());
       miniChartInstances = [];
 
+      const buttons = document.querySelectorAll('.tabs button');
+
       if (tab === 'inspector') {
-        document.querySelector('.tabs button:nth-child(1)').classList.add('active');
+        if (buttons[0]) buttons[0].classList.add('active');
         document.getElementById('section-inspector').classList.add('active');
         document.getElementById('standard-filter-group').style.display = 'flex';
         document.getElementById('router-filter-group').style.display = 'flex';
         document.getElementById('history-filter-group').style.display = 'none';
         onRouterChange();
       } else if (tab === 'overview') {
-        document.querySelector('.tabs button:nth-child(2)').classList.add('active');
+        if (buttons[1]) buttons[1].classList.add('active');
         document.getElementById('section-overview').classList.add('active');
         document.getElementById('standard-filter-group').style.display = 'flex';
         document.getElementById('router-filter-group').style.display = 'none';
         document.getElementById('history-filter-group').style.display = 'none';
         loadHighUtilization();
       } else if (tab === 'history') {
-        document.querySelector('.tabs button:nth-child(3)').classList.add('active');
+        if (buttons[2]) buttons[2].classList.add('active');
         document.getElementById('section-history').classList.add('active');
         document.getElementById('standard-filter-group').style.display = 'none';
         document.getElementById('router-filter-group').style.display = 'none';
@@ -988,6 +990,9 @@ HTML_TEMPLATE = """<!doctype html>
       } catch (err) {
         console.error("Failed to load high utilization data", err);
       }
+      showLoading(false);
+    }
+
     async function loadHighUtilizationHistory() {
       if (activeTab !== 'history') return;
       const startDate = document.getElementById('start-date-select').value;
