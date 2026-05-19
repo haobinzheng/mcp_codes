@@ -15172,3 +15172,2783 @@ Physical interface: et-1/0/12, Enabled, Physical link is Up
         "upgrade_status": "Not upgraded"
     }
 }
+Processing device: cr01.atl101
+
+--- show version ---
+Hostname: re0-cr01.atl101-re0
+Model: ptx10008
+Junos: 24.4R1-S3.7-EVO
+Yocto: 4.0.22
+Linux Kernel: 5.15.142-10.22.33.14-yocto-standard-juniper-12615-gcefb031838df
+JUNOS-EVO OS 64-bit [junos-evo-install-ptx-x86-64-24.4R1-S3.7-EVO]
+
+--- show isis adjacency ---
+Interface             System         L State         Hold (secs) SNPA
+ae10.0                re0-cr01.aus122 2 Up                     3
+ae12.0                bng01.atl101   2  Up                     2
+ae13.0                bng01.hsv113   2  Up                     2
+ae14.0                re0-dr01.atl103 2 Up                     3
+ae16.0                re0-rr01.atl101 2 Up                     3
+ae17.0                re0-cr01.atl103 2 Up                     3
+ae3.0                 re0-pr01.atl101 2 Up                     3
+ae4.0                 re0-cr01.ord101 2 Up                     3
+ae5.0                 re0-cr01.rdu103 2 Up                     3
+ae8.0                 bng01.bna103   2  Up                     2
+ae9.0                 re0-cr01.clt102 2 Up                     3
+
+--- show interfaces ae10 extensive ---
+Physical interface: ae10, Enabled, Physical link is Up
+  Interface index: 1219, SNMP ifIndex: 525, Generation: 837518623885
+  Description: [R=CR01.AUS122][A=AE7][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, Speed: 600Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  Current address: f0:7c:c7:33:11:95, Hardware address: f0:7c:c7:33:11:95
+  Last flapped   : 2026-05-15 15:02:53 UTC (3d 02:39 ago)
+  Statistics last cleared: 2026-02-15 03:03:45 UTC (13w1d 14:38 ago)
+  Traffic statistics:
+   Input  bytes  :    35089913777797740          24900957064 bps
+   Output bytes  :    29293965302681882          30235860296 bps
+   Input  packets:       32145025058583              2948671 pps
+   Output packets:       31941236929066              4364131 pps
+  Input errors:
+    Errors: 2024, Drops: 0, Framing errors: 102, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 2, Errors: 93, Drops: 0, MTU errors: 0, Resource errors: 0, ECN Marked packets: 0
+  Members:
+      Statistics        Packets       pps          Bytes         bps
+      et-0/0/13
+        Input : 5347780340820     431591 5838808422217295   3516739216
+        Output: 5322941776739     806573 4882293367563437   6018260440
+      et-0/0/15
+        Input : 5357801547670     534014 5850014904928320   4611877184
+        Output: 5327739382484     693337 4884015024813360   4475776304
+      et-0/0/28
+        Input : 5357006258737     494659 5848445430900477   4329908536
+        Output: 5325492629753     763787 4882453058435251   5463117048
+      et-1/0/13
+        Input : 5369985797632     521701 5855536926005964   4617360472
+        Output: 5319608364830     714766 4880557644978824   4825635072
+      et-1/0/15
+        Input : 5355684710534     490906 5847911802596009   4058840104
+        Output: 5314590787251     722637 4873849467093514   5001286896
+      et-1/0/28
+        Input : 5356766403190     475800 5849196291149675   3766231552
+        Output: 5330863988009     663031 4890796739797496   4451784536
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                     3634             3641
+    Multicast packets                 59805180         59766384
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                   31938464671106       31938464671106                    0
+    1                          9790582              9790582                    0
+    2                         13830818             13830818                    0
+    3                       2563017923           2563017923                    0
+    4                         50945457             50945457                    0
+    5                        130327413            130327413                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+
+  Logical interface ae10.0 (Index 1007) (SNMP ifIndex 526) (Generation 837518623904)
+    Description: [R=CR01.AUS122][A=AE7][S=ACTIVE][U=CORE]
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input : 32145032985911    3005400 34511312510328177  25024007176
+        Output: 31941192531138    4229668 28717401131027193  27955169032
+
+
+    Aggregate member links: 6
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-0/0/13.0    Actor        127  f0:7c:c7:33:11:8f        127        6      11
+      et-0/0/13.0  Partner        127  ac:78:d1:55:61:51        127       38       8
+      et-1/0/13.0    Actor        127  f0:7c:c7:33:11:8f        127       12      11
+      et-1/0/13.0  Partner        127  ac:78:d1:55:61:51        127        2       8
+      et-0/0/28.0    Actor        127  f0:7c:c7:33:11:8f        127       36      11
+      et-0/0/28.0  Partner        127  ac:78:d1:55:61:51        127       30       8
+      et-1/0/28.0    Actor        127  f0:7c:c7:33:11:8f        127       47      11
+      et-1/0/28.0  Partner        127  ac:78:d1:55:61:51        127       37       8
+      et-1/0/15.0    Actor        127  f0:7c:c7:33:11:8f        127       48      11
+      et-1/0/15.0  Partner        127  ac:78:d1:55:61:51        127       36       8
+      et-0/0/15.0    Actor        127  f0:7c:c7:33:11:8f        127       61      11
+      et-0/0/15.0  Partner        127  ac:78:d1:55:61:51        127       54       8
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx
+      et-0/0/13.0         13839180    13839233            0            0
+      et-1/0/13.0         13839279    13839311            0            0
+      et-0/0/28.0         13839893    13839941            0            0
+      et-1/0/28.0         13839987    13840027            0            0
+      et-1/0/15.0         13839112    13839186            0            0
+      et-0/0/15.0          8001595     8001707            0            0
+    Marker Statistics:   Marker Rx     Resp Tx      Lacp Rx      Lacp Tx   Unknown Rx   Illegal Rx
+      et-0/0/13.0                0           0            0            0            0            0
+      et-1/0/13.0                0           0            0            0            0            0
+      et-0/0/28.0                0           0            0            0            0            0
+      et-1/0/28.0                0           0            0            0            0            0
+      et-1/0/15.0                0           0            0            0            0            0
+      et-0/0/15.0                0           0            0            0            0            0
+    Protocol inet
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 4460, Generation: 837518623935, Route table: 0
+      Flags: Sendbcast-pkt-to-re
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 23.255.224.128/31, Local: 23.255.224.128, Broadcast: Unspecified, Generation: 837518624006
+    Protocol iso, MTU: 4457, Generation: 837518623936, Route table: 0
+      Flags: None
+    Protocol inet6
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 4460, Generation: 837518623937, Route table: 0
+      Flags: None
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::f27c:c7ff:fe33:1195
+        INET6 Address Flags: None
+    Protocol mpls, MTU: 4440, Maximum labels: 5, Generation: 837518624103
+    Generation: 837518623938, Route table: 0
+      Flags: None
+    Protocol multiservice, MTU: Unlimited, Generation: 837518624005, Route table: 0
+      Flags: None
+
+--- show interfaces et-0/0/13 ---
+Physical interface: et-0/0/13, Enabled, Physical link is Up
+  Interface index: 1242, SNMP ifIndex: 564
+  Description: [R=CR01.AUS122][C=LEVEL3:441012793][I=ET-1/0/5][A=AE10][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:95, Hardware address: f0:7c:c7:33:06:a2
+  Last flapped   : 2026-05-15 15:02:55 UTC (3d 02:39 ago)
+  Input rate     : 4491607656 bps (519889 pps)
+  Output rate    : 4601673344 bps (693094 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             3
+    Errored blocks                         3
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/13.0 (Index 1020) (SNMP ifIndex 565)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae10.0
+
+--- show interfaces et-0/0/15 ---
+Physical interface: et-0/0/15, Enabled, Physical link is Up
+  Interface index: 1297, SNMP ifIndex: 568
+  Description: [R=CR01.AUS122][I=ET-0/0/2][A=AE10][C=Centurylink-442183841][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:95, Hardware address: f0:7c:c7:33:06:b2
+  Last flapped   : 2026-05-15 15:02:57 UTC (3d 02:39 ago)
+  Input rate     : 3988327512 bps (466567 pps)
+  Output rate    : 4261559624 bps (686881 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             3
+    Errored blocks                         6
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/15.0 (Index 1080) (SNMP ifIndex 690)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae10.0
+
+--- show interfaces et-0/0/28 ---
+Physical interface: et-0/0/28, Enabled, Physical link is Up
+  Interface index: 1281, SNMP ifIndex: 590
+  Description: [R=CR01.AUS122][C=CNTLK:443168881][I=ET-0/0/18][A=AE10][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:95, Hardware address: f0:7c:c7:33:07:1a
+  Last flapped   : 2026-05-15 15:03:02 UTC (3d 02:39 ago)
+  Input rate     : 3920840976 bps (469983 pps)
+  Output rate    : 4631133936 bps (709313 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             2
+    Errored blocks                         2
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/28.0 (Index 1050) (SNMP ifIndex 591)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae10.0
+
+--- show interfaces et-1/0/13 ---
+Physical interface: et-1/0/13, Enabled, Physical link is Up
+  Interface index: 1251, SNMP ifIndex: 621
+  Description: [R=CR01.AUS122][C=LEVEL3:441012792][I=ET-0/0/3][A=AE10][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:95, Hardware address: f0:7c:c7:33:08:0c
+  Last flapped   : 2026-05-15 15:02:51 UTC (3d 02:39 ago)
+  Input rate     : 5121105176 bps (577645 pps)
+  Output rate    : 4036135328 bps (632312 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                            13
+    Errored blocks                        13
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/13.0 (Index 1026) (SNMP ifIndex 622)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae10.0
+
+--- show interfaces et-1/0/15 ---
+Physical interface: et-1/0/15, Enabled, Physical link is Up
+  Interface index: 1296, SNMP ifIndex: 624
+  Description: [R=CR01.AUS122][C=LEVEL3:441012791][I=ET-1/0/2][A=AE10][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:95, Hardware address: f0:7c:c7:33:08:1c
+  Last flapped   : 2026-05-15 15:02:54 UTC (3d 02:39 ago)
+  Input rate     : 4247498288 bps (497457 pps)
+  Output rate    : 5289924832 bps (768300 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                            14
+    Errored blocks                        15
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/15.0 (Index 1062) (SNMP ifIndex 625)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae10.0
+
+--- show interfaces et-1/0/28 ---
+Physical interface: et-1/0/28, Enabled, Physical link is Up
+  Interface index: 1295, SNMP ifIndex: 642
+  Description: [R=CR01.AUS122][C=CNTLK:443168893][I=ET-1/0/18][A=AE10][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:95, Hardware address: f0:7c:c7:33:08:84
+  Last flapped   : 2026-05-15 15:03:02 UTC (3d 02:39 ago)
+  Input rate     : 4250344248 bps (507063 pps)
+  Output rate    : 4627688424 bps (686003 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             2
+    Errored blocks                         7
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/28.0 (Index 1061) (SNMP ifIndex 653)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae10.0
+
+--- show interfaces ae14 extensive ---
+Physical interface: ae14, Enabled, Physical link is Up
+  Interface index: 1222, SNMP ifIndex: 531, Generation: 837518623891
+  Description: [R=DR01.ATL103][I=AE1][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, Speed: 200Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  Current address: f0:7c:c7:33:11:98, Hardware address: f0:7c:c7:33:11:98
+  Last flapped   : 2025-12-09 06:58:40 UTC (22w 6d 10:44 ago)
+  Statistics last cleared: 2026-02-04 19:54:28 UTC (14w4d 21:48 ago)
+  Traffic statistics:
+   Input  bytes  :    37644038758965369          25288137144 bps
+   Output bytes  :    23833602185968697          18500754624 bps
+   Input  packets:       27276236774836              2329536 pps
+   Output packets:       22073252461749              2163321 pps
+  Input errors:
+    Errors: 0, Drops: 0, Framing errors: 0, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 0, Errors: 0, Drops: 0, MTU errors: 0, Resource errors: 0, ECN Marked packets: 0
+  Members:
+      Statistics        Packets       pps          Bytes         bps
+      et-0/0/2
+        Input : 14711345017340    1044238 20299575726597712  11294035328
+        Output: 11924811491010     926772 12868636728547808   7478851488
+      et-1/0/14
+        Input : 12564891757496    1285298 17344463032367657  13994101816
+        Output: 10148440970739    1236549 10964965457420889  11021903136
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                     4056             4014
+    Multicast packets                 30886897         28724813
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                    4480921035197        4480921035197                    0
+    1                           118314               118314                    0
+    2                          2478771              2478771                    0
+    3                        137555734            137555734                    0
+    4                          1026284              1026284                    0
+    5                          1067825              1067825                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+
+  Logical interface ae14.0 (Index 1010) (SNMP ifIndex 532) (Generation 837518623907)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input : 27276240964227    2376222 37153072163610740  25672556848
+        Output: 22073238434540    2181076 23436191006560953  18474991296
+
+
+    Aggregate member links: 2
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-0/0/2.0     Actor        127  f0:7c:c7:33:11:8f        127       16      15
+      et-0/0/2.0   Partner        127  f0:1c:2d:81:d7:c0        127       12       2
+      et-1/0/14.0    Actor        127  f0:7c:c7:33:11:8f        127       60      15
+      et-1/0/14.0  Partner        127  f0:1c:2d:81:d7:c0        127       19       2
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx
+      et-0/0/2.0          13862303    13861849            0            0
+      et-1/0/14.0          8145767     8145443            0            0
+    Marker Statistics:   Marker Rx     Resp Tx      Lacp Rx      Lacp Tx   Unknown Rx   Illegal Rx
+      et-0/0/2.0                 0           0            0            0            0            0
+      et-1/0/14.0                0           0            0            0            0            0
+    Protocol inet
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 4460, Generation: 837518623950, Route table: 0
+      Flags: Sendbcast-pkt-to-re
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 192.119.18.116/31, Local: 192.119.18.116, Broadcast: Unspecified, Generation: 837518624030
+    Protocol iso, MTU: 4457, Generation: 837518623951, Route table: 0
+      Flags: None
+    Protocol inet6
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 4460, Generation: 837518623952, Route table: 0
+      Flags: None
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::f27c:c7ff:fe33:1198
+        INET6 Address Flags: None
+    Protocol mpls, MTU: 4440, Maximum labels: 5, Generation: 837518624133
+    Generation: 837518623953, Route table: 0
+      Flags: None
+    Protocol multiservice, MTU: Unlimited, Generation: 837518624029, Route table: 0
+      Flags: None
+
+--- show interfaces et-0/0/2 ---
+Physical interface: et-0/0/2, Enabled, Physical link is Up
+  Interface index: 1256, SNMP ifIndex: 545
+  Description: [R=DR01.ATL103][I=ET-2/0/0][A=AE14][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:98, Hardware address: f0:7c:c7:33:06:4a
+  Last flapped   : 2026-02-17 19:53:42 UTC (12w 5d 21:49 ago)
+  Input rate     : 11548840640 bps (1063939 pps)
+  Output rate    : 9240778768 bps (1094050 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             1
+    Errored blocks                         1
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/2.0 (Index 1030) (SNMP ifIndex 546)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae14.0
+
+--- show interfaces et-1/0/14 ---
+Physical interface: et-1/0/14, Enabled, Physical link is Up
+  Interface index: 1302, SNMP ifIndex: 623
+  Description: [R=DR01.ATL103][I=ET-3/0/0][A=AE14][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:98, Hardware address: f0:7c:c7:33:08:14
+  Last flapped   : 2026-02-13 10:58:26 UTC (13w 3d 06:44 ago)
+  Input rate     : 14088676472 bps (1288501 pps)
+  Output rate    : 9752399344 bps (1146752 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/14.0 (Index 1070) (SNMP ifIndex 692)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae14.0
+
+--- show interfaces ae17 extensive ---
+Physical interface: ae17, Enabled, Physical link is Up
+  Interface index: 1224, SNMP ifIndex: 535, Generation: 837518623895
+  Description: [R=CR01.ATL103][I=AE17][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, Speed: 600Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  Current address: f0:7c:c7:33:11:9a, Hardware address: f0:7c:c7:33:11:9a
+  Last flapped   : 2025-12-09 06:58:25 UTC (22w 6d 10:44 ago)
+  Statistics last cleared: 2026-02-04 19:54:28 UTC (14w4d 21:48 ago)
+  Traffic statistics:
+   Input  bytes  :    55853702161120470          45618501128 bps
+   Output bytes  :     8844712605018502           1069759128 bps
+   Input  packets:       54952965401570              6140984 pps
+   Output packets:        8387786509530               232381 pps
+  Input errors:
+    Errors: 3759, Drops: 0, Framing errors: 3651, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 0, Errors: 1644, Drops: 0, MTU errors: 0, Resource errors: 0, ECN Marked packets: 0
+  Members:
+      Statistics        Packets       pps          Bytes         bps
+      et-0/0/3
+        Input : 9233858879513    1001518 9384767911660070   7094575568
+        Output: 1399050756383      47164 1474042856715268    230277760
+      et-0/0/23
+        Input :  181268023198     924246 178689702556818   6522250976
+        Output:    9443847672      37793 6703271187622    192791816
+      et-0/0/24
+        Input : 9250949611247    1035444 9404096810416269   7501163968
+        Output: 1403450538530      49553 1475613425064419    285111400
+      et-1/0/3
+        Input : 9214402937152    1014022 9371591415930855   7581906960
+        Output: 1405719731805      38886 1482843463755018    184052144
+      et-1/0/23
+        Input : 9208531256164    1022473 9360178340540420   7423763352
+        Output: 1409636456994      32938 1481861683757994    144623344
+      et-1/0/24
+        Input : 9224973573191    1147956 9375259336002549   9227297864
+        Output: 1391020623327      29081 1466434092056773    103692944
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                     4092             4006
+    Multicast packets                 66235257         65987982
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                    8384847243694        8384847243694                    0
+    1                          1432991              1432991                    0
+    2                         67512214             67512214                    0
+    3                       2756046034           2756046034                    0
+    4                          2353910              2353910                    0
+    5                        109563721            109563721                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+
+  Logical interface ae17.0 (Index 1012) (SNMP ifIndex 536) (Generation 837518623909)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input : 54952962923644    6454138 54864545773724547  48359497456
+        Output: 8387729482029     238057 8693408206124326   1108462776
+
+
+    Aggregate member links: 6
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-1/0/24.0    Actor        127  f0:7c:c7:33:11:8f        127       11      18
+      et-1/0/24.0  Partner        127  ac:78:d1:64:7c:99        127        5      18
+      et-1/0/3.0     Actor        127  f0:7c:c7:33:11:8f        127       27      18
+      et-1/0/3.0   Partner        127  ac:78:d1:64:7c:99        127        1      18
+      et-0/0/24.0    Actor        127  f0:7c:c7:33:11:8f        127       29      18
+      et-0/0/24.0  Partner        127  ac:78:d1:64:7c:99        127       13      18
+      et-1/0/23.0    Actor        127  f0:7c:c7:33:11:8f        127       39      18
+      et-1/0/23.0  Partner        127  ac:78:d1:64:7c:99        127        4      18
+      et-0/0/3.0     Actor        127  f0:7c:c7:33:11:8f        127       53      18
+      et-0/0/3.0   Partner        127  ac:78:d1:64:7c:99        127       21      18
+      et-0/0/23.0    Actor        127  f0:7c:c7:33:11:8f        127       81      18
+      et-0/0/23.0  Partner        127  ac:78:d1:64:7c:99        127       32      18
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx
+      et-1/0/24.0         13861769    13861840            0            0
+      et-1/0/3.0          13861767    13861839            0            0
+      et-0/0/24.0         13861814    13861847            0            0
+      et-1/0/23.0         13861768    13861839            0            0
+      et-0/0/3.0           9376531     9376562            0            0
+      et-0/0/23.0           210311      210452            0            0
+    Marker Statistics:   Marker Rx     Resp Tx      Lacp Rx      Lacp Tx   Unknown Rx   Illegal Rx
+      et-1/0/24.0                0           0            0            0            0            0
+      et-1/0/3.0                 0           0            0            0            0            0
+      et-0/0/24.0                0           0            0            0            0            0
+      et-1/0/23.0                0           0            0            0            0            0
+      et-0/0/3.0                 0           0            0            0            0            0
+      et-0/0/23.0                0           0            0            0            0            0
+    Protocol inet
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 4460, Generation: 837518623960, Route table: 0
+      Flags: Sendbcast-pkt-to-re
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 23.255.224.220/31, Local: 23.255.224.220, Broadcast: Unspecified, Generation: 837518624046
+    Protocol iso, MTU: 4457, Generation: 837518623961, Route table: 0
+      Flags: None
+    Protocol inet6
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 4460, Generation: 837518623962, Route table: 0
+      Flags: None
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::f27c:c7ff:fe33:119a
+        INET6 Address Flags: None
+    Protocol mpls, MTU: 4440, Maximum labels: 5, Generation: 837518624153
+    Generation: 837518623963, Route table: 0
+      Flags: None
+    Protocol multiservice, MTU: Unlimited, Generation: 837518624045, Route table: 0
+      Flags: None
+
+--- show interfaces et-0/0/3 ---
+Physical interface: et-0/0/3, Enabled, Physical link is Up
+  Interface index: 1307, SNMP ifIndex: 547
+  Description: [R=CR01.ATL103][I=ET-0/0/3][A=AE17][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:9a, Hardware address: f0:7c:c7:33:06:52
+  Last flapped   : 2026-01-30 04:59:01 UTC (15w 3d 12:43 ago)
+  Input rate     : 8213183248 bps (1085454 pps)
+  Output rate    : 200982400 bps (44616 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/3.0 (Index 1090) (SNMP ifIndex 701)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae17.0
+
+--- show interfaces et-0/0/23 ---
+Physical interface: et-0/0/23, Enabled, Physical link is Up
+  Interface index: 1304, SNMP ifIndex: 582
+  Description: [R=CR01.ATL103][I=ET-0/0/23][A=AE17][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:9a, Hardware address: f0:7c:c7:33:06:f2
+  Last flapped   : 2026-05-16 07:17:08 UTC (2d 10:25 ago)
+  Input rate     : 7431501576 bps (982454 pps)
+  Output rate    : 227653784 bps (41513 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             1
+    Errored blocks                         6
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/23.0 (Index 1049) (SNMP ifIndex 583)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae17.0
+
+--- show interfaces et-0/0/24 ---
+Physical interface: et-0/0/24, Enabled, Physical link is Up
+  Interface index: 1271, SNMP ifIndex: 584
+  Description: [R=CR01.ATL103][I=ET-0/0/24][A=AE17][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:9a, Hardware address: f0:7c:c7:33:06:fa
+  Last flapped   : 2026-02-25 06:20:05 UTC (11w 5d 11:22 ago)
+  Input rate     : 8264737040 bps (1096545 pps)
+  Output rate    : 382271304 bps (62128 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             2
+    Errored blocks                         2
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/24.0 (Index 1043) (SNMP ifIndex 585)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae17.0
+
+--- show interfaces et-1/0/3 ---
+Physical interface: et-1/0/3, Enabled, Physical link is Up
+  Interface index: 1268, SNMP ifIndex: 604
+  Description: [R=CR01.ATL103][I=ET-1/0/3][A=AE17][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:9a, Hardware address: f0:7c:c7:33:07:bc
+  Last flapped   : 2025-12-09 06:58:39 UTC (22w 6d 10:44 ago)
+  Input rate     : 6521763104 bps (935828 pps)
+  Output rate    : 197597232 bps (42620 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                  FEC91
+    FEC Codeword size                     528
+    FEC Codeword rate                   0.973
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/3.0 (Index 1041) (SNMP ifIndex 702)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae17.0
+
+--- show interfaces et-1/0/23 ---
+Physical interface: et-1/0/23, Enabled, Physical link is Up
+  Interface index: 1284, SNMP ifIndex: 635
+  Description: [R=CR01.ATL103][I=ET-1/0/23][A=AE17][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:9a, Hardware address: f0:7c:c7:33:08:5c
+  Last flapped   : 2025-12-09 06:58:39 UTC (22w 6d 10:44 ago)
+  Input rate     : 8229032104 bps (1079337 pps)
+  Output rate    : 144978008 bps (34628 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                  FEC91
+    FEC Codeword size                     528
+    FEC Codeword rate                   0.973
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/23.0 (Index 1053) (SNMP ifIndex 647)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae17.0
+
+--- show interfaces et-1/0/24 ---
+Physical interface: et-1/0/24, Enabled, Physical link is Up
+  Interface index: 1250, SNMP ifIndex: 636
+  Description: [R=CR01.ATL103][I=ET-1/0/24][A=AE17][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:9a, Hardware address: f0:7c:c7:33:08:64
+  Last flapped   : 2025-12-09 06:58:38 UTC (22w 6d 10:44 ago)
+  Input rate     : 8236717488 bps (1075031 pps)
+  Output rate    : 144214064 bps (32628 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                  FEC91
+    FEC Codeword size                     528
+    FEC Codeword rate                   0.973
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/24.0 (Index 1025) (SNMP ifIndex 649)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae17.0
+
+--- show interfaces ae3 extensive ---
+Physical interface: ae3, Enabled, Physical link is Up
+  Interface index: 1214, SNMP ifIndex: 513, Generation: 837518623874
+  Description: [R=PR01.ATL101][I=AE1][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, Speed: 1800Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:11:8f
+  Last flapped   : 2025-12-09 06:58:29 UTC (22w 6d 10:44 ago)
+  Statistics last cleared: 2026-02-05 08:44:39 UTC (14w4d 08:58 ago)
+  Traffic statistics:
+   Input  bytes  :   377203935589062998         322846801712 bps
+   Output bytes  :    79217108972277576          89500361144 bps
+   Input  packets:      304690093089750             34179044 pps
+   Output packets:      133049393612884             17299378 pps
+  Input errors:
+    Errors: 0, Drops: 0, Framing errors: 0, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 0, Errors: 308, Drops: 0, MTU errors: 0, Resource errors: 0, ECN Marked packets: 0
+  Members:
+      Statistics        Packets       pps          Bytes         bps
+      et-0/0/1
+        Input : 16693811066575    1761798 20641014751063553  16232535312
+        Output: 7359986534649     920684 4367715499611244   4876789392
+      et-0/0/6
+        Input : 16608487631471    1886907 20583120415829174  17892863416
+        Output: 7385366763036    1025378 4403571662555728   5567405536
+      et-0/0/7
+        Input : 17153797059945    1821257 21245314014522521  16987987816
+        Output: 7382196987624     926640 4397703720595523   4522389248
+      et-0/0/9
+        Input : 17131053056977    1847730 21199143575515606  17450865952
+        Output: 7380392204124    1051748 4371833157478340   5737985312
+      et-0/0/10
+        Input : 16692161474691    1995808 20669655543279039  18806472336
+        Output: 7368008037176     957036 4387843622973871   5030960608
+      et-0/0/19
+        Input : 17196095712825    2014194 21293242238021971  19187042592
+        Output: 7478441427339    1042012 4502460211916464   5273681152
+      et-0/0/22
+        Input : 16761654218539    1915307 20725156723637548  17714676144
+        Output: 7359990422756     887604 4377081871630258   4301730216
+      et-0/0/25
+        Input : 16599548951189    1824088 20584291153043158  17288844896
+        Output: 7369964374781     954512 4393828909883255   5375062280
+      et-0/0/26
+        Input : 16581587243559    2000796 20538160887345518  19266415752
+        Output: 7462344223913     938154 4376344990611497   4937971136
+      et-1/0/1
+        Input : 17222561326439    1985752 21272911211599984  18750374064
+        Output: 7367202053599     854522 4390642858128906   4441577792
+      et-1/0/6
+        Input : 17246574947923    1763808 21355655504587770  16367342976
+        Output: 7397093668569     903580 4412095350568298   4331264432
+      et-1/0/9
+        Input : 17224871402553    1817475 21307318957590040  17371202936
+        Output: 7371054724174     964804 4384715679257481   5074310976
+      et-1/0/10
+        Input : 17128161177592    1675664 21202285648628617  15442539400
+        Output: 7360124945405     973620 4381732646810146   4615844944
+      et-1/0/16
+        Input : 17291417265348    2056040 21423056076137313  19862314992
+        Output: 7403567108569    1046998 4438904667759020   5629634096
+      et-1/0/19
+        Input : 16758317439105    1877062 20757573866491840  17965637968
+        Output: 7377734491532     922952 4370248299373007   4774438672
+      et-1/0/22
+        Input : 16778522316973    2022598 20790515669809939  19122216184
+        Output: 7401868480029     954832 4393301684457234   4962721544
+      et-1/0/25
+        Input : 16819128627088    1916127 20797466514699673  18049396120
+        Output: 7386064401269    1015669 4386695727536839   5409792056
+      et-1/0/26
+        Input : 16802342170958    1996633 20818052837259734  19088072856
+        Output: 7437992764340     958633 4480388411130465   4636801752
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                     4041             3983
+    Multicast packets                180744945        175948011
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                  133037093836487      133037093836487                    0
+    1                         48062743             48062743                    0
+    2                       1435190292           1435190292                    0
+    3                       6024892416           6024892416                    0
+    4                       1105281650           1105281650                    0
+    5                       3684181532           3684181532                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+
+  Logical interface ae3.0 (Index 1002) (SNMP ifIndex 514) (Generation 837518623899)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input : 304690073807964   34351701 371719492213606708 320103806136
+        Output: 133049218375244   17208158 76815544736445625  86457243984
+
+
+    Aggregate member links: 18
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-0/0/1.0     Actor        127  f0:7c:c7:33:11:8f        127        1       4
+      et-0/0/1.0   Partner        127  64:64:9b:b6:79:c0        127       79       2
+      et-0/0/9.0     Actor        127  f0:7c:c7:33:11:8f        127        5       4
+      et-0/0/9.0   Partner        127  64:64:9b:b6:79:c0        127       54       2
+      et-1/0/1.0     Actor        127  f0:7c:c7:33:11:8f        127        7       4
+      et-1/0/1.0   Partner        127  64:64:9b:b6:79:c0        127       50       2
+      et-1/0/16.0    Actor        127  f0:7c:c7:33:11:8f        127        8       4
+      et-1/0/16.0  Partner        127  64:64:9b:b6:79:c0        127       61       2
+      et-0/0/19.0    Actor        127  f0:7c:c7:33:11:8f        127       17       4
+      et-0/0/19.0  Partner        127  64:64:9b:b6:79:c0        127       62       2
+      et-0/0/7.0     Actor        127  f0:7c:c7:33:11:8f        127       21       4
+      et-0/0/7.0   Partner        127  64:64:9b:b6:79:c0        127       46       2
+      et-0/0/6.0     Actor        127  f0:7c:c7:33:11:8f        127       22       4
+      et-0/0/6.0   Partner        127  64:64:9b:b6:79:c0        127       81       2
+      et-0/0/22.0    Actor        127  f0:7c:c7:33:11:8f        127       24       4
+      et-0/0/22.0  Partner        127  64:64:9b:b6:79:c0        127       68       2
+      et-1/0/19.0    Actor        127  f0:7c:c7:33:11:8f        127       28       4
+      et-1/0/19.0  Partner        127  64:64:9b:b6:79:c0        127       64       2
+      et-0/0/10.0    Actor        127  f0:7c:c7:33:11:8f        127       32       4
+      et-0/0/10.0  Partner        127  64:64:9b:b6:79:c0        127       80       2
+      et-0/0/26.0    Actor        127  f0:7c:c7:33:11:8f        127       33       4
+      et-0/0/26.0  Partner        127  64:64:9b:b6:79:c0        127       71       2
+      et-1/0/6.0     Actor        127  f0:7c:c7:33:11:8f        127       38       4
+      et-1/0/6.0   Partner        127  64:64:9b:b6:79:c0        127       60       2
+      et-1/0/22.0    Actor        127  f0:7c:c7:33:11:8f        127       40       4
+      et-1/0/22.0  Partner        127  64:64:9b:b6:79:c0        127       70       2
+      et-1/0/9.0     Actor        127  f0:7c:c7:33:11:8f        127       41       4
+      et-1/0/9.0   Partner        127  64:64:9b:b6:79:c0        127       56       2
+      et-1/0/10.0    Actor        127  f0:7c:c7:33:11:8f        127       44       4
+      et-1/0/10.0  Partner        127  64:64:9b:b6:79:c0        127       48       2
+      et-1/0/26.0    Actor        127  f0:7c:c7:33:11:8f        127       45       4
+      et-1/0/26.0  Partner        127  64:64:9b:b6:79:c0        127       69       2
+      et-0/0/25.0    Actor        127  f0:7c:c7:33:11:8f        127       54       4
+      et-0/0/25.0  Partner        127  64:64:9b:b6:79:c0        127       83       2
+      et-1/0/25.0    Actor        127  f0:7c:c7:33:11:8f        127       55       4
+      et-1/0/25.0  Partner        127  64:64:9b:b6:79:c0        127       84       2
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx
+      et-0/0/1.0          13836168    13838998            0            0
+      et-0/0/9.0          13860942    13861516            0            0
+      et-1/0/1.0          13860933    13861507            0            0
+      et-1/0/16.0         13861335    13861879            0            0
+      et-0/0/19.0         13861338    13861884            0            0
+      et-0/0/7.0          13860929    13861504            0            0
+      et-0/0/6.0          13836089    13838916            0            0
+      et-0/0/22.0         13859935    13860412            0            0
+      et-1/0/19.0         13861339    13861884            0            0
+      et-0/0/10.0         13836134    13838963            0            0
+      et-0/0/26.0         13861438    13861879            0            0
+      et-1/0/6.0          13861339    13861882            0            0
+      et-1/0/22.0         13861442    13861881            0            0
+      et-1/0/9.0          13860931    13861503            0            0
+      et-1/0/10.0         13860930    13861503            0            0
+      et-1/0/26.0         13861441    13861880            0            0
+      et-0/0/25.0          8843048     8843444            0            0
+      et-1/0/25.0          8844815     8845207            0            0
+    Marker Statistics:   Marker Rx     Resp Tx      Lacp Rx      Lacp Tx   Unknown Rx   Illegal Rx
+      et-0/0/1.0                 0           0            0            0            0            0
+      et-0/0/9.0                 0           0            0            0            0            0
+      et-1/0/1.0                 0           0            0            0            0            0
+      et-1/0/16.0                0           0            0            0            0            0
+      et-0/0/19.0                0           0            0            0            0            0
+      et-0/0/7.0                 0           0            0            0            0            0
+      et-0/0/6.0                 0           0            0            0            0            0
+      et-0/0/22.0                0           0            0            0            0            0
+      et-1/0/19.0                0           0            0            0            0            0
+      et-0/0/10.0                0           0            0            0            0            0
+      et-0/0/26.0                0           0            0            0            0            0
+      et-1/0/6.0                 0           0            0            0            0            0
+      et-1/0/22.0                0           0            0            0            0            0
+      et-1/0/9.0                 0           0            0            0            0            0
+      et-1/0/10.0                0           0            0            0            0            0
+      et-1/0/26.0                0           0            0            0            0            0
+      et-0/0/25.0                0           0            0            0            0            0
+      et-1/0/25.0                0           0            0            0            0            0
+    Protocol inet
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 4460, Generation: 837518623910, Route table: 0
+      Flags: Sendbcast-pkt-to-re, Is-Primary
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 23.255.225.144/31, Local: 23.255.225.144, Broadcast: Unspecified, Generation: 837518623966
+    Protocol iso, MTU: 4457, Generation: 837518623911, Route table: 0
+      Flags: Is-Primary
+    Protocol inet6
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 4460, Generation: 837518623912, Route table: 0
+      Flags: Is-Primary
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::f27c:c7ff:fe33:118f
+        INET6 Address Flags: None
+    Protocol mpls, MTU: 4440, Maximum labels: 5, Generation: 837518624053
+    Generation: 837518623913, Route table: 0
+      Flags: Is-Primary
+    Protocol multiservice, MTU: Unlimited, Generation: 837518623965, Route table: 0
+      Flags: Is-Primary
+
+--- show interfaces et-0/0/1 ---
+Physical interface: et-0/0/1, Enabled, Physical link is Up
+  Interface index: 1235, SNMP ifIndex: 543
+  Description: [R=PR01.ATL101][I=ET-5/0/4][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:06:42
+  Last flapped   : 2026-02-25 06:32:31 UTC (11w 5d 11:10 ago)
+  Input rate     : 18178254672 bps (1931684 pps)
+  Output rate    : 5078118944 bps (967145 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             5
+    Errored blocks                         5
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/1.0 (Index 1015) (SNMP ifIndex 544)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-0/0/6 ---
+Physical interface: et-0/0/6, Enabled, Physical link is Up
+  Interface index: 1262, SNMP ifIndex: 551
+  Description: [R=PR01.ATL101][I=ET-5/2/3][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:06:6a
+  Last flapped   : 2026-02-25 06:34:07 UTC (11w 5d 11:09 ago)
+  Input rate     : 17966993424 bps (1895000 pps)
+  Output rate    : 5446745648 bps (1024112 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             4
+    Errored blocks                         4
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/6.0 (Index 1036) (SNMP ifIndex 552)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-0/0/7 ---
+Physical interface: et-0/0/7, Enabled, Physical link is Up
+  Interface index: 1261, SNMP ifIndex: 553
+  Description: [R=PR01.ATL101][I=ET-7/0/3][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:06:72
+  Last flapped   : 2026-05-01 06:56:00 UTC (2w 3d 10:47 ago)
+  Input rate     : 18858032736 bps (1960350 pps)
+  Output rate    : 4376942176 bps (920636 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             2
+    Errored blocks                         2
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/7.0 (Index 1035) (SNMP ifIndex 554)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-0/0/9 ---
+Physical interface: et-0/0/9, Enabled, Physical link is Up
+  Interface index: 1240, SNMP ifIndex: 557
+  Description: [R=PR01.ATL101][I=ET-7/2/1][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:06:82
+  Last flapped   : 2026-05-01 06:56:01 UTC (2w 3d 10:47 ago)
+  Input rate     : 17328520832 bps (1834742 pps)
+  Output rate    : 5968716704 bps (1086937 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             3
+    Errored blocks                         3
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/9.0 (Index 1019) (SNMP ifIndex 558)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-0/0/10 ---
+Physical interface: et-0/0/10, Enabled, Physical link is Up
+  Interface index: 1274, SNMP ifIndex: 559
+  Description: [R=PR01.ATL101][I=ET-5/1/1][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:06:8a
+  Last flapped   : 2026-02-25 06:33:04 UTC (11w 5d 11:10 ago)
+  Input rate     : 18120906256 bps (1903799 pps)
+  Output rate    : 5261730832 bps (966216 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             3
+    Errored blocks                         3
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/10.0 (Index 1046) (SNMP ifIndex 560)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-0/0/19 ---
+Physical interface: et-0/0/19, Enabled, Physical link is Up
+  Interface index: 1257, SNMP ifIndex: 574
+  Description: [R=PR01.ATL101][I=ET-8/1/0][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:06:d2
+  Last flapped   : 2025-12-09 06:58:27 UTC (22w 6d 10:44 ago)
+  Input rate     : 19096927080 bps (1988248 pps)
+  Output rate    : 5613775192 bps (1027362 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/19.0 (Index 1031) (SNMP ifIndex 575)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-0/0/22 ---
+Physical interface: et-0/0/22, Enabled, Physical link is Up
+  Interface index: 1264, SNMP ifIndex: 580
+  Description: [R=PR01.ATL101][I=ET-9/0/0][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:06:ea
+  Last flapped   : 2026-02-04 09:40:48 UTC (14w 5d 08:02 ago)
+  Input rate     : 20494158808 bps (2145867 pps)
+  Output rate    : 3940039320 bps (840747 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/22.0 (Index 1038) (SNMP ifIndex 581)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-0/0/25 ---
+Physical interface: et-0/0/25, Enabled, Physical link is Up
+  Interface index: 1310, SNMP ifIndex: 586
+  Description: [R=PR01.ATL101][I=ET-5/2/0][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:07:02
+  Last flapped   : 2026-02-25 06:34:07 UTC (11w 5d 11:09 ago)
+  Input rate     : 19121793920 bps (1986038 pps)
+  Output rate    : 5097356632 bps (926400 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             4
+    Errored blocks                         5
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/25.0 (Index 1082) (SNMP ifIndex 687)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-0/0/26 ---
+Physical interface: et-0/0/26, Enabled, Physical link is Up
+  Interface index: 1276, SNMP ifIndex: 587
+  Description: [R=PR01.ATL101][I=ET-9/2/0][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:07:0a
+  Last flapped   : 2025-12-09 06:58:31 UTC (22w 6d 10:44 ago)
+  Input rate     : 16343833232 bps (1737515 pps)
+  Output rate    : 4710504640 bps (950865 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/26.0 (Index 1047) (SNMP ifIndex 588)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-1/0/1 ---
+Physical interface: et-1/0/1, Enabled, Physical link is Up
+  Interface index: 1244, SNMP ifIndex: 601
+  Description: [R=PR01.ATL101][I=ET-7/1/2][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:07:ac
+  Last flapped   : 2026-05-01 06:56:00 UTC (2w 3d 10:47 ago)
+  Input rate     : 15943744672 bps (1746660 pps)
+  Output rate    : 5246650960 bps (946866 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             2
+    Errored blocks                         2
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/1.0 (Index 1021) (SNMP ifIndex 602)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-1/0/6 ---
+Physical interface: et-1/0/6, Enabled, Physical link is Up
+  Interface index: 1283, SNMP ifIndex: 608
+  Description: [R=PR01.ATL101][I=ET-8/0/2][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:07:d4
+  Last flapped   : 2025-12-09 06:58:26 UTC (22w 6d 10:45 ago)
+  Input rate     : 16705871344 bps (1791914 pps)
+  Output rate    : 4035236264 bps (904113 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/6.0 (Index 1052) (SNMP ifIndex 609)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-1/0/9 ---
+Physical interface: et-1/0/9, Enabled, Physical link is Up
+  Interface index: 1286, SNMP ifIndex: 613
+  Description: [R=PR01.ATL101][I=ET-7/2/3][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:07:ec
+  Last flapped   : 2026-05-01 06:56:01 UTC (2w 3d 10:47 ago)
+  Input rate     : 18923873752 bps (1954031 pps)
+  Output rate    : 4887089256 bps (952131 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             2
+    Errored blocks                         2
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/9.0 (Index 1055) (SNMP ifIndex 614)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-1/0/10 ---
+Physical interface: et-1/0/10, Enabled, Physical link is Up
+  Interface index: 1291, SNMP ifIndex: 615
+  Description: [R=PR01.ATL101][I=ET-7/1/0][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:07:f4
+  Last flapped   : 2026-05-01 06:56:00 UTC (2w 3d 10:47 ago)
+  Input rate     : 17603386272 bps (1868836 pps)
+  Output rate    : 4665308968 bps (919300 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             2
+    Errored blocks                         2
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/10.0 (Index 1058) (SNMP ifIndex 616)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-1/0/16 ---
+Physical interface: et-1/0/16, Enabled, Physical link is Up
+  Interface index: 1246, SNMP ifIndex: 626
+  Description: [R=PR01.ATL101][I=ET-8/0/3][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:08:24
+  Last flapped   : 2025-12-09 06:58:30 UTC (22w 6d 10:45 ago)
+  Input rate     : 19743700976 bps (2057477 pps)
+  Output rate    : 5686666472 bps (1051049 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/16.0 (Index 1022) (SNMP ifIndex 627)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-1/0/19 ---
+Physical interface: et-1/0/19, Enabled, Physical link is Up
+  Interface index: 1270, SNMP ifIndex: 631
+  Description: [R=PR01.ATL101][I=ET-8/2/0][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:08:3c
+  Last flapped   : 2025-12-09 06:58:26 UTC (22w 6d 10:45 ago)
+  Input rate     : 18120194136 bps (1896732 pps)
+  Output rate    : 4807764848 bps (948303 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/19.0 (Index 1042) (SNMP ifIndex 641)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-1/0/22 ---
+Physical interface: et-1/0/22, Enabled, Physical link is Up
+  Interface index: 1285, SNMP ifIndex: 634
+  Description: [R=PR01.ATL101][I=ET-9/1/0][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:08:54
+  Last flapped   : 2025-12-09 06:58:27 UTC (22w 6d 10:45 ago)
+  Input rate     : 18469515464 bps (1976562 pps)
+  Output rate    : 4697274264 bps (929740 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/22.0 (Index 1054) (SNMP ifIndex 645)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-1/0/25 ---
+Physical interface: et-1/0/25, Enabled, Physical link is Up
+  Interface index: 1313, SNMP ifIndex: 637
+  Description: [R=PR01.ATL101][I=ET-8/2/4][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:08:6c
+  Last flapped   : 2026-02-05 08:35:38 UTC (14w 4d 09:07 ago)
+  Input rate     : 18491146896 bps (1957254 pps)
+  Output rate    : 5232463856 bps (969169 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/25.0 (Index 1087) (SNMP ifIndex 689)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces et-1/0/26 ---
+Physical interface: et-1/0/26, Enabled, Physical link is Up
+  Interface index: 1293, SNMP ifIndex: 638
+  Description: [R=PR01.ATL101][I=ET-9/0/1][A=AE3][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 4474, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:8f, Hardware address: f0:7c:c7:33:08:74
+  Last flapped   : 2025-12-09 06:58:28 UTC (22w 6d 10:45 ago)
+  Input rate     : 18737478560 bps (1976400 pps)
+  Output rate    : 4900474464 bps (938105 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/26.0 (Index 1059) (SNMP ifIndex 651)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae3.0
+
+--- show interfaces ae4 extensive ---
+Physical interface: ae4, Enabled, Physical link is Up
+  Interface index: 1215, SNMP ifIndex: 515, Generation: 837518623877
+  Description: [R=CR01.ORD101][I=AE9][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, Speed: 600Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  Current address: f0:7c:c7:33:11:90, Hardware address: f0:7c:c7:33:11:90
+  Last flapped   : 2026-03-24 09:14:04 UTC (7w 6d 08:29 ago)
+  Statistics last cleared: 2026-02-04 19:54:28 UTC (14w4d 21:49 ago)
+  Traffic statistics:
+   Input  bytes  :    36517920648252885          37986885888 bps
+   Output bytes  :    34773843543173449          29756222032 bps
+   Input  packets:       31409974363590              4479896 pps
+   Output packets:       36663013695612              4105737 pps
+  Input errors:
+    Errors: 44, Drops: 0, Framing errors: 21, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 2, Errors: 0, Drops: 0, MTU errors: 0, Resource errors: 0, ECN Marked packets: 0
+  Members:
+      Statistics        Packets       pps          Bytes         bps
+      et-0/0/16
+        Input : 5251913943486     680208 6103857843164035   5666742240
+        Output: 6122395775453     748814 5801533457082024   5801703872
+      et-0/0/18
+        Input : 5255922174977     733390 6113453138863683   6184875152
+        Output: 6125185571972     653344 5809348373925703   4538804640
+      et-0/0/29
+        Input : 3392195450970     733245 3878653455333826   6221015816
+        Output: 4038268037242     675385 3813892971941694   4863195592
+      et-1/0/17
+        Input : 5248117107605     797244 6099800424090997   6964328192
+        Output: 6159629585749     734894 5848365856852573   5471254928
+      et-1/0/18
+        Input :  213220846071     681447 242114291832387   5498204080
+        Output:  170426869760     700465 148803205684536   5028704232
+      et-1/0/29
+        Input : 3395667628505     744850 3882079959649244   6248087088
+        Output: 4056157764602     709928 3832769189398509   5152518960
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                    29596                1
+    Multicast packets                 66196310         66066288
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                   36612868090408       36612868090408                    0
+    1                         32927830             32927830                    0
+    2                         16905145             16905145                    0
+    3                      49885710851          49885710851                    0
+    4                          8853459              8853459                    0
+    5                        205098825            205098825                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+
+  Logical interface ae4.0 (Index 1003) (SNMP ifIndex 519) (Generation 837518623900)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input : 31409981596176    4560103 35952548766515997  38323823384
+        Output: 36662968451178    4177856 34113747550347076  29804611080
+
+
+    Aggregate member links: 6
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-0/0/16.0    Actor        127  f0:7c:c7:33:11:8f        127        2       5
+      et-0/0/16.0  Partner        127  ac:78:d1:64:8c:99        127       10      10
+      et-0/0/18.0    Actor        127  f0:7c:c7:33:11:8f        127       18       5
+      et-0/0/18.0  Partner        127  ac:78:d1:64:8c:99        127        9      10
+      et-1/0/17.0    Actor        127  f0:7c:c7:33:11:8f        127       25       5
+      et-1/0/17.0  Partner        127  ac:78:d1:64:8c:99        127       28      10
+      et-0/0/29.0    Actor        127  f0:7c:c7:33:11:8f        127       65       5
+      et-0/0/29.0  Partner        127  ac:78:d1:64:8c:99        127       49      10
+      et-1/0/29.0    Actor        127  f0:7c:c7:33:11:8f        127       66       5
+      et-1/0/29.0  Partner        127  ac:78:d1:64:8c:99        127       50      10
+      et-1/0/18.0    Actor        127  f0:7c:c7:33:11:8f        127       80       5
+      et-1/0/18.0  Partner        127  ac:78:d1:64:8c:99        127       61      10
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx
+      et-0/0/16.0         13509135    13509283            0            0
+      et-0/0/18.0         13509333    13509472            0            0
+      et-1/0/17.0         13510135    13510320            0            0
+      et-0/0/29.0          6311825     6311872            0            0
+      et-1/0/29.0          6311987     6312014            0            0
+      et-1/0/18.0           310455      310461            0            0
+    Marker Statistics:   Marker Rx     Resp Tx      Lacp Rx      Lacp Tx   Unknown Rx   Illegal Rx
+      et-0/0/16.0                0           0            0            0            0            0
+      et-0/0/18.0                0           0            0            0            0            0
+      et-1/0/17.0                0           0            0            0            0            0
+      et-0/0/29.0                0           0            0            0            0            0
+      et-1/0/29.0                0           0            0            0            0            0
+      et-1/0/18.0                0           0            0            0            0            0
+    Protocol inet
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 9198, Generation: 837518623915, Route table: 0
+      Flags: Sendbcast-pkt-to-re
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 192.119.18.210/31, Local: 192.119.18.210, Broadcast: Unspecified, Generation: 837518623974
+    Protocol iso, MTU: 9195, Generation: 837518623916, Route table: 0
+      Flags: None
+    Protocol inet6
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 9198, Generation: 837518623917, Route table: 0
+      Flags: None
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::f27c:c7ff:fe33:1190
+        INET6 Address Flags: None
+    Protocol mpls, MTU: 9178, Maximum labels: 5, Generation: 837518624063
+    Generation: 837518623918, Route table: 0
+      Flags: None
+    Protocol multiservice, MTU: Unlimited, Generation: 837518623973, Route table: 0
+      Flags: None
+
+--- show interfaces et-0/0/16 ---
+Physical interface: et-0/0/16, Enabled, Physical link is Up
+  Interface index: 1237, SNMP ifIndex: 569
+  Description: [R=CR01.ORD101][C=Centurylink-ETH100GB-17887168-DIV][I=ET-0/0/2][A=AE4][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:90, Hardware address: f0:7c:c7:33:06:ba
+  Last flapped   : 2026-03-24 17:54:04 UTC (7w 5d 23:49 ago)
+  Input rate     : 5666742240 bps (680208 pps)
+  Output rate    : 5801703872 bps (748814 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                          2333
+    Errored blocks                      2338
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/16.0 (Index 1016) (SNMP ifIndex 570)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces et-0/0/18 ---
+Physical interface: et-0/0/18, Enabled, Physical link is Up
+  Interface index: 1258, SNMP ifIndex: 572
+  Description: [R=CR01.ORD101][C=Centurylink-ETH100GB-23662744-DIV][I=ET-0/0/3][A=AE4][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:90, Hardware address: f0:7c:c7:33:06:ca
+  Last flapped   : 2026-03-24 17:52:34 UTC (7w 5d 23:51 ago)
+  Input rate     : 6184875152 bps (733390 pps)
+  Output rate    : 4538804640 bps (653344 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                          2327
+    Errored blocks                      2329
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/18.0 (Index 1032) (SNMP ifIndex 573)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces et-0/0/29 ---
+Physical interface: et-0/0/29, Enabled, Physical link is Up
+  Interface index: 1305, SNMP ifIndex: 592
+  Description: [R=CR01.ORD101][C=Centurylink-ETH100GB-24245962-DIV][I=ET-0/0/4][A=AE4][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:90, Hardware address: f0:7c:c7:33:07:22
+  Last flapped   : 2026-05-07 01:13:08 UTC (1w 4d 16:30 ago)
+  Input rate     : 6221015816 bps (733245 pps)
+  Output rate    : 4863195592 bps (675385 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/29.0 (Index 1091) (SNMP ifIndex 593)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces et-1/0/17 ---
+Physical interface: et-1/0/17, Enabled, Physical link is Up
+  Interface index: 1266, SNMP ifIndex: 628
+  Description: [R=CR01.ORD101][C=Centurylink-ETH100GB-17740714-DIV][I=ET-1/0/2][A=AE4][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:90, Hardware address: f0:7c:c7:33:08:2c
+  Last flapped   : 2026-03-24 17:52:35 UTC (7w 5d 23:51 ago)
+  Input rate     : 7042056096 bps (806118 pps)
+  Output rate    : 4763004864 bps (679586 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         1
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/17.0 (Index 1039) (SNMP ifIndex 629)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces et-1/0/18 ---
+Physical interface: et-1/0/18, Enabled, Physical link is Up
+  Interface index: 1318, SNMP ifIndex: 630
+  Description: [R=CR01.ORD101][C=Centurylink-442233960][I=ET-1/0/3][A=AE4][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:90, Hardware address: f0:7c:c7:33:08:34
+  Last flapped   : 2026-05-15 03:29:02 UTC (3d 14:14 ago)
+  Input rate     : 6439232760 bps (755354 pps)
+  Output rate    : 5058286128 bps (692201 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/18.0 (Index 1056) (SNMP ifIndex 639)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces et-1/0/29 ---
+Physical interface: et-1/0/29, Enabled, Physical link is Up
+  Interface index: 1306, SNMP ifIndex: 644
+  Description: [R=CR01.ORD101][C=Centurylink-ETH100GB-24245962-DIV][I=ET-1/0/4][A=AE4][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:90, Hardware address: f0:7c:c7:33:08:8c
+  Last flapped   : 2026-05-07 01:13:08 UTC (1w 4d 16:30 ago)
+  Input rate     : 6034057616 bps (711900 pps)
+  Output rate    : 5019755816 bps (705445 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/29.0 (Index 1092) (SNMP ifIndex 655)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae4.0
+
+--- show interfaces ae5 extensive ---
+Physical interface: ae5, Enabled, Physical link is Up
+  Interface index: 1216, SNMP ifIndex: 516, Generation: 837518623879
+  Description: [R=CR01.RDU103][A=AE5][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, Speed: 600Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  Current address: f0:7c:c7:33:11:91, Hardware address: f0:7c:c7:33:11:91
+  Last flapped   : 2026-03-25 08:23:20 UTC (7w 5d 09:20 ago)
+  Statistics last cleared: 2026-02-04 19:54:28 UTC (14w4d 21:49 ago)
+  Traffic statistics:
+   Input  bytes  :    19074087333312659          20396269080 bps
+   Output bytes  :   113369543874566267          93481495008 bps
+   Input  packets:       28713088430933              3525602 pps
+   Output packets:       93769029966644             10316152 pps
+  Input errors:
+    Errors: 46, Drops: 0, Framing errors: 35, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 1, Errors: 0, Drops: 33040279, MTU errors: 0, Resource errors: 0, ECN Marked packets: 0
+  Members:
+      Statistics        Packets       pps          Bytes         bps
+      et-0/0/12
+        Input : 2582861853446     553291 1718904986811064   3266588040
+        Output: 8758847013463    1734965 10526326128740205  16012645856
+      et-0/0/14
+        Input :  921091842163     557647 639525559215302   2827409928
+        Output: 2934714268747    1622407 3528648356771921  14547855000
+      et-1/0/2
+        Input : 2810003577342     554580 1987037806647801   3358846800
+        Output: 9011039291747    1818005 10824139972683480  16478951344
+      et-1/0/5
+        Input : 2689435387930     613001 1803796501090339   3809372456
+        Output: 9009231064836    1725539 10826575639420976  15671401704
+      et-1/0/7
+        Input :  629964983230     645817 451656994838166   3698426840
+        Output: 1879800006246    1681001 2255300455597386  15092039040
+      et-1/0/21
+        Input : 1126739699601     601266 784484029464342   3435625016
+        Output: 3578964985069    1734235 4287852219254541  15678602064
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                    29695                1
+    Multicast packets                 57222612         56848373
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0                   93768130677045       93768097636766             33040279
+    1                          2450808              2450808                    0
+    2                          6632857              6632857                    0
+    3                        924525054            924525054                    0
+    4                           102421               102421                    0
+    5                          2637964              2637964                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+
+  Logical interface ae5.0 (Index 1004) (SNMP ifIndex 520) (Generation 837518623901)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input : 28713088334660    3496655 18557251062801391  19716618496
+        Output: 93768956671783   10344813 183737125134858391  92410237608
+
+
+    Aggregate member links: 6
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-1/0/2.0     Actor        127  f0:7c:c7:33:11:8f        127       70       6
+      et-1/0/2.0   Partner        127  40:de:ad:9e:84:91        127        2       6
+      et-1/0/5.0     Actor        127  f0:7c:c7:33:11:8f        127       71       6
+      et-1/0/5.0   Partner        127  40:de:ad:9e:84:91        127       14       6
+      et-0/0/12.0    Actor        127  f0:7c:c7:33:11:8f        127       72       6
+      et-0/0/12.0  Partner        127  40:de:ad:9e:84:91        127       16       6
+      et-1/0/21.0    Actor        127  f0:7c:c7:33:11:8f        127       76       6
+      et-1/0/21.0  Partner        127  40:de:ad:9e:84:91        127       31       6
+      et-0/0/14.0    Actor        127  f0:7c:c7:33:11:8f        127       78       6
+      et-0/0/14.0  Partner        127  40:de:ad:9e:84:91        127       33       6
+      et-1/0/7.0     Actor        127  f0:7c:c7:33:11:8f        127       79       6
+      et-1/0/7.0   Partner        127  40:de:ad:9e:84:91        127       35       6
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx
+      et-1/0/2.0           5043934     5044779            0            0
+      et-1/0/5.0           5043951     5044795            0            0
+      et-0/0/12.0          4950428     4951215            0            0
+      et-1/0/21.0          2068037     2068044            0            0
+      et-0/0/14.0          1695961     1695982            0            0
+      et-1/0/7.0           1081556     1081666            0            0
+    Marker Statistics:   Marker Rx     Resp Tx      Lacp Rx      Lacp Tx   Unknown Rx   Illegal Rx
+      et-1/0/2.0                 0           0            0            0            0            0
+      et-1/0/5.0                 0           0            0            0            0            0
+      et-0/0/12.0                0           0            0            0            0            0
+      et-1/0/21.0                0           0            0            0            0            0
+      et-0/0/14.0                0           0            0            0            0            0
+      et-1/0/7.0                 0           0            0            0            0            0
+    Protocol inet
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 9198, Generation: 837518623920, Route table: 0
+      Flags: Sendbcast-pkt-to-re
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 23.255.226.18/31, Local: 23.255.226.18, Broadcast: Unspecified, Generation: 837518623982
+    Protocol iso, MTU: 9195, Generation: 837518623921, Route table: 0
+      Flags: None
+    Protocol inet6
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 9198, Generation: 837518623922, Route table: 0
+      Flags: None
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::f27c:c7ff:fe33:1191
+        INET6 Address Flags: None
+    Protocol mpls, MTU: 9178, Maximum labels: 5, Generation: 837518624073
+    Generation: 837518623923, Route table: 0
+      Flags: None
+    Protocol multiservice, MTU: Unlimited, Generation: 837518623981, Route table: 0
+      Flags: None
+
+--- show interfaces et-0/0/12 ---
+Physical interface: et-0/0/12, Enabled, Physical link is Up
+  Interface index: 1317, SNMP ifIndex: 563
+  Description: [R=CR01.RDU103][C=LEVL3:448058661][I=ET-0/0/2][A=AE5][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:91, Hardware address: f0:7c:c7:33:06:9a
+  Last flapped   : 2026-05-13 16:10:11 UTC (5d 01:33 ago)
+  Input rate     : 3875089824 bps (617419 pps)
+  Output rate    : 15112050760 bps (1658158 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                            31
+    Errored blocks                        32
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/12.0 (Index 1096) (SNMP ifIndex 688)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae5.0
+
+--- show interfaces et-0/0/14 ---
+Physical interface: et-0/0/14, Enabled, Physical link is Up
+  Interface index: 1312, SNMP ifIndex: 566
+  Description: [R=CR01.RDU103][I=ET-0/0/5][A=AE5][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:91, Hardware address: f0:7c:c7:33:06:aa
+  Last flapped   : 2026-05-15 17:52:13 UTC (2d 23:51 ago)
+  Input rate     : 2922931560 bps (546536 pps)
+  Output rate    : 13785572320 bps (1546959 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/14.0 (Index 1057) (SNMP ifIndex 567)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae5.0
+
+--- show interfaces et-1/0/2 ---
+Physical interface: et-1/0/2, Enabled, Physical link is Up
+  Interface index: 1315, SNMP ifIndex: 603
+  Description: [R=CR01.RDU103][I=ET-1/0/3][A=AE5][C=LEVL3:448831333][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:91, Hardware address: f0:7c:c7:33:07:b4
+  Last flapped   : 2026-05-11 00:48:21 UTC (1w 0d 16:55 ago)
+  Input rate     : 3568844288 bps (572247 pps)
+  Output rate    : 15844372208 bps (1741530 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             9
+    Errored blocks                        12
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/2.0 (Index 1097) (SNMP ifIndex 695)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae5.0
+
+--- show interfaces et-1/0/5 ---
+Physical interface: et-1/0/5, Enabled, Physical link is Up
+  Interface index: 1316, SNMP ifIndex: 607
+  Description: [R=CR01.RDU103][I=ET-1/0/14][A=AE5][C=LEVL3:448831335][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:91, Hardware address: f0:7c:c7:33:07:cc
+  Last flapped   : 2026-05-11 00:48:21 UTC (1w 0d 16:55 ago)
+  Input rate     : 3439735424 bps (562147 pps)
+  Output rate    : 16083554504 bps (1769365 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             9
+    Errored blocks                        13
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/5.0 (Index 1098) (SNMP ifIndex 696)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae5.0
+
+--- show interfaces et-1/0/7 ---
+Physical interface: et-1/0/7, Enabled, Physical link is Up
+  Interface index: 1303, SNMP ifIndex: 610
+  Description: [R=CR01.RDU103][I=ET-1/0/5][A=AE5][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:91, Hardware address: f0:7c:c7:33:07:dc
+  Last flapped   : 2026-05-15 17:52:55 UTC (2d 23:50 ago)
+  Input rate     : 3595074384 bps (638723 pps)
+  Output rate    : 13660104392 bps (1557412 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             2
+    Errored blocks                         2
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/7.0 (Index 1051) (SNMP ifIndex 611)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae5.0
+
+--- show interfaces et-1/0/21 ---
+Physical interface: et-1/0/21, Enabled, Physical link is Up
+  Interface index: 1308, SNMP ifIndex: 633
+  Description: [R=CR01.RDU103][I=ET-1/0/15][A=AE5][C=LEVL3:448831335][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:91, Hardware address: f0:7c:c7:33:08:4c
+  Last flapped   : 2026-05-11 00:48:13 UTC (1w 0d 16:55 ago)
+  Input rate     : 3404556720 bps (588229 pps)
+  Output rate    : 15331749360 bps (1733694 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             0
+    Errored blocks                         0
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/21.0 (Index 1048) (SNMP ifIndex 691)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae5.0
+
+--- show interfaces ae9 extensive ---
+Physical interface: ae9, Enabled, Physical link is Up
+  Interface index: 1218, SNMP ifIndex: 523, Generation: 837518623883
+  Description: [R=CR01.CLT102][I=AE9][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, Speed: 400Gbps, BPDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Minimum links needed: 1, Minimum bandwidth needed: 1bps
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  Current address: f0:7c:c7:33:11:94, Hardware address: f0:7c:c7:33:11:94
+  Last flapped   : 2026-04-16 07:21:01 UTC (4w 4d 10:22 ago)
+  Statistics last cleared: 2026-02-04 19:54:28 UTC (14w4d 21:49 ago)
+  Traffic statistics:
+   Input  bytes  :    34618584154402879          37396994960 bps
+   Output bytes  :   112586942158832580          94455278080 bps
+   Input  packets:       48462207436220              6328500 pps
+   Output packets:       88389058157120              9725602 pps
+  Input errors:
+    Errors: 7, Drops: 0, Framing errors: 6, Runts: 0, Giants: 0, Policed discards: 0, Resource errors: 0
+  Output errors:
+    Carrier transitions: 1, Errors: 0, Drops: 192389928, MTU errors: 0, Resource errors: 0, ECN Marked packets: 0
+  Members:
+      Statistics        Packets       pps          Bytes         bps
+      et-0/0/5
+        Input : 11987991991711    1387120 8539882902106114   7555553312
+        Output: 22029235237796    2299398 28058706559175183  22121605272
+      et-0/0/21
+        Input : 12337251006886    1683853 8815060273595319  10551896176
+        Output: 22309509214853    2381569 28414089265393236  23320523696
+      et-1/0/8
+        Input : 12067821399145    1605368 8611507638039302   9236846640
+        Output: 22036047575963    2426946 28074004436795728  23256851776
+      et-1/0/12
+        Input : 12069143038478    1652159 8652133340662144  10052698832
+        Output: 22014266128508    2617689 28040141897468433  25756297336
+  MAC statistics:                      Receive         Transmit
+    Broadcast packets                    29665                1
+    Multicast packets                 47900839         47526067
+  Egress queues: 8 supported, 6 in use
+  Queue counters:       Queued packets  Transmitted packets      Dropped packets
+    0              18446709316731091322 18446709316538701394            192389928
+    1                         31175061             31175061                    0
+    2                          6630085              6630085                    0
+    3                        886166569            886166569                    0
+    4                              240                  240                    0
+    5                          2046687              2046687                    0
+  Queue number:         Mapped forwarding classes
+    0                   TC1
+    1                   TC2
+    2                   TC3
+    3                   NC
+    4                   TC4
+    5                   EF
+    Adaptive Statistics:
+        Adaptive Adjusts:          0
+        Adaptive Scans  :          0
+        Adaptive Updates:          0
+
+  Logical interface ae9.0 (Index 1006) (SNMP ifIndex 524) (Generation 837518623903)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Statistics        Packets        pps         Bytes          bps
+    Bundle:
+        Input : 48462212516334    6307887 33746267063133686  36356653384
+        Output: 88389032520312    9783783 183052274668279972  93652713632
+
+
+    Aggregate member links: 4
+
+    LACP info:        Role     System             System       Port     Port    Port 
+                             priority         identifier   priority   number     key 
+      et-0/0/5.0     Actor        127  f0:7c:c7:33:11:8f        127        3      10
+      et-0/0/5.0   Partner        127  88:90:09:de:70:95        127        4      10
+      et-0/0/21.0    Actor        127  f0:7c:c7:33:11:8f        127        4      10
+      et-0/0/21.0  Partner        127  88:90:09:de:70:95        127        3      10
+      et-1/0/12.0    Actor        127  f0:7c:c7:33:11:8f        127       46      10
+      et-1/0/12.0  Partner        127  88:90:09:de:70:95        127       16      10
+      et-1/0/8.0     Actor        127  f0:7c:c7:33:11:8f        127       49      10
+      et-1/0/8.0   Partner        127  88:90:09:de:70:95        127       17      10
+    LACP Statistics:       LACP Rx     LACP Tx   Unknown Rx   Illegal Rx
+      et-0/0/5.0          13733124    13741029            0            0
+      et-0/0/21.0         13846536    13854488            0            0
+      et-1/0/12.0         13733387    13740600            0            0
+      et-1/0/8.0          13211656    13218545            0            0
+    Marker Statistics:   Marker Rx     Resp Tx      Lacp Rx      Lacp Tx   Unknown Rx   Illegal Rx
+      et-0/0/5.0                 0           0            0            0            0            0
+      et-0/0/21.0                0           0            0            0            0            0
+      et-1/0/12.0                0           0            0            0            0            0
+      et-1/0/8.0                 0           0            0            0            0            0
+    Protocol inet
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 9198, Generation: 837518623930, Route table: 0
+      Flags: Sendbcast-pkt-to-re
+      Addresses, Flags: Is-Preferred Is-Primary
+        Destination: 23.255.224.116/31, Local: 23.255.224.116, Broadcast: Unspecified, Generation: 837518623998
+    Protocol iso, MTU: 9195, Generation: 837518623931, Route table: 0
+      Flags: None
+    Protocol inet6
+    Max nh cache: 100000, New hold nh limit: 100000, Curr nh cnt: 1, Curr new hold cnt: 0, NH drop cnt: 0, Hold NH RED drop cnt: 0
+    MTU: 9198, Generation: 837518623932, Route table: 0
+      Flags: None
+      Addresses, Flags: Is-Preferred
+        Destination: fe80::/64, Local: fe80::f27c:c7ff:fe33:1194
+        INET6 Address Flags: None
+    Protocol mpls, MTU: 9178, Maximum labels: 5, Generation: 837518624093
+    Generation: 837518623933, Route table: 0
+      Flags: None
+    Protocol multiservice, MTU: Unlimited, Generation: 837518623997, Route table: 0
+      Flags: None
+
+--- show interfaces et-0/0/5 ---
+Physical interface: et-0/0/5, Enabled, Physical link is Up
+  Interface index: 1238, SNMP ifIndex: 550
+  Description: [R=CR01.CLT102][I=ET-0/0/2][A=AE9][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:94, Hardware address: f0:7c:c7:33:06:62
+  Last flapped   : 2026-04-16 07:21:03 UTC (4w 4d 10:22 ago)
+  Input rate     : 8741066672 bps (1504837 pps)
+  Output rate    : 24751832992 bps (2537050 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             5
+    Errored blocks                        13
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/5.0 (Index 1017) (SNMP ifIndex 697)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae9.0
+
+--- show interfaces et-0/0/21 ---
+Physical interface: et-0/0/21, Enabled, Physical link is Up
+  Interface index: 1239, SNMP ifIndex: 578
+  Description: [R=CR01.CLT102][C=CNTLK:442183896][I=ET-0/0/3][A=AE9][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:94, Hardware address: f0:7c:c7:33:06:e2
+  Last flapped   : 2026-04-16 07:20:59 UTC (4w 4d 10:23 ago)
+  Input rate     : 9694375472 bps (1653934 pps)
+  Output rate    : 25836169952 bps (2597878 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             4
+    Errored blocks                         4
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-0/0/21.0 (Index 1018) (SNMP ifIndex 579)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae9.0
+
+--- show interfaces et-1/0/8 ---
+Physical interface: et-1/0/8, Enabled, Physical link is Up
+  Interface index: 1301, SNMP ifIndex: 612
+  Description: [R=CR01.CLT102][I=ET-1/0/8][A=AE9][C=LEVL3:448620384][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:94, Hardware address: f0:7c:c7:33:07:e4
+  Last flapped   : 2026-04-16 07:32:48 UTC (4w 4d 10:11 ago)
+  Input rate     : 8188835960 bps (1501125 pps)
+  Output rate    : 22912246384 bps (2401594 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             8
+    Errored blocks                         8
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/8.0 (Index 1069) (SNMP ifIndex 657)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae9.0
+
+--- show interfaces et-1/0/12 ---
+Physical interface: et-1/0/12, Enabled, Physical link is Up
+  Interface index: 1294, SNMP ifIndex: 619
+  Description: [R=CR01.CLT102][I=ET-1/0/6][A=AE9][S=ACTIVE][U=CORE]
+  Link-level type: Ethernet, MTU: 9212, LAN-PHY mode, Speed: 100Gbps, BPDU Error: None, Loop Detect PDU Error: None, Ethernet-Switching Error: None, MAC-REWRITE Error: None, Loopback: Disabled, Source filtering: Disabled, Flow control: Enabled, Auto-negotiation: Disabled, Media type: Fiber
+  Device flags   : Present Running
+  Interface flags: SNMP-Traps
+  CoS queues     : 8 supported, 8 maximum usable queues
+  Current address: f0:7c:c7:33:11:94, Hardware address: f0:7c:c7:33:08:04
+  Last flapped   : 2026-04-16 07:32:43 UTC (4w 4d 10:11 ago)
+  Input rate     : 9520386416 bps (1603286 pps)
+  Output rate    : 24407842800 bps (2500009 pps)
+  Active alarms  : None
+  Active defects : None
+  PCS statistics                      Seconds
+    Bit errors                             4
+    Errored blocks                         4
+  Ethernet FEC Mode  :                   NONE
+    FEC Codeword size                       0
+    FEC Codeword rate                   0.000
+  Ethernet FEC statistics              Errors
+    FEC Corrected Errors                    0
+    FEC Uncorrected Errors                  0
+    FEC Corrected Errors Rate               0
+    FEC Uncorrected Errors Rate             0
+  PRBS Mode : Disabled
+  Interface transmit statistics: Disabled
+  Link Degrade :                      
+    Link Monitoring                   :  Disable
+
+  Logical interface et-1/0/12.0 (Index 1060) (SNMP ifIndex 620)
+    Flags: Up SNMP-Traps Encapsulation: ENET2 DF
+    Protocol aenet, AE bundle: ae9.0
+
+--- Processed Data ---
+{
+    "role": "backbone",
+    "year": 2024,
+    "ae10": {
+        "neighbor": "re0-cr01.aus122",
+        "Circuit": "LR",
+        "description": "Description: [R=CR01.AUS122][A=AE7][S=ACTIVE][U=CORE]",
+        "speed": "600Gbps",
+        "speed_human": 600000000000,
+        "input_bps": 24900957064,
+        "input_bps_percent": 4.150159510666667,
+        "output_bps": 30235860296,
+        "output_bps_percent": 5.039310049333333,
+        "input_pps": 2948671,
+        "output_pps": 4364131,
+        "ae_list": [
+            "et-0/0/13",
+            "et-0/0/15",
+            "et-0/0/28",
+            "et-1/0/13",
+            "et-1/0/15",
+            "et-1/0/28"
+        ],
+        "member_speeds": {
+            "et-0/0/13": "100Gbps",
+            "et-0/0/15": "100Gbps",
+            "et-0/0/28": "100Gbps",
+            "et-1/0/13": "100Gbps",
+            "et-1/0/15": "100Gbps",
+            "et-1/0/28": "100Gbps"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae14": {
+        "neighbor": "re0-dr01.atl103",
+        "Circuit": "SR",
+        "description": "Description: [R=DR01.ATL103][I=AE1][S=ACTIVE][U=CORE]",
+        "speed": "200Gbps",
+        "speed_human": 200000000000,
+        "input_bps": 25288137144,
+        "input_bps_percent": 12.644068572,
+        "output_bps": 18500754624,
+        "output_bps_percent": 9.250377312,
+        "input_pps": 2329536,
+        "output_pps": 2163321,
+        "ae_list": [
+            "et-0/0/2",
+            "et-1/0/14"
+        ],
+        "member_speeds": {
+            "et-0/0/2": "100Gbps",
+            "et-1/0/14": "100Gbps"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae17": {
+        "neighbor": "re0-cr01.atl103",
+        "Circuit": "SR",
+        "description": "Description: [R=CR01.ATL103][I=AE17][S=ACTIVE][U=CORE]",
+        "speed": "600Gbps",
+        "speed_human": 600000000000,
+        "input_bps": 45618501128,
+        "input_bps_percent": 7.603083521333333,
+        "output_bps": 1069759128,
+        "output_bps_percent": 0.178293188,
+        "input_pps": 6140984,
+        "output_pps": 232381,
+        "ae_list": [
+            "et-0/0/3",
+            "et-0/0/23",
+            "et-0/0/24",
+            "et-1/0/3",
+            "et-1/0/23",
+            "et-1/0/24"
+        ],
+        "member_speeds": {
+            "et-0/0/3": "100Gbps",
+            "et-0/0/23": "100Gbps",
+            "et-0/0/24": "100Gbps",
+            "et-1/0/3": "100Gbps",
+            "et-1/0/23": "100Gbps",
+            "et-1/0/24": "100Gbps"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae3": {
+        "neighbor": "re0-pr01.atl101",
+        "Circuit": "SR",
+        "description": "Description: [R=PR01.ATL101][I=AE1][S=ACTIVE][U=CORE]",
+        "speed": "1800Gbps",
+        "speed_human": 1800000000000,
+        "input_bps": 322846801712,
+        "input_bps_percent": 17.935933428444446,
+        "output_bps": 89500361144,
+        "output_bps_percent": 4.972242285777777,
+        "input_pps": 34179044,
+        "output_pps": 17299378,
+        "ae_list": [
+            "et-0/0/1",
+            "et-0/0/6",
+            "et-0/0/7",
+            "et-0/0/9",
+            "et-0/0/10",
+            "et-0/0/19",
+            "et-0/0/22",
+            "et-0/0/25",
+            "et-0/0/26",
+            "et-1/0/1",
+            "et-1/0/6",
+            "et-1/0/9",
+            "et-1/0/10",
+            "et-1/0/16",
+            "et-1/0/19",
+            "et-1/0/22",
+            "et-1/0/25",
+            "et-1/0/26"
+        ],
+        "member_speeds": {
+            "et-0/0/1": "100Gbps",
+            "et-0/0/6": "100Gbps",
+            "et-0/0/7": "100Gbps",
+            "et-0/0/9": "100Gbps",
+            "et-0/0/10": "100Gbps",
+            "et-0/0/19": "100Gbps",
+            "et-0/0/22": "100Gbps",
+            "et-0/0/25": "100Gbps",
+            "et-0/0/26": "100Gbps",
+            "et-1/0/1": "100Gbps",
+            "et-1/0/6": "100Gbps",
+            "et-1/0/9": "100Gbps",
+            "et-1/0/10": "100Gbps",
+            "et-1/0/16": "100Gbps",
+            "et-1/0/19": "100Gbps",
+            "et-1/0/22": "100Gbps",
+            "et-1/0/25": "100Gbps",
+            "et-1/0/26": "100Gbps"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae4": {
+        "neighbor": "re0-cr01.ord101",
+        "Circuit": "LR",
+        "description": "Description: [R=CR01.ORD101][I=AE9][S=ACTIVE][U=CORE]",
+        "speed": "600Gbps",
+        "speed_human": 600000000000,
+        "input_bps": 37986885888,
+        "input_bps_percent": 6.331147648,
+        "output_bps": 29756222032,
+        "output_bps_percent": 4.959370338666667,
+        "input_pps": 4479896,
+        "output_pps": 4105737,
+        "ae_list": [
+            "et-0/0/16",
+            "et-0/0/18",
+            "et-0/0/29",
+            "et-1/0/17",
+            "et-1/0/18",
+            "et-1/0/29"
+        ],
+        "member_speeds": {
+            "et-0/0/16": "100Gbps",
+            "et-0/0/18": "100Gbps",
+            "et-0/0/29": "100Gbps",
+            "et-1/0/17": "100Gbps",
+            "et-1/0/18": "100Gbps",
+            "et-1/0/29": "100Gbps"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae5": {
+        "neighbor": "re0-cr01.rdu103",
+        "Circuit": "LR",
+        "description": "Description: [R=CR01.RDU103][A=AE5][S=ACTIVE][U=CORE]",
+        "speed": "600Gbps",
+        "speed_human": 600000000000,
+        "input_bps": 20396269080,
+        "input_bps_percent": 3.39937818,
+        "output_bps": 93481495008,
+        "output_bps_percent": 15.580249167999998,
+        "input_pps": 3525602,
+        "output_pps": 10316152,
+        "ae_list": [
+            "et-0/0/12",
+            "et-0/0/14",
+            "et-1/0/2",
+            "et-1/0/5",
+            "et-1/0/7",
+            "et-1/0/21"
+        ],
+        "member_speeds": {
+            "et-0/0/12": "100Gbps",
+            "et-0/0/14": "100Gbps",
+            "et-1/0/2": "100Gbps",
+            "et-1/0/5": "100Gbps",
+            "et-1/0/7": "100Gbps",
+            "et-1/0/21": "100Gbps"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    },
+    "ae9": {
+        "neighbor": "re0-cr01.clt102",
+        "Circuit": "LR",
+        "description": "Description: [R=CR01.CLT102][I=AE9][S=ACTIVE][U=CORE]",
+        "speed": "400Gbps",
+        "speed_human": 400000000000,
+        "input_bps": 37396994960,
+        "input_bps_percent": 9.34924874,
+        "output_bps": 94455278080,
+        "output_bps_percent": 23.61381952,
+        "input_pps": 6328500,
+        "output_pps": 9725602,
+        "ae_list": [
+            "et-0/0/5",
+            "et-0/0/21",
+            "et-1/0/8",
+            "et-1/0/12"
+        ],
+        "member_speeds": {
+            "et-0/0/5": "100Gbps",
+            "et-0/0/21": "100Gbps",
+            "et-1/0/8": "100Gbps",
+            "et-1/0/12": "100Gbps"
+        },
+        "is_400g_upgraded": false,
+        "upgrade_status": "Not upgraded"
+    }
+}

@@ -8497,3 +8497,803 @@ INFO:     127.0.0.1:35638 - "POST /run_sse HTTP/1.1" 200 OK
                              CallToolRequest                                    
 2026-05-14 16:39:09,052 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
 INFO:     127.0.0.1:35638 - "GET /debug/trace/session/de0da38e-acce-4935-9fdc-db28cdf3c6fc HTTP/1.1" 200 OK
+==== 2026-05-18T17:01:47Z start_ai_tool_adk pid=3812954 ====
+PYTHON=python3
+ADK_WEB_HOST=127.0.0.1
+ADK_WEB_PORT=8787
+AGENTS_DIR=/usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents
+SESSION_URI=memory://
+ADK_LOG_FILE=/usr/local/google/home/mikezh/Coding/mcp_codes/logs/adk_web.log
+
+Starting ADK Web UI — agents from /usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents
+Listening on 127.0.0.1:8787 (set ADK_WEB_PORT to avoid clashes)
+Session storage: memory:// (not persisted unless you set ADK_SESSION_SERVICE_URI to a durable backend)
+SSH tunnel from laptop: use REMOTE_PORT=8787 with start_ai_tool_adk_tunnel
+Logging to: /usr/local/google/home/mikezh/Coding/mcp_codes/logs/adk_web.log (disable: START_AI_TOOL_LOG_DISABLE=1)
+Ensure GEMINI_API_KEY is set (see DESIGN_PIP_INSTALL.md).
+Custom UI logo: set both ADK_LOGO_TEXT and ADK_LOGO_IMAGE_URL (ADK rejects logo-text alone).
+Same agent as client_inmemory_v2_google_adk.py: open app gfiber_network in the ADK Web UI.
+Interactive CLI (stdio): python3 client_inmemory_v2_adk.py
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/authlib/_joserfc_helpers.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import ECKey
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/features/_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.PLUGGABLE_AUTH is enabled.
+  check_feature_enabled()
+2026-05-18 10:01:54,136 - INFO - service_factory.py:266 - Using in-memory memory service
+2026-05-18 10:01:54,137 - INFO - service_factory.py:189 - Using session service URI: memory:
+2026-05-18 10:01:54,137 - INFO - local_storage.py:110 - Using file artifact service at /usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents/.adk/artifacts
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/fast_api.py:204: UserWarning: [EXPERIMENTAL] InMemoryCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  credential_service = InMemoryCredentialService()
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/auth/credential_service/in_memory_credential_service.py:33: UserWarning: [EXPERIMENTAL] BaseCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  super().__init__()
+INFO:     Started server process [3812954]
+INFO:     Waiting for application startup.
+
++-----------------------------------------------------------------------------+
+| ADK Web Server started                                                      |
+|                                                                             |
+| For local testing, access at http://127.0.0.1:8787.                         |
++-----------------------------------------------------------------------------+
+
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8787 (Press CTRL+C to quit)
+INFO:     127.0.0.1:59532 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59532 - "GET /dev-ui/ HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:59532 - "GET /dev-ui/chunk-EN473UE3.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59538 - "GET /dev-ui/chunk-W7GRJBO5.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:59542 - "GET /dev-ui/polyfills-5CFQRCPP.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:59532 - "GET /dev-ui/main-TCIQIOZ3.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59542 - "GET /dev-ui/styles-2ORK6PRA.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:59532 - "GET /dev-ui/assets/config/runtime-config.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59532 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59538 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59542 - "GET /dev-ui/prism-dark.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:59548 - "GET /dev-ui/assets/ADK-512-color.svg HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:59532 - "GET /dev/build_graph_image/gfiber_network?dark_mode=true HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:59538 - "GET /dev/build_graph_image/gfiber_network?dark_mode=false HTTP/1.1" 404 Not Found
+2026-05-18 10:03:10,339 - INFO - envs.py:90 - No .env file found for gfiber_network
+2026-05-18 10:03:10,339 - INFO - envs.py:90 - No .env file found for gfiber_network
+2026-05-18 10:03:10,347 - INFO - plugin_manager.py:104 - Plugin 'gfiber_adk_web_session_log' registered.
+INFO:     127.0.0.1:59542 - "GET /dev/build_graph/gfiber_network HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59558 - "GET /builder/app/gfiber_network?ts=1779123790296 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59558 - "GET /dev-ui/adk_favicon.svg HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:59558 - "GET /apps/gfiber_network/eval_sets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59542 - "GET /apps/gfiber_network/eval_results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59542 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:59542 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50062 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59542 - "GET /dev/build_graph/gfiber_network HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50074 - "GET /dev/build_graph_image/gfiber_network?dark_mode=false HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50082 - "GET /dev/build_graph_image/gfiber_network?dark_mode=true HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50096 - "GET /builder/app/gfiber_network?ts=1779123795841 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50082 - "GET /apps/gfiber_network/eval_results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50096 - "GET /apps/gfiber_network/eval_sets HTTP/1.1" 200 OK
+2026-05-18 10:41:40,686 - INFO - adk_web_server.py:867 - New session created: b2f5c553-6a1e-48d6-ac20-6b44a682256f
+INFO:     127.0.0.1:43228 - "POST /apps/gfiber_network/users/user/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43228 - "POST /run_sse HTTP/1.1" 200 OK
+[05/18/26 10:41:42] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/features/_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.BASE_AUTHENTICATED_TOOL is enabled.
+  check_feature_enabled()
+2026-05-18 10:41:42,835 - INFO - types.py:2818 - 
+Note: Conversion of fields that are not included in the JSONSchema class are ignored.
+Json Schema is now supported natively by both Vertex AI and Gemini API. Users
+are recommended to pass/receive Json Schema directly to/from the API. For example:
+1. the counter part of GenerateContentConfig.response_schema is
+   GenerateContentConfig.response_json_schema, which accepts [JSON
+  Schema](https://json-schema.org/)
+2. the counter part of FunctionDeclaration.parameters is
+   FunctionDeclaration.parameters_json_schema, which accepts [JSON
+   Schema](https://json-schema.org/)
+3. the counter part of FunctionDeclaration.response is
+   FunctionDeclaration.response_json_schema, which accepts [JSON
+   Schema](https://json-schema.org/)
+
+2026-05-18 10:41:42,994 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+2026-05-18 10:41:43,933 - WARNING - types.py:7966 - Warning: there are non-text parts in the response: ['function_call'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py:233: UserWarning: [EXPERIMENTAL] feature FeatureName.PROGRESSIVE_SSE_STREAMING is enabled.
+  async for llm_response in aggregator_gen:
+[05/18/26 10:41:43] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-18 10:41:46,388 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:43228 - "GET /debug/trace/session/b2f5c553-6a1e-48d6-ac20-6b44a682256f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34580 - "POST /run_sse HTTP/1.1" 200 OK
+[05/18/26 10:42:25] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-18 10:42:25,237 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/18/26 10:42:26] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-18 10:46:31,843 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:34580 - "GET /debug/trace/session/b2f5c553-6a1e-48d6-ac20-6b44a682256f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39274 - "POST /run_sse HTTP/1.1" 200 OK
+[05/18/26 10:47:12] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-18 10:47:12,332 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/18/26 10:47:13] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-18 10:47:13,650 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:39274 - "GET /debug/trace/session/b2f5c553-6a1e-48d6-ac20-6b44a682256f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38870 - "POST /run_sse HTTP/1.1" 200 OK
+[05/18/26 10:47:29] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-18 10:47:29,859 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:38870 - "GET /debug/trace/session/b2f5c553-6a1e-48d6-ac20-6b44a682256f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60712 - "POST /run_sse HTTP/1.1" 200 OK
+[05/18/26 11:49:41] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-18 11:49:41,424 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:60712 - "GET /debug/trace/session/b2f5c553-6a1e-48d6-ac20-6b44a682256f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44808 - "POST /run_sse HTTP/1.1" 200 OK
+[05/18/26 12:29:06] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-18 12:29:06,419 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/18/26 12:29:07] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-18 12:29:07,915 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:44808 - "GET /debug/trace/session/b2f5c553-6a1e-48d6-ac20-6b44a682256f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37990 - "POST /run_sse HTTP/1.1" 200 OK
+[05/18/26 12:29:43] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-18 12:29:43,392 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/18/26 12:29:44] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-18 12:29:44,576 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:37990 - "GET /debug/trace/session/b2f5c553-6a1e-48d6-ac20-6b44a682256f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60286 - "POST /run_sse HTTP/1.1" 200 OK
+[05/18/26 12:29:54] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-18 12:29:54,432 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/18/26 12:29:55] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-18 12:29:55,585 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:60286 - "GET /debug/trace/session/b2f5c553-6a1e-48d6-ac20-6b44a682256f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60286 - "POST /run_sse HTTP/1.1" 200 OK
+[05/18/26 12:30:01] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-18 12:30:01,560 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/18/26 12:30:03] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-18 12:30:03,085 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:60286 - "GET /debug/trace/session/b2f5c553-6a1e-48d6-ac20-6b44a682256f HTTP/1.1" 200 OK
+==== 2026-05-19T18:14:31Z start_ai_tool_adk pid=4088402 ====
+PYTHON=python3
+ADK_WEB_HOST=127.0.0.1
+ADK_WEB_PORT=8787
+AGENTS_DIR=/usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents
+SESSION_URI=memory://
+ADK_LOG_FILE=/usr/local/google/home/mikezh/Coding/mcp_codes/logs/adk_web.log
+
+Starting ADK Web UI — agents from /usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents
+Listening on 127.0.0.1:8787 (set ADK_WEB_PORT to avoid clashes)
+Session storage: memory:// (not persisted unless you set ADK_SESSION_SERVICE_URI to a durable backend)
+SSH tunnel from laptop: use REMOTE_PORT=8787 with start_ai_tool_adk_tunnel
+Logging to: /usr/local/google/home/mikezh/Coding/mcp_codes/logs/adk_web.log (disable: START_AI_TOOL_LOG_DISABLE=1)
+Ensure GEMINI_API_KEY is set (see DESIGN_PIP_INSTALL.md).
+Custom UI logo: set both ADK_LOGO_TEXT and ADK_LOGO_IMAGE_URL (ADK rejects logo-text alone).
+Same agent as client_inmemory_v2_google_adk.py: open app gfiber_network in the ADK Web UI.
+Interactive CLI (stdio): python3 client_inmemory_v2_adk.py
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/authlib/_joserfc_helpers.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import ECKey
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/features/_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.PLUGGABLE_AUTH is enabled.
+  check_feature_enabled()
+2026-05-19 11:14:37,791 - INFO - service_factory.py:266 - Using in-memory memory service
+2026-05-19 11:14:37,791 - INFO - service_factory.py:189 - Using session service URI: memory:
+2026-05-19 11:14:37,792 - INFO - local_storage.py:110 - Using file artifact service at /usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents/.adk/artifacts
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/fast_api.py:204: UserWarning: [EXPERIMENTAL] InMemoryCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  credential_service = InMemoryCredentialService()
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/auth/credential_service/in_memory_credential_service.py:33: UserWarning: [EXPERIMENTAL] BaseCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  super().__init__()
+INFO:     Started server process [4088402]
+INFO:     Waiting for application startup.
+
++-----------------------------------------------------------------------------+
+| ADK Web Server started                                                      |
+|                                                                             |
+| For local testing, access at http://127.0.0.1:8787.                         |
++-----------------------------------------------------------------------------+
+
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8787 (Press CTRL+C to quit)
+INFO:     127.0.0.1:51428 - "GET /dev-ui/?app=gfiber_network&userId=user&session=b2f5c553-6a1e-48d6-ac20-6b44a682256f HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51428 - "GET /dev-ui/assets/config/runtime-config.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51428 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51436 - "GET /version HTTP/1.1" 200 OK
+2026-05-19 11:15:00,507 - INFO - envs.py:90 - No .env file found for gfiber_network
+2026-05-19 11:15:00,508 - INFO - envs.py:90 - No .env file found for gfiber_network
+2026-05-19 11:15:00,516 - INFO - plugin_manager.py:104 - Plugin 'gfiber_adk_web_session_log' registered.
+INFO:     127.0.0.1:51428 - "GET /dev/build_graph/gfiber_network HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51436 - "GET /apps/gfiber_network/users/user/sessions/b2f5c553-6a1e-48d6-ac20-6b44a682256f HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51438 - "GET /dev/build_graph_image/gfiber_network?dark_mode=false HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51444 - "GET /dev/build_graph_image/gfiber_network?dark_mode=true HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51458 - "GET /builder/app/gfiber_network?ts=1779214500453 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51444 - "GET /apps/gfiber_network/eval_results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51458 - "GET /apps/gfiber_network/eval_sets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51458 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:51444 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51458 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51458 - "GET /dev/build_graph/gfiber_network HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51428 - "GET /builder/app/gfiber_network?ts=1779214502090 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51438 - "GET /dev/build_graph_image/gfiber_network?dark_mode=true HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51444 - "GET /dev/build_graph_image/gfiber_network?dark_mode=false HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:51438 - "GET /apps/gfiber_network/eval_results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51444 - "GET /apps/gfiber_network/eval_sets HTTP/1.1" 200 OK
+2026-05-19 11:15:25,540 - INFO - adk_web_server.py:867 - New session created: 91e2185d-2116-4a9a-bc74-57ae008109b1
+INFO:     127.0.0.1:50672 - "POST /apps/gfiber_network/users/user/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50672 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:15:26] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/features/_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.BASE_AUTHENTICATED_TOOL is enabled.
+  check_feature_enabled()
+2026-05-19 11:15:26,805 - INFO - types.py:2818 - 
+Note: Conversion of fields that are not included in the JSONSchema class are ignored.
+Json Schema is now supported natively by both Vertex AI and Gemini API. Users
+are recommended to pass/receive Json Schema directly to/from the API. For example:
+1. the counter part of GenerateContentConfig.response_schema is
+   GenerateContentConfig.response_json_schema, which accepts [JSON
+  Schema](https://json-schema.org/)
+2. the counter part of FunctionDeclaration.parameters is
+   FunctionDeclaration.parameters_json_schema, which accepts [JSON
+   Schema](https://json-schema.org/)
+3. the counter part of FunctionDeclaration.response is
+   FunctionDeclaration.response_json_schema, which accepts [JSON
+   Schema](https://json-schema.org/)
+
+2026-05-19 11:15:26,922 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+2026-05-19 11:15:32,267 - WARNING - types.py:7966 - Warning: there are non-text parts in the response: ['function_call'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py:233: UserWarning: [EXPERIMENTAL] feature FeatureName.PROGRESSIVE_SSE_STREAMING is enabled.
+  async for llm_response in aggregator_gen:
+[05/19/26 11:15:32] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-19 11:15:43,965 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:50672 - "GET /debug/trace/session/91e2185d-2116-4a9a-bc74-57ae008109b1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59122 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:16:23] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:16:23,611 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/19/26 11:16:29] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-19 11:16:32,714 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+2026-05-19 11:16:34,136 - ERROR - adk_web_server.py:1976 - Error in event_generator: 400 Bad Request. {'message': '{\n  "error": {\n    "code": 400,\n    "message": "The input token count exceeds the maximum number of tokens allowed 1048576.",\n    "status": "INVALID_ARGUMENT",\n    "details": [\n      {\n        "@type": "type.googleapis.com/google.rpc.DebugInfo",\n        "detail": "No endpoint config found for the given token count: 1048576; input token count: 1062808"\n      }\n    ]\n  }\n}\n', 'status': 'Bad Request'}
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 1948, in event_generator
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 632, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 617, in _run_with_trace
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 881, in _exec_with_plugin
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 606, in execute
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 297, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 487, in _run_async_impl
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 804, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 881, in _run_one_step_async
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1261, in _call_llm_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1239, in _call_llm_with_tracing
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1322, in _run_and_handle_error
+    async for response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 406, in _run_and_handle_error
+    raise model_error
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 379, in _run_and_handle_error
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 266, in generate_content_async
+    raise ce
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 214, in generate_content_async
+    responses = await self.api_client.aio.models.generate_content_stream(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/models.py", line 8501, in generate_content_stream
+    response = await self._generate_content_stream(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/models.py", line 7005, in _generate_content_stream
+    response_stream = await self._api_client.async_request_streamed(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1600, in async_request_streamed
+    response = await self._async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1516, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1402, in _async_request_once
+    await errors.APIError.raise_for_async_response(response)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/errors.py", line 247, in raise_for_async_response
+    await cls.raise_error_async(status_code, response_json, response)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/errors.py", line 269, in raise_error_async
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 400 Bad Request. {'message': '{\n  "error": {\n    "code": 400,\n    "message": "The input token count exceeds the maximum number of tokens allowed 1048576.",\n    "status": "INVALID_ARGUMENT",\n    "details": [\n      {\n        "@type": "type.googleapis.com/google.rpc.DebugInfo",\n        "detail": "No endpoint config found for the given token count: 1048576; input token count: 1062808"\n      }\n    ]\n  }\n}\n', 'status': 'Bad Request'}
+INFO:     127.0.0.1:59122 - "GET /debug/trace/session/91e2185d-2116-4a9a-bc74-57ae008109b1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51494 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:16:57] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:16:57,253 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+2026-05-19 11:16:58,614 - ERROR - adk_web_server.py:1976 - Error in event_generator: 400 Bad Request. {'message': '{\n  "error": {\n    "code": 400,\n    "message": "The input token count exceeds the maximum number of tokens allowed 1048576.",\n    "status": "INVALID_ARGUMENT",\n    "details": [\n      {\n        "@type": "type.googleapis.com/google.rpc.DebugInfo",\n        "detail": "No endpoint config found for the given token count: 1048576; input token count: 1062824"\n      }\n    ]\n  }\n}\n', 'status': 'Bad Request'}
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 1948, in event_generator
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 632, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 617, in _run_with_trace
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 881, in _exec_with_plugin
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 606, in execute
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 297, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 487, in _run_async_impl
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 804, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 881, in _run_one_step_async
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1261, in _call_llm_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1239, in _call_llm_with_tracing
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1322, in _run_and_handle_error
+    async for response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 406, in _run_and_handle_error
+    raise model_error
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 379, in _run_and_handle_error
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 266, in generate_content_async
+    raise ce
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 214, in generate_content_async
+    responses = await self.api_client.aio.models.generate_content_stream(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/models.py", line 8501, in generate_content_stream
+    response = await self._generate_content_stream(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/models.py", line 7005, in _generate_content_stream
+    response_stream = await self._api_client.async_request_streamed(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1600, in async_request_streamed
+    response = await self._async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1516, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1402, in _async_request_once
+    await errors.APIError.raise_for_async_response(response)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/errors.py", line 247, in raise_for_async_response
+    await cls.raise_error_async(status_code, response_json, response)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/errors.py", line 269, in raise_error_async
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 400 Bad Request. {'message': '{\n  "error": {\n    "code": 400,\n    "message": "The input token count exceeds the maximum number of tokens allowed 1048576.",\n    "status": "INVALID_ARGUMENT",\n    "details": [\n      {\n        "@type": "type.googleapis.com/google.rpc.DebugInfo",\n        "detail": "No endpoint config found for the given token count: 1048576; input token count: 1062824"\n      }\n    ]\n  }\n}\n', 'status': 'Bad Request'}
+INFO:     127.0.0.1:51494 - "GET /debug/trace/session/91e2185d-2116-4a9a-bc74-57ae008109b1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51502 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:17:57] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:17:57,675 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+2026-05-19 11:17:58,978 - ERROR - adk_web_server.py:1976 - Error in event_generator: 400 Bad Request. {'message': '{\n  "error": {\n    "code": 400,\n    "message": "The input token count exceeds the maximum number of tokens allowed 1048576.",\n    "status": "INVALID_ARGUMENT",\n    "details": [\n      {\n        "@type": "type.googleapis.com/google.rpc.DebugInfo",\n        "detail": "No endpoint config found for the given token count: 1048576; input token count: 1062840"\n      }\n    ]\n  }\n}\n', 'status': 'Bad Request'}
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 1948, in event_generator
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 632, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 617, in _run_with_trace
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 881, in _exec_with_plugin
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 606, in execute
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 297, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 487, in _run_async_impl
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 804, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 881, in _run_one_step_async
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1261, in _call_llm_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1239, in _call_llm_with_tracing
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1322, in _run_and_handle_error
+    async for response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 406, in _run_and_handle_error
+    raise model_error
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 379, in _run_and_handle_error
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 266, in generate_content_async
+    raise ce
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 214, in generate_content_async
+    responses = await self.api_client.aio.models.generate_content_stream(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/models.py", line 8501, in generate_content_stream
+    response = await self._generate_content_stream(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/models.py", line 7005, in _generate_content_stream
+    response_stream = await self._api_client.async_request_streamed(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1600, in async_request_streamed
+    response = await self._async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1516, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1402, in _async_request_once
+    await errors.APIError.raise_for_async_response(response)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/errors.py", line 247, in raise_for_async_response
+    await cls.raise_error_async(status_code, response_json, response)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/errors.py", line 269, in raise_error_async
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 400 Bad Request. {'message': '{\n  "error": {\n    "code": 400,\n    "message": "The input token count exceeds the maximum number of tokens allowed 1048576.",\n    "status": "INVALID_ARGUMENT",\n    "details": [\n      {\n        "@type": "type.googleapis.com/google.rpc.DebugInfo",\n        "detail": "No endpoint config found for the given token count: 1048576; input token count: 1062840"\n      }\n    ]\n  }\n}\n', 'status': 'Bad Request'}
+INFO:     127.0.0.1:51502 - "GET /debug/trace/session/91e2185d-2116-4a9a-bc74-57ae008109b1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36270 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:18:23] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:18:23,245 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+2026-05-19 11:18:24,744 - ERROR - adk_web_server.py:1976 - Error in event_generator: 400 Bad Request. {'message': '{\n  "error": {\n    "code": 400,\n    "message": "The input token count exceeds the maximum number of tokens allowed 1048576.",\n    "status": "INVALID_ARGUMENT",\n    "details": [\n      {\n        "@type": "type.googleapis.com/google.rpc.DebugInfo",\n        "detail": "No endpoint config found for the given token count: 1048576; input token count: 1062848"\n      }\n    ]\n  }\n}\n', 'status': 'Bad Request'}
+Traceback (most recent call last):
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/adk_web_server.py", line 1948, in event_generator
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 632, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 617, in _run_with_trace
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 881, in _exec_with_plugin
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/runners.py", line 606, in execute
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/base_agent.py", line 297, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/agents/llm_agent.py", line 487, in _run_async_impl
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 804, in run_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 881, in _run_one_step_async
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1261, in _call_llm_async
+    async for event in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1239, in _call_llm_with_tracing
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 1322, in _run_and_handle_error
+    async for response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 406, in _run_and_handle_error
+    raise model_error
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/flows/llm_flows/base_llm_flow.py", line 379, in _run_and_handle_error
+    async for llm_response in agen:
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 266, in generate_content_async
+    raise ce
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py", line 214, in generate_content_async
+    responses = await self.api_client.aio.models.generate_content_stream(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/models.py", line 8501, in generate_content_stream
+    response = await self._generate_content_stream(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/models.py", line 7005, in _generate_content_stream
+    response_stream = await self._api_client.async_request_streamed(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1600, in async_request_streamed
+    response = await self._async_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1516, in _async_request
+    return await self._async_retry(  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/_utils.py", line 111, in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/__init__.py", line 413, in exc_check
+    raise retry_exc.reraise()
+          ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/__init__.py", line 184, in reraise
+    raise self.last_attempt.result()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/.pyenv/versions/3.12.6/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/_api_client.py", line 1402, in _async_request_once
+    await errors.APIError.raise_for_async_response(response)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/errors.py", line 247, in raise_for_async_response
+    await cls.raise_error_async(status_code, response_json, response)
+  File "/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/genai/errors.py", line 269, in raise_error_async
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 400 Bad Request. {'message': '{\n  "error": {\n    "code": 400,\n    "message": "The input token count exceeds the maximum number of tokens allowed 1048576.",\n    "status": "INVALID_ARGUMENT",\n    "details": [\n      {\n        "@type": "type.googleapis.com/google.rpc.DebugInfo",\n        "detail": "No endpoint config found for the given token count: 1048576; input token count: 1062848"\n      }\n    ]\n  }\n}\n', 'status': 'Bad Request'}
+INFO:     127.0.0.1:36270 - "GET /debug/trace/session/91e2185d-2116-4a9a-bc74-57ae008109b1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34432 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:34432 - "GET /dev-ui/assets/config/runtime-config.json HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:34432 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34446 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34432 - "GET /dev/build_graph_image/gfiber_network?dark_mode=false HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:34446 - "GET /dev/build_graph/gfiber_network HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34458 - "GET /dev/build_graph_image/gfiber_network?dark_mode=true HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:34462 - "GET /builder/app/gfiber_network?ts=1779214713837 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34458 - "GET /apps/gfiber_network/eval_results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34462 - "GET /apps/gfiber_network/eval_sets HTTP/1.1" 200 OK
+2026-05-19 11:18:45,824 - INFO - adk_web_server.py:867 - New session created: 5ecf128d-0cce-413c-8814-f26523f539cb
+INFO:     127.0.0.1:43414 - "POST /apps/gfiber_network/users/user/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43414 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:18:45] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:18:45,954 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/19/26 11:18:46] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-19 11:18:48,139 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:43414 - "GET /debug/trace/session/5ecf128d-0cce-413c-8814-f26523f539cb HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+
++-----------------------------------------------------------------------------+
+| ADK Web Server shutting down...                                             |
++-----------------------------------------------------------------------------+
+
+2026-05-19 11:22:00,819 - INFO - runners.py:1600 - Closing runner...
+2026-05-19 11:22:00,819 - INFO - runners.py:1576 - Closing toolset: McpToolset
+2026-05-19 11:22:01,047 - INFO - runners.py:1579 - Successfully closed toolset: McpToolset
+2026-05-19 11:22:01,047 - INFO - runners.py:1608 - Runner closed.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [4088402]
+
+Aborted!
+==== 2026-05-19T18:22:10Z start_ai_tool_adk pid=4096189 ====
+PYTHON=python3
+ADK_WEB_HOST=127.0.0.1
+ADK_WEB_PORT=8787
+AGENTS_DIR=/usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents
+SESSION_URI=memory://
+ADK_LOG_FILE=/usr/local/google/home/mikezh/Coding/mcp_codes/logs/adk_web.log
+
+Starting ADK Web UI — agents from /usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents
+Listening on 127.0.0.1:8787 (set ADK_WEB_PORT to avoid clashes)
+Session storage: memory:// (not persisted unless you set ADK_SESSION_SERVICE_URI to a durable backend)
+SSH tunnel from laptop: use REMOTE_PORT=8787 with start_ai_tool_adk_tunnel
+Logging to: /usr/local/google/home/mikezh/Coding/mcp_codes/logs/adk_web.log (disable: START_AI_TOOL_LOG_DISABLE=1)
+Ensure GEMINI_API_KEY is set (see DESIGN_PIP_INSTALL.md).
+Custom UI logo: set both ADK_LOGO_TEXT and ADK_LOGO_IMAGE_URL (ADK rejects logo-text alone).
+Same agent as client_inmemory_v2_google_adk.py: open app gfiber_network in the ADK Web UI.
+Interactive CLI (stdio): python3 client_inmemory_v2_adk.py
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/authlib/_joserfc_helpers.py:8: AuthlibDeprecationWarning: authlib.jose module is deprecated, please use joserfc instead.
+It will be compatible before version 2.0.0.
+  from authlib.jose import ECKey
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/features/_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.PLUGGABLE_AUTH is enabled.
+  check_feature_enabled()
+2026-05-19 11:22:14,094 - INFO - service_factory.py:266 - Using in-memory memory service
+2026-05-19 11:22:14,094 - INFO - service_factory.py:189 - Using session service URI: memory:
+2026-05-19 11:22:14,095 - INFO - local_storage.py:110 - Using file artifact service at /usr/local/google/home/mikezh/Coding/mcp_codes/adk_agents/.adk/artifacts
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/cli/fast_api.py:204: UserWarning: [EXPERIMENTAL] InMemoryCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  credential_service = InMemoryCredentialService()
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/auth/credential_service/in_memory_credential_service.py:33: UserWarning: [EXPERIMENTAL] BaseCredentialService: This feature is experimental and may change or be removed in future versions without notice. It may introduce breaking changes at any time.
+  super().__init__()
+INFO:     Started server process [4096189]
+INFO:     Waiting for application startup.
+
++-----------------------------------------------------------------------------+
+| ADK Web Server started                                                      |
+|                                                                             |
+| For local testing, access at http://127.0.0.1:8787.                         |
++-----------------------------------------------------------------------------+
+
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8787 (Press CTRL+C to quit)
+INFO:     127.0.0.1:50300 - "GET /dev-ui/?app=gfiber_network&userId=user&session=5ecf128d-0cce-413c-8814-f26523f539cb HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50300 - "GET /dev-ui/assets/config/runtime-config.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50300 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50316 - "GET /version HTTP/1.1" 200 OK
+2026-05-19 11:22:31,562 - INFO - envs.py:90 - No .env file found for gfiber_network
+2026-05-19 11:22:31,562 - INFO - envs.py:90 - No .env file found for gfiber_network
+2026-05-19 11:22:31,565 - INFO - plugin_manager.py:104 - Plugin 'gfiber_adk_web_session_log' registered.
+INFO:     127.0.0.1:50300 - "GET /dev/build_graph/gfiber_network HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50316 - "GET /apps/gfiber_network/users/user/sessions/5ecf128d-0cce-413c-8814-f26523f539cb HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50324 - "GET /dev/build_graph_image/gfiber_network?dark_mode=false HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50326 - "GET /dev/build_graph_image/gfiber_network?dark_mode=true HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:50342 - "GET /builder/app/gfiber_network?ts=1779214951511 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50326 - "GET /apps/gfiber_network/eval_results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50342 - "GET /apps/gfiber_network/eval_sets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50342 - "GET / HTTP/1.1" 307 Temporary Redirect
+INFO:     127.0.0.1:50342 - "GET /dev-ui/assets/config/runtime-config.json HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:50342 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34210 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34210 - "GET /dev/build_graph/gfiber_network HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50342 - "GET /dev/build_graph_image/gfiber_network?dark_mode=false HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:34212 - "GET /dev/build_graph_image/gfiber_network?dark_mode=true HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:34214 - "GET /builder/app/gfiber_network?ts=1779214957350 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34212 - "GET /apps/gfiber_network/eval_results HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34214 - "GET /apps/gfiber_network/eval_sets HTTP/1.1" 200 OK
+2026-05-19 11:22:46,521 - INFO - adk_web_server.py:867 - New session created: 15b231d3-e039-49e2-ad66-1f9d12855457
+INFO:     127.0.0.1:43626 - "POST /apps/gfiber_network/users/user/sessions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43626 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:22:47] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/features/_feature_decorator.py:72: UserWarning: [EXPERIMENTAL] feature FeatureName.BASE_AUTHENTICATED_TOOL is enabled.
+  check_feature_enabled()
+2026-05-19 11:22:48,010 - INFO - types.py:2818 - 
+Note: Conversion of fields that are not included in the JSONSchema class are ignored.
+Json Schema is now supported natively by both Vertex AI and Gemini API. Users
+are recommended to pass/receive Json Schema directly to/from the API. For example:
+1. the counter part of GenerateContentConfig.response_schema is
+   GenerateContentConfig.response_json_schema, which accepts [JSON
+  Schema](https://json-schema.org/)
+2. the counter part of FunctionDeclaration.parameters is
+   FunctionDeclaration.parameters_json_schema, which accepts [JSON
+   Schema](https://json-schema.org/)
+3. the counter part of FunctionDeclaration.response is
+   FunctionDeclaration.response_json_schema, which accepts [JSON
+   Schema](https://json-schema.org/)
+
+2026-05-19 11:22:48,138 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+2026-05-19 11:22:49,592 - WARNING - types.py:7966 - Warning: there are non-text parts in the response: ['function_call', 'function_call', 'function_call', 'function_call', 'function_call', 'function_call'], returning concatenated text result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+/usr/local/google/home/mikezh/myenv/lib/python3.12/site-packages/google/adk/models/google_llm.py:233: UserWarning: [EXPERIMENTAL] feature FeatureName.PROGRESSIVE_SSE_STREAMING is enabled.
+  async for llm_response in aggregator_gen:
+[05/19/26 11:22:49] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+                    INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-19 11:22:50,725 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:43626 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56060 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:23:13] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:23:13,671 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/19/26 11:23:14] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-19 11:23:20,204 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:56060 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35874 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:23:40] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:23:40,229 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/19/26 11:23:41] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-19 11:23:46,433 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:35874 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42714 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:23:59] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:23:59,383 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:42714 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40464 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:24:12] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:24:13,055 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:40464 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45606 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:25:05] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:25:05,402 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:45606 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46598 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:26:06] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:26:06,264 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/19/26 11:26:14] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-19 11:26:18,019 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:46598 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43736 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:30:34] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:30:34,931 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:43736 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38986 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:30:55] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:30:55,704 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/19/26 11:30:57] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-19 11:31:00,892 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:38986 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44524 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:32:34] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:32:34,719 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:44524 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40542 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:32:54] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:32:54,873 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:40542 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44154 - "POST /run_sse HTTP/1.1" 200 OK
+[05/19/26 11:33:39] INFO     Processing request of type            server.py:720
+                             ListToolsRequest                                   
+2026-05-19 11:33:39,664 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+[05/19/26 11:33:41] INFO     Processing request of type            server.py:720
+                             CallToolRequest                                    
+2026-05-19 11:33:44,434 - INFO - google_llm.py:185 - Sending out request, model: gemini-2.5-flash-lite, backend: GoogleLLMVariant.GEMINI_API, stream: True
+INFO:     127.0.0.1:44154 - "GET /debug/trace/session/15b231d3-e039-49e2-ad66-1f9d12855457 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40074 - "GET /dev-ui/?app=gfiber_network&userId=user&session=de0da38e-acce-4935-9fdc-db28cdf3c6fc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40074 - "GET /dev-ui/assets/config/runtime-config.json HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:40074 - "GET /list-apps?relative_path=./ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40084 - "GET /version HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40074 - "GET /dev/build_graph/gfiber_network HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40084 - "GET /apps/gfiber_network/users/user/sessions/de0da38e-acce-4935-9fdc-db28cdf3c6fc HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40086 - "GET /dev/build_graph_image/gfiber_network?dark_mode=false HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40092 - "GET /dev/build_graph_image/gfiber_network?dark_mode=true HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40106 - "GET /builder/app/gfiber_network?ts=1779215778958 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40106 - "GET /apps/gfiber_network/eval_sets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40092 - "GET /apps/gfiber_network/eval_results HTTP/1.1" 200 OK
