@@ -2701,7 +2701,7 @@ def scan_high_utilization_interfaces(
         canonical_target = os.path.realpath(target_path)
         return canonical_target == canonical_root or canonical_target.startswith(canonical_root + os.sep)
 
-    matches = []
+    peak_map = {}
     
     # Scan date directories
     for date_folder in os.listdir(root_dir):
@@ -2752,18 +2752,26 @@ def scan_high_utilization_interfaces(
                     out_pct = round(v.get("output_bps_percent", 0), 1)
                     
                     if in_pct > threshold_percent or out_pct > threshold_percent:
-                        matches.append({
-                            "date": date_folder,
-                            "router": router_folder,
-                            "interface": k,
-                            "neighbor": v.get("neighbor", "Unknown"),
-                            "circuit": v.get("Circuit", "Unknown"),
-                            "speed": v.get("speed", "Unknown"),
-                            "input_percent": in_pct,
-                            "output_percent": out_pct,
-                            "timestamp": ts_label
-                        })
+                        max_util = max(in_pct, out_pct)
+                        key = (date_folder, router_folder, k)
+                        if key not in peak_map or max_util > peak_map[key]["peak_utilization"]:
+                            peak_map[key] = {
+                                "peak_utilization": max_util,
+                                "record": {
+                                    "date": date_folder,
+                                    "router": router_folder,
+                                    "interface": k,
+                                    "neighbor": v.get("neighbor", "Unknown"),
+                                    "circuit": v.get("Circuit", "Unknown"),
+                                    "speed": v.get("speed", "Unknown"),
+                                    "input_percent": in_pct,
+                                    "output_percent": out_pct,
+                                    "timestamp": ts_label
+                                }
+                            }
                         
+    matches = [val["record"] for val in peak_map.values()]
+    
     # Sort matches by date, then router, then timestamp, then interface
     matches.sort(key=lambda x: (x["date"], x["router"], x["timestamp"], x["interface"]), reverse=True)
     
