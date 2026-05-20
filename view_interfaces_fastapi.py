@@ -841,24 +841,24 @@ HTML_TEMPLATE = """<!doctype html>
             {
               label: 'Input %',
               data: series.input,
-              borderColor: '#a855f7',
-              backgroundColor: 'rgba(168, 85, 247, 0.1)',
+              borderColor: '#06b6d4',
+              backgroundColor: 'rgba(6, 182, 212, 0.1)',
               fill: true,
               tension: 0.3,
               borderWidth: 3,
-              pointBackgroundColor: '#a855f7',
+              pointBackgroundColor: '#06b6d4',
               pointRadius: 4,
               pointHoverRadius: 6
             },
             {
               label: 'Output %',
               data: series.output,
-              borderColor: '#6366f1',
-              backgroundColor: 'rgba(99, 102, 241, 0.1)',
+              borderColor: '#10b981',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
               fill: true,
               tension: 0.3,
               borderWidth: 3,
-              pointBackgroundColor: '#6366f1',
+              pointBackgroundColor: '#10b981',
               pointRadius: 4,
               pointHoverRadius: 6
             }
@@ -958,8 +958,8 @@ HTML_TEMPLATE = """<!doctype html>
                 {
                   label: 'In %',
                   data: item.series.input,
-                  borderColor: '#a855f7',
-                  backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                  borderColor: '#06b6d4',
+                  backgroundColor: 'rgba(6, 182, 212, 0.1)',
                   fill: true,
                   tension: 0.3,
                   pointRadius: 3
@@ -967,8 +967,8 @@ HTML_TEMPLATE = """<!doctype html>
                 {
                   label: 'Out %',
                   data: item.series.output,
-                  borderColor: '#6366f1',
-                  backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                  borderColor: '#10b981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
                   fill: true,
                   tension: 0.3,
                   pointRadius: 3
@@ -1061,8 +1061,8 @@ HTML_TEMPLATE = """<!doctype html>
                 {
                   label: 'In %',
                   data: item.series.input,
-                  borderColor: '#a855f7',
-                  backgroundColor: 'rgba(168, 85, 247, 0.1)',
+                  borderColor: '#06b6d4',
+                  backgroundColor: 'rgba(6, 182, 212, 0.1)',
                   fill: true,
                   tension: 0.3,
                   pointRadius: 3
@@ -1070,8 +1070,8 @@ HTML_TEMPLATE = """<!doctype html>
                 {
                   label: 'Out %',
                   data: item.series.output,
-                  borderColor: '#6366f1',
-                  backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                  borderColor: '#10b981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
                   fill: true,
                   tension: 0.3,
                   pointRadius: 3
