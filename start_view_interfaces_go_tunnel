@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Local port forward: access the GFiber Interface Audit Dashboard (Go) from your Mac browser.
+SSH_USER="${SSH_USER:-mikezh}"
+SSH_HOST="${SSH_HOST:-mikezh.c.googlers.com}"
+
+if [[ $# -ge 1 ]]; then
+  REMOTE_TARGET="$1"
+else
+  REMOTE_TARGET="${REMOTE_SSH_TARGET:-${SSH_USER}@${SSH_HOST}}"
+fi
+
+if [[ "${REMOTE_TARGET}" == "your-ssh-user@your-remote-host" ]]; then
+  echo "Edit SSH_USER and SSH_HOST in this script before running it."
+  exit 1
+fi
+
+LOCAL_PORT="${LOCAL_PORT:-9000}"
+REMOTE_HOST="${REMOTE_HOST:-127.0.0.1}"
+REMOTE_PORT="${REMOTE_PORT:-9000}"
+
+echo "Opening SSH tunnel to ${REMOTE_TARGET} for Interface Audit Dashboard (Go)"
+echo "Keep this terminal open. Open this URL in your Mac browser:"
+echo "http://127.0.0.1:${LOCAL_PORT}"
+
+exec ssh -N -L "${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT}" "${REMOTE_TARGET}"
