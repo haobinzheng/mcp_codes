@@ -956,7 +956,7 @@ HTML_TEMPLATE = """<!doctype html>
               labels: item.timestamps,
               datasets: [
                 {
-                  label: 'In %',
+                  label: 'Input %',
                   data: item.series.input,
                   borderColor: '#06b6d4',
                   backgroundColor: 'rgba(6, 182, 212, 0.1)',
@@ -965,7 +965,7 @@ HTML_TEMPLATE = """<!doctype html>
                   pointRadius: 3
                 },
                 {
-                  label: 'Out %',
+                  label: 'Output %',
                   data: item.series.output,
                   borderColor: '#10b981',
                   backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -982,7 +982,15 @@ HTML_TEMPLATE = """<!doctype html>
                 y: { max: 100, grid: { color: 'rgba(51,65,85,0.2)' }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
                 x: { grid: { color: 'rgba(51,65,85,0.2)' }, ticks: { font: { size: 10 }, color: '#94a3b8' } }
               },
-              plugins: { legend: { display: false } }
+              plugins: {
+                legend: {
+                  display: true,
+                  labels: {
+                    color: '#f8fafc',
+                    font: { family: 'Inter', size: 10, weight: 600 }
+                  }
+                }
+              }
             }
           });
           miniChartInstances.push(inst);
@@ -1059,7 +1067,7 @@ HTML_TEMPLATE = """<!doctype html>
               labels: item.timestamps,
               datasets: [
                 {
-                  label: 'In %',
+                  label: 'Input %',
                   data: item.series.input,
                   borderColor: '#06b6d4',
                   backgroundColor: 'rgba(6, 182, 212, 0.1)',
@@ -1068,7 +1076,7 @@ HTML_TEMPLATE = """<!doctype html>
                   pointRadius: 3
                 },
                 {
-                  label: 'Out %',
+                  label: 'Output %',
                   data: item.series.output,
                   borderColor: '#10b981',
                   backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -1085,7 +1093,15 @@ HTML_TEMPLATE = """<!doctype html>
                 y: { max: 100, grid: { color: 'rgba(51,65,85,0.2)' }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
                 x: { grid: { color: 'rgba(51,65,85,0.2)' }, ticks: { font: { size: 10 }, color: '#94a3b8' } }
               },
-              plugins: { legend: { display: false } }
+              plugins: {
+                legend: {
+                  display: true,
+                  labels: {
+                    color: '#f8fafc',
+                    font: { family: 'Inter', size: 10, weight: 600 }
+                  }
+                }
+              }
             }
           });
           miniChartInstances.push(inst);
@@ -1153,10 +1169,7 @@ def route_api_router_data(date: str = Query(...), router: str = Query(...)):
     files = glob.glob(os.path.join(router_path, f"{router}_*.json"))
     files.sort()
 
-    timestamps = []
-    series_map = {}
-    latest_intfs = {}
-
+    valid_files_data = []
     for f in files:
         basename = os.path.basename(f)
         match = re.search(r"_(\d{4}_\d{2}_\d{2}_\d{2}_\d{2})\.json$", basename)
@@ -1164,24 +1177,32 @@ def route_api_router_data(date: str = Query(...), router: str = Query(...)):
             continue
         ts_raw = match.group(1)
         parts = ts_raw.split("_")
-        if len(parts) >= 5:
-            ts_label = f"{parts[3]}:{parts[4]}"
-        else:
-            ts_label = ts_raw
-
-        timestamps.append(ts_label)
-
+        ts_label = f"{parts[3]}:{parts[4]}" if len(parts) >= 5 else ts_raw
+        
         try:
             with open(f, "r") as fh:
                 data = json.load(fh)
+            valid_files_data.append((ts_label, data))
         except Exception:
             continue
 
+    timestamps = [item[0] for item in valid_files_data]
+    series_map = {}
+    latest_intfs = {}
+
+    for ts_label, data in valid_files_data:
+        present_interfaces = set()
         for k, v in data.items():
             if k in ["role", "year", "audit_timestamp"] or not isinstance(v, dict):
                 continue
+            
+            present_interfaces.add(k)
             if k not in series_map:
-                series_map[k] = {"input": [], "output": []}
+                idx = timestamps.index(ts_label)
+                series_map[k] = {
+                    "input": [None] * idx,
+                    "output": [None] * idx
+                }
             
             in_pct = round(v.get("input_bps_percent", 0), 1)
             out_pct = round(v.get("output_bps_percent", 0), 1)
@@ -1197,6 +1218,11 @@ def route_api_router_data(date: str = Query(...), router: str = Query(...)):
                 "is_400g_upgraded": v.get("is_400g_upgraded", False),
                 "upgrade_status": v.get("upgrade_status", "Not upgraded")
             }
+
+        for k in series_map:
+            if k not in present_interfaces:
+                series_map[k]["input"].append(None)
+                series_map[k]["output"].append(None)
 
     return {
         "timestamps": timestamps,
@@ -1227,10 +1253,7 @@ def route_api_high_utilization(date: str = Query("", pattern=r"^\d{4}-\d{2}-\d{2
         files = glob.glob(os.path.join(router_path, f"{r}_*.json"))
         files.sort()
 
-        timestamps = []
-        r_series = {}
-        r_meta = {}
-
+        valid_files_data = []
         for f in files:
             basename = os.path.basename(f)
             match = re.search(r"_(\d{4}_\d{2}_\d{2}_\d{2}_\d{2})\.json$", basename)
@@ -1239,19 +1262,31 @@ def route_api_high_utilization(date: str = Query("", pattern=r"^\d{4}-\d{2}-\d{2
             ts_raw = match.group(1)
             parts = ts_raw.split("_")
             ts_label = f"{parts[3]}:{parts[4]}" if len(parts) >= 5 else ts_raw
-            timestamps.append(ts_label)
-
+            
             try:
                 with open(f, "r") as fh:
                     data = json.load(fh)
+                valid_files_data.append((ts_label, data))
             except Exception:
                 continue
 
+        timestamps = [item[0] for item in valid_files_data]
+        r_series = {}
+        r_meta = {}
+
+        for ts_label, data in valid_files_data:
+            present_interfaces = set()
             for k, v in data.items():
                 if k in ["role", "year", "audit_timestamp"] or not isinstance(v, dict):
                     continue
+                
+                present_interfaces.add(k)
                 if k not in r_series:
-                    r_series[k] = {"input": [], "output": []}
+                    idx = timestamps.index(ts_label)
+                    r_series[k] = {
+                        "input": [None] * idx,
+                        "output": [None] * idx
+                    }
                 
                 in_pct = round(v.get("input_bps_percent", 0), 1)
                 out_pct = round(v.get("output_bps_percent", 0), 1)
@@ -1263,9 +1298,16 @@ def route_api_high_utilization(date: str = Query("", pattern=r"^\d{4}-\d{2}-\d{2
                     "speed": v.get("speed", "Unknown")
                 }
 
+            for k in r_series:
+                if k not in present_interfaces:
+                    r_series[k]["input"].append(None)
+                    r_series[k]["output"].append(None)
+
         for intf, series in r_series.items():
-            peak_in = max(series["input"]) if series["input"] else 0
-            peak_out = max(series["output"]) if series["output"] else 0
+            valid_in = [val for val in series["input"] if val is not None]
+            valid_out = [val for val in series["output"] if val is not None]
+            peak_in = max(valid_in) if valid_in else 0
+            peak_out = max(valid_out) if valid_out else 0
 
             if peak_in > 50 or peak_out > 50:
                 meta = r_meta.get(intf, {})
