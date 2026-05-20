@@ -2701,35 +2701,72 @@ def scan_high_utilization_interfaces(
         canonical_target = os.path.realpath(target_path)
         return canonical_target == canonical_root or canonical_target.startswith(canonical_root + os.sep)
 
-    peak_map = {}
-    
-    # Scan date directories
+    # Phase 1: Identify unique interface keys exceeding the threshold at least once
+    high_keys = set()
+    metadata_map = {}
+
     for date_folder in os.listdir(root_dir):
         date_path = os.path.join(root_dir, date_folder)
-        if not os.path.isdir(date_path):
-            continue
-        if not is_safe_subpath(date_path):
+        if not os.path.isdir(date_path) or not is_safe_subpath(date_path):
             continue
         if date_filter and date_filter not in date_folder:
             continue
             
-        # Scan router directories
         for router_folder in os.listdir(date_path):
             router_path = os.path.join(date_path, router_folder)
-            if not os.path.isdir(router_path):
-                continue
-            if not is_safe_subpath(router_path):
+            if not os.path.isdir(router_path) or not is_safe_subpath(router_path):
                 continue
             if router_filter and router_filter not in router_folder:
                 continue
                 
-            # Scan JSON files
             json_files = glob.glob(os.path.join(router_path, f"{router_folder}_*.json"))
             for f in json_files:
                 if not is_safe_subpath(f):
                     continue
+                try:
+                    with open(f, "r") as fh:
+                        data = json.load(fh)
+                except Exception:
+                    continue
+                    
+                for k, v in data.items():
+                    if k in ["role", "year", "audit_timestamp"] or not isinstance(v, dict):
+                        continue
+                    in_pct = round(v.get("input_bps_percent", 0), 1)
+                    out_pct = round(v.get("output_bps_percent", 0), 1)
+                    
+                    if in_pct > threshold_percent or out_pct > threshold_percent:
+                        key = (date_folder, router_folder, k)
+                        high_keys.add(key)
+                        metadata_map[key] = {
+                            "neighbor": v.get("neighbor", "Unknown"),
+                            "circuit": v.get("Circuit", "Unknown"),
+                            "speed": v.get("speed", "Unknown")
+                        }
+
+    # Phase 2: Aggregate full chronological daily timelines for those highly-utilized interfaces
+    interface_timeline_map = {}
+
+    for date_folder in os.listdir(root_dir):
+        date_path = os.path.join(root_dir, date_folder)
+        if not os.path.isdir(date_path) or not is_safe_subpath(date_path):
+            continue
+        if date_filter and date_filter not in date_folder:
+            continue
+            
+        for router_folder in os.listdir(date_path):
+            router_path = os.path.join(date_path, router_folder)
+            if not os.path.isdir(router_path) or not is_safe_subpath(router_path):
+                continue
+            if router_filter and router_filter not in router_folder:
+                continue
                 
-                # Extract timestamp from filename (e.g. router_2026_05_14_21_10.json)
+            json_files = glob.glob(os.path.join(router_path, f"{router_folder}_*.json"))
+            json_files.sort()  # Chronological order of snapshots
+
+            for f in json_files:
+                if not is_safe_subpath(f):
+                    continue
                 basename = os.path.basename(f)
                 match_ts = re.search(r"_(\d{4}_\d{2}_\d{2}_\d{2}_\d{2})\.json$", basename)
                 ts_label = "Unknown"
@@ -2747,36 +2784,34 @@ def scan_high_utilization_interfaces(
                 for k, v in data.items():
                     if k in ["role", "year", "audit_timestamp"] or not isinstance(v, dict):
                         continue
+                    key = (date_folder, router_folder, k)
+                    if key in high_keys:
+                        in_pct = round(v.get("input_bps_percent", 0), 1)
+                        out_pct = round(v.get("output_bps_percent", 0), 1)
                         
-                    in_pct = round(v.get("input_bps_percent", 0), 1)
-                    out_pct = round(v.get("output_bps_percent", 0), 1)
-                    
-                    if in_pct > threshold_percent or out_pct > threshold_percent:
-                        max_util = max(in_pct, out_pct)
-                        key = (date_folder, router_folder, k)
-                        if key not in peak_map or max_util > peak_map[key]["peak_utilization"]:
-                            peak_map[key] = {
-                                "peak_utilization": max_util,
-                                "record": {
-                                    "date": date_folder,
-                                    "router": router_folder,
-                                    "interface": k,
-                                    "neighbor": v.get("neighbor", "Unknown"),
-                                    "circuit": v.get("Circuit", "Unknown"),
-                                    "speed": v.get("speed", "Unknown"),
-                                    "input_percent": in_pct,
-                                    "output_percent": out_pct,
-                                    "timestamp": ts_label
-                                }
+                        if key not in interface_timeline_map:
+                            meta = metadata_map[key]
+                            interface_timeline_map[key] = {
+                                "date": date_folder,
+                                "router": router_folder,
+                                "interface": k,
+                                "neighbor": meta["neighbor"],
+                                "circuit": meta["circuit"],
+                                "speed": meta["speed"],
+                                "timestamps": [],
+                                "series": {"input": [], "output": []}
                             }
-                        
-    matches = [val["record"] for val in peak_map.values()]
-    
-    # Sort matches by date, then router, then timestamp, then interface
-    matches.sort(key=lambda x: (x["date"], x["router"], x["timestamp"], x["interface"]), reverse=True)
+                            
+                        interface_timeline_map[key]["timestamps"].append(ts_label)
+                        interface_timeline_map[key]["series"]["input"].append(in_pct)
+                        interface_timeline_map[key]["series"]["output"].append(out_pct)
+
+    matches = list(interface_timeline_map.values())
+    # Sort matches by date, then router, then interface
+    matches.sort(key=lambda x: (x["date"], x["router"], x["interface"]), reverse=True)
     
     return _json({
-        "total_matches": len(matches),
+        "total_high_interfaces": len(matches),
         "threshold_percent": threshold_percent,
         "high_utilization_interfaces": matches
     })
