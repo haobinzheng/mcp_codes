@@ -924,13 +924,27 @@ HTML_TEMPLATE = """<!doctype html>
           
           const header = document.createElement('div');
           header.className = 'header';
+          
+          const leftSide = document.createElement('div');
+          leftSide.style.display = 'flex';
+          leftSide.style.alignItems = 'center';
+          leftSide.style.gap = '12px';
+          
           const routerSpan = document.createElement('span');
           routerSpan.className = 'router-name';
           routerSpan.textContent = item.router;
+          
           const intfSpan = document.createElement('span');
           intfSpan.className = 'intf-name';
           intfSpan.textContent = item.interface;
-          header.append(routerSpan, intfSpan);
+          
+          leftSide.append(routerSpan, intfSpan);
+          
+          const spanUpg = document.createElement('span');
+          spanUpg.className = `badge ${item.is_400g_upgraded ? 'badge-ok' : 'badge-warn'}`;
+          spanUpg.textContent = item.upgrade_status || 'Not upgraded';
+          
+          header.append(leftSide, spanUpg);
 
           const details = document.createElement('div');
           details.className = 'details';
@@ -1035,13 +1049,27 @@ HTML_TEMPLATE = """<!doctype html>
           
           const header = document.createElement('div');
           header.className = 'header';
+          
+          const leftSide = document.createElement('div');
+          leftSide.style.display = 'flex';
+          leftSide.style.alignItems = 'center';
+          leftSide.style.gap = '12px';
+          
           const routerSpan = document.createElement('span');
           routerSpan.className = 'router-name';
           routerSpan.textContent = item.router;
+          
           const intfSpan = document.createElement('span');
           intfSpan.className = 'intf-name';
           intfSpan.textContent = item.interface;
-          header.append(routerSpan, intfSpan);
+          
+          leftSide.append(routerSpan, intfSpan);
+          
+          const spanUpg = document.createElement('span');
+          spanUpg.className = `badge ${item.is_400g_upgraded ? 'badge-ok' : 'badge-warn'}`;
+          spanUpg.textContent = item.upgrade_status || 'Not upgraded';
+          
+          header.append(leftSide, spanUpg);
 
           const details = document.createElement('div');
           details.className = 'details';
@@ -1295,7 +1323,9 @@ def route_api_high_utilization(date: str = Query("", pattern=r"^\d{4}-\d{2}-\d{2
 
                 r_meta[k] = {
                     "neighbor": v.get("neighbor", "Unknown"),
-                    "speed": v.get("speed", "Unknown")
+                    "speed": v.get("speed", "Unknown"),
+                    "is_400g_upgraded": v.get("is_400g_upgraded", False),
+                    "upgrade_status": v.get("upgrade_status", "Not upgraded")
                 }
 
             for k in r_series:
@@ -1319,7 +1349,9 @@ def route_api_high_utilization(date: str = Query("", pattern=r"^\d{4}-\d{2}-\d{2
                     "peak_input": peak_in,
                     "peak_output": peak_out,
                     "timestamps": timestamps,
-                    "series": series
+                    "series": series,
+                    "is_400g_upgraded": meta.get("is_400g_upgraded", False),
+                    "upgrade_status": meta.get("upgrade_status", "Not upgraded")
                 })
 
     return {"high_interfaces": high_items}
@@ -1393,13 +1425,17 @@ def route_api_high_utilization_history(
                             "timestamps": [],
                             "series": {"input": [], "output": []},
                             "peak_input": 0,
-                            "peak_output": 0
+                            "peak_output": 0,
+                            "is_400g_upgraded": v.get("is_400g_upgraded", False),
+                            "upgrade_status": v.get("upgrade_status", "Not upgraded")
                         }
 
                     interface_map[key]["timestamps"].append(ts_label)
                     interface_map[key]["series"]["input"].append(in_pct)
                     interface_map[key]["series"]["output"].append(out_pct)
-                    
+                    interface_map[key]["is_400g_upgraded"] = v.get("is_400g_upgraded", False)
+                    interface_map[key]["upgrade_status"] = v.get("upgrade_status", "Not upgraded")
+
                     if in_pct > interface_map[key]["peak_input"]:
                         interface_map[key]["peak_input"] = in_pct
                     if out_pct > interface_map[key]["peak_output"]:
