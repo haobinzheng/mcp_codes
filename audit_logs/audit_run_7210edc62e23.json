@@ -1,0 +1,56 @@
+{
+  "commands": [
+    "show interface terse | match ae"
+  ],
+  "completed_at": 1779132586.0585215,
+  "completed_tasks": 1,
+  "created_at": 1779132584.4853058,
+  "error": null,
+  "failed_tasks": 0,
+  "hosts": [
+    "cr02.slc102"
+  ],
+  "log_file": "/usr/local/google/home/mikezh/Coding/mcp_codes/audit_logs/audit_run_7210edc62e23.json",
+  "results": {
+    "cr02.slc102": {
+      "show interface terse | match ae": {
+        "command": "show interface terse | match ae",
+        "completed_at": 1779132586.0560124,
+        "components": [],
+        "duration_ms": 1541,
+        "exit_code": 0,
+        "facts": {},
+        "filtered": "",
+        "started_at": 1779132584.5137331,
+        "stderr": "",
+        "stdout": "et-0/0/0.0              up    down aenet    --> ae0.0\net-0/0/1.0              up    down aenet    --> ae1.0\net-0/0/2.0              up    down aenet    --> ae9.0\net-0/0/3.0              up    down aenet    --> ae2.0\net-0/0/4.0              up    down aenet    --> ae2.0\net-0/0/5.0              up    down aenet    --> ae15.0\net-0/0/6.0              up    down aenet    --> ae15.0\net-0/0/7.0              up    down aenet    --> ae15.0\net-0/0/8.0              up    down aenet    --> ae10.0\net-0/0/9.0              up    down aenet    --> ae10.0\net-0/0/10.0             up    down aenet    --> ae1.0\net-0/0/11.0             up    down aenet    --> ae1.0\net-0/0/12.0             up    down aenet    --> ae1.0\net-0/0/13.0             up    down aenet    --> ae15.0\net-0/0/14.0             up    down aenet    --> ae15.0\net-0/0/19.0             up    down aenet    --> ae10.0\net-0/0/20.0             up    down aenet    --> ae10.0\net-0/0/23.0             up    up   aenet    --> ae4.0\net-1/0/0.0              up    down aenet    --> ae12.0\net-1/0/1.0              up    down aenet    --> ae1.0\net-1/0/2.0              up    down aenet    --> ae9.0\net-1/0/3.0              up    down aenet    --> ae15.0\net-1/0/4.0              up    down aenet    --> ae3.0\net-1/0/7.0              up    down aenet    --> ae16.0\net-1/0/9.0              up    down aenet    --> ae10.0\net-1/0/10.0             up    down aenet    --> ae1.0\net-1/0/11.0             up    down aenet    --> ae1.0\net-1/0/12.0             up    down aenet    --> ae1.0\net-1/0/13.0             up    down aenet    --> ae15.0\net-1/0/14.0             up    down aenet    --> ae15.0\net-1/0/18.0             up    down aenet    --> ae10.0\net-1/0/19.0             up    down aenet    --> ae10.0\net-1/0/20.0             up    down aenet    --> ae10.0\net-1/0/23.0             up    down aenet    --> ae2.0\net-1/0/24.0             up    down aenet    --> ae2.0\nae0                     down  down\nae0.0                   up    down inet     23.255.225.244/31\n                                   inet6    fe80::ae78:d1ff:fe56:6151/64\nae1                     down  down\nae1.0                   up    down inet     23.255.225.191/31\n                                   inet6    fe80::ae78:d1ff:fe56:6152/64\nae2                     down  down\nae2.0                   up    down inet     192.119.18.215/31\n                                   inet6    fe80::ae78:d1ff:fe56:6153/64\nae3                     down  down\nae3.0                   up    down inet     23.255.226.32/31\n                                   inet6    fe80::ae78:d1ff:fe56:6154/64\nae4                     up    up\nae4.0                   up    up   inet     23.255.225.188/31\n                                   inet6    fe80::ae78:d1ff:fe56:615b/64\nae9                     down  down\nae9.0                   up    down inet     192.119.17.168/31\n                                   inet6    fe80::ae78:d1ff:fe56:6155/64\nae10                    down  down\nae10.0                  up    down inet     23.255.224.134/31\n                                   inet6    fe80::ae78:d1ff:fe56:6156/64\nae12                    down  down\nae12.0                  up    down inet     23.255.226.50/31\n                                   inet6    fe80::ae78:d1ff:fe56:6157/64\nae15                    down  down\nae15.0                  up    down inet     192.119.17.89/31\n                                   inet6    fe80::ae78:d1ff:fe56:6159/64\nae16                    down  down\nae16.0                  up    down inet     192.119.18.78/31\n                                   inet6    fe80::ae78:d1ff:fe56:615a/64",
+        "structured_data_available": false
+      }
+    }
+  },
+  "run_id": "7210edc62e23",
+  "state": "completed",
+  "summary": {
+    "command_failures": [],
+    "commands_total": 1,
+    "facts": {
+      "chassis_models": {},
+      "fabric_modules": {},
+      "junos_versions": {},
+      "line_cards": {},
+      "power_modules": {},
+      "routing_engines": {}
+    },
+    "failed_hosts": [],
+    "hosts_total": 1,
+    "run_id": "7210edc62e23",
+    "state": "completed",
+    "success_hosts": [
+      "cr02.slc102"
+    ],
+    "tasks_completed": 1,
+    "tasks_failed": 0,
+    "tasks_total": 1
+  },
+  "total_tasks": 1
+}
