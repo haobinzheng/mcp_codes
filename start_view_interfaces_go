@@ -8,10 +8,14 @@ export WEB_PORT="${WEB_PORT:-9000}"
 
 cd "${SCRIPT_DIR}"
 
-# Compile dashboard_server if it doesn't exist
-if [ ! -f "dashboard_server" ]; then
-  echo "Building Go dashboard server..."
+# Recompile the binary dynamically if 'go' is installed to ensure native compatibility on the host machine
+if command -v go >/dev/null 2>&1; then
+  echo "Compiling native dashboard server binary..."
   go build -o dashboard_server main.go
+elif [ ! -f "dashboard_server" ]; then
+  echo "Error: 'go' command not found, and no pre-compiled 'dashboard_server' binary exists."
+  echo "Please install Go or compile main.go manually."
+  exit 1
 fi
 
 echo "Starting GFiber Interface Audit Dashboard (Go) on ${WEB_HOST}:${WEB_PORT}"
