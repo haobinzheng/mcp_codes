@@ -450,6 +450,7 @@ HTML_TEMPLATE = """<!doctype html>
       <button class="tab-btn active" onclick="switchTab('inspector')">Router Inspector</button>
       <button class="tab-btn" onclick="switchTab('overview')">High Utilization (>50%)</button>
       <button class="tab-btn" onclick="switchTab('history')">Utilization History</button>
+      <button class="tab-btn" onclick="switchTab('p95')">P95 Peak Trend</button>
       <a href="/docs" target="_blank" class="tab-btn" style="text-decoration: none; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: var(--accent-purple); display: inline-flex; align-items: center;">Interactive API Docs ⚡</a>
     </div>
   </header>
@@ -474,7 +475,32 @@ HTML_TEMPLATE = """<!doctype html>
         <select id="end-date-select"></select>
         <span class="filter-label">Threshold %</span>
         <input type="number" id="history-threshold-input" value="50" min="1" max="100" style="background: #0f172a; color: var(--text-main); border: 1px solid var(--border); padding: 10px; border-radius: 10px; width: 70px; font-family: inherit; font-size: 15px; outline: none; text-align: center;">
+        <span class="filter-label">400G Status</span>
+        <select id="history-upgrade-select" style="min-width: 160px;">
+          <option value="all">All Speeds</option>
+          <option value="upgraded">400G Upgraded Only</option>
+        </select>
         <button class="tab-btn active" onclick="loadHighUtilizationHistory()" style="padding: 10px 20px; font-size: 14px;">Apply Filters</button>
+        <button id="history-view-toggle-btn" class="tab-btn" onclick="toggleHistoryView()" style="padding: 10px 20px; font-size: 14px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: var(--accent-purple);">📊 Show as Table</button>
+        <button id="history-export-btn" class="tab-btn" onclick="exportHistoryToCSV()" style="display: none; padding: 10px 20px; font-size: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-indigo);">📥 Export to Excel</button>
+      </div>
+
+      <!-- P95 Range Filters -->
+      <div id="p95-filter-group" class="filter-group" style="display: none; gap: 16px; align-items: center;">
+        <span class="filter-label">Start Date</span>
+        <select id="p95-start-date-select"></select>
+        <span class="filter-label">End Date</span>
+        <select id="p95-end-date-select"></select>
+        <span class="filter-label">Threshold %</span>
+        <input type="number" id="p95-threshold-input" value="50" min="1" max="100" style="background: #0f172a; color: var(--text-main); border: 1px solid var(--border); padding: 10px; border-radius: 10px; width: 70px; font-family: inherit; font-size: 15px; outline: none; text-align: center;">
+        <span class="filter-label">400G Status</span>
+        <select id="p95-upgrade-select" style="min-width: 160px;">
+          <option value="all">All Speeds</option>
+          <option value="upgraded">400G Upgraded Only</option>
+        </select>
+        <button class="tab-btn active" onclick="loadP95History()" style="padding: 10px 20px; font-size: 14px;">Apply Filters</button>
+        <button id="p95-view-toggle-btn" class="tab-btn" onclick="toggleP95View()" style="padding: 10px 20px; font-size: 14px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: var(--accent-purple);">📊 Show as Table</button>
+        <button id="p95-export-btn" class="tab-btn" onclick="exportP95ToCSV()" style="display: none; padding: 10px 20px; font-size: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-indigo);">📥 Export to Excel</button>
       </div>
 
       <div id="loading-indicator" style="display: none; align-items: center; gap: 10px; color: var(--accent-purple);">
@@ -549,6 +575,13 @@ HTML_TEMPLATE = """<!doctype html>
         <div class="empty-state" style="grid-column: 1/-1;">Select a date range and click Apply Filters above to view historical trends.</div>
       </div>
     </div>
+
+    <!-- Section 4: P95 Peak Trend -->
+    <div id="section-p95" class="view-section">
+      <div id="p95-util-container" class="high-util-grid">
+        <div class="empty-state" style="grid-column: 1/-1;">Select a date range and click Apply Filters above to view daily peak trends.</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -556,6 +589,10 @@ HTML_TEMPLATE = """<!doctype html>
     let currentRouterData = null;
     let mainChartInstance = null;
     let miniChartInstances = [];
+    let historyViewMode = 'cards';
+    let lastHistoryData = null;
+    let p95ViewMode = 'cards';
+    let lastP95Data = null;
 
     document.addEventListener("DOMContentLoaded", () => {
       loadDates();
@@ -578,6 +615,7 @@ HTML_TEMPLATE = """<!doctype html>
         document.getElementById('standard-filter-group').style.display = 'flex';
         document.getElementById('router-filter-group').style.display = 'flex';
         document.getElementById('history-filter-group').style.display = 'none';
+        document.getElementById('p95-filter-group').style.display = 'none';
         onRouterChange();
       } else if (tab === 'overview') {
         if (buttons[1]) buttons[1].classList.add('active');
@@ -585,6 +623,7 @@ HTML_TEMPLATE = """<!doctype html>
         document.getElementById('standard-filter-group').style.display = 'flex';
         document.getElementById('router-filter-group').style.display = 'none';
         document.getElementById('history-filter-group').style.display = 'none';
+        document.getElementById('p95-filter-group').style.display = 'none';
         loadHighUtilization();
       } else if (tab === 'history') {
         if (buttons[2]) buttons[2].classList.add('active');
@@ -592,7 +631,16 @@ HTML_TEMPLATE = """<!doctype html>
         document.getElementById('standard-filter-group').style.display = 'none';
         document.getElementById('router-filter-group').style.display = 'none';
         document.getElementById('history-filter-group').style.display = 'flex';
+        document.getElementById('p95-filter-group').style.display = 'none';
         loadHighUtilizationHistory();
+      } else if (tab === 'p95') {
+        if (buttons[3]) buttons[3].classList.add('active');
+        document.getElementById('section-p95').classList.add('active');
+        document.getElementById('standard-filter-group').style.display = 'none';
+        document.getElementById('router-filter-group').style.display = 'none';
+        document.getElementById('history-filter-group').style.display = 'none';
+        document.getElementById('p95-filter-group').style.display = 'flex';
+        loadP95History();
       }
     }
 
@@ -609,10 +657,14 @@ HTML_TEMPLATE = """<!doctype html>
         const select = document.getElementById('date-select');
         const startSelect = document.getElementById('start-date-select');
         const endSelect = document.getElementById('end-date-select');
+        const p95StartSelect = document.getElementById('p95-start-date-select');
+        const p95EndSelect = document.getElementById('p95-end-date-select');
         
         select.replaceChildren();
         startSelect.replaceChildren();
         endSelect.replaceChildren();
+        p95StartSelect.replaceChildren();
+        p95EndSelect.replaceChildren();
         
         if (data.dates.length === 0) {
           const opt = document.createElement('option');
@@ -635,11 +687,23 @@ HTML_TEMPLATE = """<!doctype html>
           optEnd.value = d;
           optEnd.textContent = d;
           endSelect.appendChild(optEnd);
+
+          const optP95Start = document.createElement('option');
+          optP95Start.value = d;
+          optP95Start.textContent = d;
+          p95StartSelect.appendChild(optP95Start);
+
+          const optP95End = document.createElement('option');
+          optP95End.value = d;
+          optP95End.textContent = d;
+          p95EndSelect.appendChild(optP95End);
         });
         
         if (chronologicalDates.length > 0) {
           startSelect.value = chronologicalDates[0];
           endSelect.value = chronologicalDates[chronologicalDates.length - 1];
+          p95StartSelect.value = chronologicalDates[0];
+          p95EndSelect.value = chronologicalDates[chronologicalDates.length - 1];
         }
 
         data.dates.forEach(d => {
@@ -1020,30 +1084,51 @@ HTML_TEMPLATE = """<!doctype html>
       const startDate = document.getElementById('start-date-select').value;
       const endDate = document.getElementById('end-date-select').value;
       const threshold = document.getElementById('history-threshold-input').value || 50;
+      const upgradeFilter = document.getElementById('history-upgrade-select').value;
       
       showLoading(true);
       try {
-        const query = `/api/high_utilization_history?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&threshold_percent=${encodeURIComponent(threshold)}`;
+        const query = `/api/high_utilization_history?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&threshold_percent=${encodeURIComponent(threshold)}&upgrade_status=${encodeURIComponent(upgradeFilter)}`;
         const resp = await fetch(query);
         const data = await resp.json();
+        lastHistoryData = data;
+        renderHistoryData();
+      } catch (err) {
+        console.error("Failed to load high utilization history", err);
+      }
+      showLoading(false);
+    }
 
-        const container = document.getElementById('history-util-container');
-        container.replaceChildren();
+    function toggleHistoryView() {
+      historyViewMode = historyViewMode === 'cards' ? 'table' : 'cards';
+      const btn = document.getElementById('history-view-toggle-btn');
+      btn.textContent = historyViewMode === 'cards' ? '📊 Show as Table' : '🎴 Show as Cards';
+      renderHistoryData();
+    }
 
-        miniChartInstances.forEach(inst => inst.destroy());
-        miniChartInstances = [];
+    function renderHistoryData() {
+      const container = document.getElementById('history-util-container');
+      container.replaceChildren();
 
-        if (data.high_interfaces_history.length === 0) {
-          const div = document.createElement('div');
-          div.className = 'empty-state';
-          div.style.gridColumn = '1/-1';
-          div.textContent = "🎉 Excellent! No interfaces crossed the threshold across this date range.";
-          container.appendChild(div);
-          showLoading(false);
-          return;
-        }
+      miniChartInstances.forEach(inst => inst.destroy());
+      miniChartInstances = [];
 
-        data.high_interfaces_history.forEach((item, i) => {
+      const exportBtn = document.getElementById('history-export-btn');
+
+      if (!lastHistoryData || !lastHistoryData.high_interfaces_history || lastHistoryData.high_interfaces_history.length === 0) {
+        if (exportBtn) exportBtn.style.display = 'none';
+        const div = document.createElement('div');
+        div.className = 'empty-state';
+        div.style.gridColumn = '1/-1';
+        div.textContent = "🎉 Excellent! No interfaces crossed the threshold across this date range.";
+        container.appendChild(div);
+        return;
+      }
+
+      if (historyViewMode === 'cards') {
+        if (exportBtn) exportBtn.style.display = 'none';
+        container.className = 'high-util-grid';
+        lastHistoryData.high_interfaces_history.forEach((item, i) => {
           const card = document.createElement('div');
           card.className = 'high-util-card';
           
@@ -1134,10 +1219,346 @@ HTML_TEMPLATE = """<!doctype html>
           });
           miniChartInstances.push(inst);
         });
+      } else {
+        if (exportBtn) exportBtn.style.display = 'inline-flex';
+        container.className = 'card';
+        container.style.padding = '28px';
+
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'table-container';
+
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+          <tr>
+            <th>Router</th>
+            <th>Interface</th>
+            <th>Neighbor</th>
+            <th>Speed</th>
+            <th>Peak Input %</th>
+            <th>Peak Output %</th>
+            <th>Peak Timestamp</th>
+            <th>Upgrade Status</th>
+          </tr>
+        `;
+
+        const tbody = document.createElement('tbody');
+        lastHistoryData.high_interfaces_history.forEach(item => {
+          let maxVal = -1;
+          let peakTimestamp = 'N/A';
+
+          const inputs = item.series.input || [];
+          const outputs = item.series.output || [];
+          const times = item.timestamps || [];
+
+          for (let idx = 0; idx < times.length; idx++) {
+            const inVal = inputs[idx] !== null ? inputs[idx] : 0;
+            const outVal = outputs[idx] !== null ? outputs[idx] : 0;
+            const currentMax = Math.max(inVal, outVal);
+            if (currentMax > maxVal) {
+              maxVal = currentMax;
+              peakTimestamp = times[idx];
+            }
+          }
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="font-weight: 600; color: var(--accent-purple);">${item.router}</td>
+            <td style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">${item.interface}</td>
+            <td>${item.neighbor}</td>
+            <td>${item.speed}</td>
+            <td><span class="badge ${item.peak_input > 80 ? 'badge-high' : 'badge-warn'}">${Math.round(item.peak_input)}%</span></td>
+            <td><span class="badge ${item.peak_output > 80 ? 'badge-high' : 'badge-warn'}">${Math.round(item.peak_output)}%</span></td>
+            <td style="color: var(--text-muted); font-size: 13px;">${peakTimestamp}</td>
+            <td><span class="badge ${item.is_400g_upgraded ? 'badge-ok' : 'badge-warn'}">${item.upgrade_status}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        table.append(thead, tbody);
+        tableContainer.appendChild(table);
+        container.appendChild(tableContainer);
+      }
+    }
+
+    function exportHistoryToCSV() {
+      if (!lastHistoryData || !lastHistoryData.high_interfaces_history || lastHistoryData.high_interfaces_history.length === 0) {
+        return;
+      }
+
+      const headers = ["Router", "Interface", "Neighbor", "Speed", "Peak Input %", "Peak Output %", "Peak Timestamp", "Upgrade Status"];
+      const csvRows = [headers.join(",")];
+
+      lastHistoryData.high_interfaces_history.forEach(item => {
+        let maxVal = -1;
+        let peakTimestamp = 'N/A';
+
+        const inputs = item.series.input || [];
+        const outputs = item.series.output || [];
+        const times = item.timestamps || [];
+
+        for (let idx = 0; idx < times.length; idx++) {
+          const inVal = inputs[idx] !== null ? inputs[idx] : 0;
+          const outVal = outputs[idx] !== null ? outputs[idx] : 0;
+          const currentMax = Math.max(inVal, outVal);
+          if (currentMax > maxVal) {
+            maxVal = currentMax;
+            peakTimestamp = times[idx];
+          }
+        }
+        const escapeCSV = val => {
+          const str = String(val).replace(/"/g, '""');
+          return str.includes(',') || str.includes('\\\\n') || str.includes('"') ? `"${str}"` : str;
+        };
+
+        const row = [
+          escapeCSV(item.router),
+          escapeCSV(item.interface),
+          escapeCSV(item.neighbor),
+          escapeCSV(item.speed),
+          escapeCSV(Math.round(item.peak_input) + "%"),
+          escapeCSV(Math.round(item.peak_output) + "%"),
+          escapeCSV(peakTimestamp),
+          escapeCSV(item.upgrade_status)
+        ];
+        csvRows.push(row.join(","));
+      });
+
+      const csvContent = "\ufeff" + csvRows.join("\\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `interface_utilization_history_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function loadP95History() {
+      if (activeTab !== 'p95') return;
+      const startDate = document.getElementById('p95-start-date-select').value;
+      const endDate = document.getElementById('p95-end-date-select').value;
+      const threshold = document.getElementById('p95-threshold-input').value || 50;
+      const upgradeFilter = document.getElementById('p95-upgrade-select').value;
+      
+      showLoading(true);
+      try {
+        const query = `/api/p95_history?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}&threshold_percent=${encodeURIComponent(threshold)}&upgrade_status=${encodeURIComponent(upgradeFilter)}`;
+        const resp = await fetch(query);
+        const data = await resp.json();
+        lastP95Data = data;
+        renderP95Data();
       } catch (err) {
-        console.error("Failed to load high utilization history", err);
+        console.error("Failed to load P95 data", err);
       }
       showLoading(false);
+    }
+
+    function toggleP95View() {
+      p95ViewMode = p95ViewMode === 'cards' ? 'table' : 'cards';
+      const btn = document.getElementById('p95-view-toggle-btn');
+      btn.textContent = p95ViewMode === 'cards' ? '📊 Show as Table' : '🎴 Show as Cards';
+      renderP95Data();
+    }
+
+    function renderP95Data() {
+      const container = document.getElementById('p95-util-container');
+      container.replaceChildren();
+
+      miniChartInstances.forEach(inst => inst.destroy());
+      miniChartInstances = [];
+
+      const exportBtn = document.getElementById('p95-export-btn');
+
+      if (!lastP95Data || !lastP95Data.high_interfaces_history || lastP95Data.high_interfaces_history.length === 0) {
+        if (exportBtn) exportBtn.style.display = 'none';
+        const div = document.createElement('div');
+        div.className = 'empty-state';
+        div.style.gridColumn = '1/-1';
+        div.textContent = "🎉 Excellent! No interfaces crossed the threshold across this date range.";
+        container.appendChild(div);
+        return;
+      }
+
+      if (p95ViewMode === 'cards') {
+        if (exportBtn) exportBtn.style.display = 'none';
+        container.className = 'high-util-grid';
+        lastP95Data.high_interfaces_history.forEach((item, i) => {
+          const card = document.createElement('div');
+          card.className = 'high-util-card';
+          
+          const header = document.createElement('div');
+          header.className = 'header';
+          
+          const leftSide = document.createElement('div');
+          leftSide.style.display = 'flex';
+          leftSide.style.alignItems = 'center';
+          leftSide.style.gap = '12px';
+          
+          const routerSpan = document.createElement('span');
+          routerSpan.className = 'router-name';
+          routerSpan.textContent = item.router;
+          
+          const intfSpan = document.createElement('span');
+          intfSpan.className = 'intf-name';
+          intfSpan.textContent = item.interface;
+          
+          leftSide.append(routerSpan, intfSpan);
+          
+          const spanUpg = document.createElement('span');
+          spanUpg.className = `badge ${item.is_400g_upgraded ? 'badge-ok' : 'badge-warn'}`;
+          spanUpg.textContent = item.upgrade_status || 'Not upgraded';
+          
+          header.append(leftSide, spanUpg);
+
+          const details = document.createElement('div');
+          details.className = 'details';
+          const divN = document.createElement('div'); divN.innerHTML = `Neighbor: <strong>${item.neighbor}</strong>`;
+          const divS = document.createElement('div'); divS.innerHTML = `Speed: <strong>${item.speed}</strong>`;
+          const divI = document.createElement('div'); divI.innerHTML = `Peak In: <strong style="color: ${item.peak_input > 80 ? '#f43f5e' : '#f59e0b'}">${Math.round(item.peak_input)}%</strong>`;
+          const divO = document.createElement('div'); divO.innerHTML = `Peak Out: <strong style="color: ${item.peak_output > 80 ? '#f43f5e' : '#f59e0b'}">${Math.round(item.peak_output)}%</strong>`;
+          details.append(divN, divS, divI, divO);
+
+          const chartWrap = document.createElement('div');
+          chartWrap.className = 'mini-chart-wrapper';
+          const canvas = document.createElement('canvas');
+          canvas.id = `p95-chart-${i}`;
+          chartWrap.appendChild(canvas);
+
+          card.append(header, details, chartWrap);
+          container.appendChild(card);
+
+          const ctx = canvas.getContext('2d');
+          const inst = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: item.timestamps,
+              datasets: [
+                {
+                  label: 'Peak Input %',
+                  data: item.series.input,
+                  borderColor: '#06b6d4',
+                  backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                  fill: true,
+                  tension: 0.3,
+                  pointRadius: 4,
+                  borderWidth: 2
+                },
+                {
+                  label: 'Peak Output %',
+                  data: item.series.output,
+                  borderColor: '#10b981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  fill: true,
+                  tension: 0.3,
+                  pointRadius: 4,
+                  borderWidth: 2
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: { max: 100, grid: { color: 'rgba(51,65,85,0.2)' }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
+                x: { grid: { color: 'rgba(51,65,85,0.2)' }, ticks: { font: { size: 10 }, color: '#94a3b8' } }
+              },
+              plugins: {
+                legend: {
+                  display: true,
+                  labels: {
+                    color: '#f8fafc',
+                    font: { family: 'Inter', size: 10, weight: 600 }
+                  }
+                }
+              }
+            }
+          });
+          miniChartInstances.push(inst);
+        });
+      } else {
+        if (exportBtn) exportBtn.style.display = 'inline-flex';
+        container.className = 'card';
+        container.style.padding = '28px';
+
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'table-container';
+
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+          <tr>
+            <th>Router</th>
+            <th>Interface</th>
+            <th>Neighbor</th>
+            <th>Speed</th>
+            <th>Peak Input %</th>
+            <th>Peak Output %</th>
+            <th>Upgrade Status</th>
+          </tr>
+        `;
+
+        const tbody = document.createElement('tbody');
+        lastP95Data.high_interfaces_history.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="font-weight: 600; color: var(--accent-purple);">${item.router}</td>
+            <td style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">${item.interface}</td>
+            <td>${item.neighbor}</td>
+            <td>${item.speed}</td>
+            <td><span class="badge ${item.peak_input > 80 ? 'badge-high' : 'badge-warn'}">${Math.round(item.peak_input)}%</span></td>
+            <td><span class="badge ${item.peak_output > 80 ? 'badge-high' : 'badge-warn'}">${Math.round(item.peak_output)}%</span></td>
+            <td><span class="badge ${item.is_400g_upgraded ? 'badge-ok' : 'badge-warn'}">${item.upgrade_status}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        table.append(thead, tbody);
+        tableContainer.appendChild(table);
+        container.appendChild(tableContainer);
+      }
+    }
+
+    function exportP95ToCSV() {
+      if (!lastP95Data || !lastP95Data.high_interfaces_history || lastP95Data.high_interfaces_history.length === 0) {
+        return;
+      }
+
+      const headers = ["Router", "Interface", "Neighbor", "Speed", "Peak Input %", "Peak Output %", "Upgrade Status"];
+      const csvRows = [headers.join(",")];
+
+      lastP95Data.high_interfaces_history.forEach(item => {
+        const escapeCSV = val => {
+          const str = String(val).replace(/"/g, '""');
+          return str.includes(',') || str.includes('\\\\n') || str.includes('"') ? `"${str}"` : str;
+        };
+
+        const row = [
+          escapeCSV(item.router),
+          escapeCSV(item.interface),
+          escapeCSV(item.neighbor),
+          escapeCSV(item.speed),
+          escapeCSV(Math.round(item.peak_input) + "%"),
+          escapeCSV(Math.round(item.peak_output) + "%"),
+          escapeCSV(item.upgrade_status)
+        ];
+        csvRows.push(row.join(","));
+      });
+
+      const csvContent = "\ufeff" + csvRows.join("\\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `p95_peak_utilization_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 </body>
@@ -1146,7 +1567,14 @@ HTML_TEMPLATE = """<!doctype html>
 
 @app.get("/", response_class=HTMLResponse)
 def route_index():
-    return HTMLResponse(content=HTML_TEMPLATE)
+    return HTMLResponse(
+        content=HTML_TEMPLATE,
+        headers={
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
 @app.get("/api/dates")
 def route_api_dates():
@@ -1360,7 +1788,8 @@ def route_api_high_utilization(date: str = Query("", pattern=r"^\d{4}-\d{2}-\d{2
 def route_api_high_utilization_history(
     start_date: str = Query("", pattern=r"^(\d{4}-\d{2}-\d{2})?$"),
     end_date: str = Query("", pattern=r"^(\d{4}-\d{2}-\d{2})?$"),
-    threshold_percent: float = Query(50.0)
+    threshold_percent: float = Query(50.0),
+    upgrade_status: str = Query("all")
 ):
     try:
         safe_root = get_safe_path()
@@ -1444,10 +1873,129 @@ def route_api_high_utilization_history(
     high_history = []
     for key, val in interface_map.items():
         if val["peak_input"] > threshold_percent or val["peak_output"] > threshold_percent:
+            if upgrade_status == "upgraded" and not val["is_400g_upgraded"]:
+                continue
             high_history.append(val)
 
     high_history.sort(key=lambda x: (x["router"], x["interface"]))
     return {"high_interfaces_history": high_history}
+
+
+@app.get("/api/p95_history")
+def route_api_p95_history(
+    start_date: str = Query("", pattern=r"^(\d{4}-\d{2}-\d{2})?$"),
+    end_date: str = Query("", pattern=r"^(\d{4}-\d{2}-\d{2})?$"),
+    threshold_percent: float = Query(50.0),
+    upgrade_status: str = Query("all")
+):
+    try:
+        safe_root = get_safe_path()
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Access Denied")
+
+    if not safe_root or not os.path.exists(safe_root):
+        return {"high_interfaces_history": []}
+
+    entries = os.listdir(safe_root)
+    date_folders = [d for d in entries if os.path.isdir(os.path.join(safe_root, d)) and re.match(r"^\d{4}-\d{2}-\d{2}$", d)]
+    date_folders.sort()
+
+    filtered_dates = []
+    for d in date_folders:
+        if start_date and d < start_date:
+            continue
+        if end_date and d > end_date:
+            continue
+        filtered_dates.append(d)
+
+    interface_map = {}
+
+    for d in filtered_dates:
+        date_path = os.path.join(safe_root, d)
+        routers = [r for r in os.listdir(date_path) if os.path.isdir(os.path.join(date_path, r))]
+        
+        for r in routers:
+            router_path = os.path.join(date_path, r)
+            files = glob.glob(os.path.join(router_path, f"{r}_*.json"))
+            files.sort()
+
+            for f in files:
+                try:
+                    with open(f, "r") as fh:
+                        data = json.load(fh)
+                except Exception:
+                    continue
+
+                for k, v in data.items():
+                    if k in ["role", "year", "audit_timestamp"] or not isinstance(v, dict):
+                        continue
+                    
+                    in_pct = round(v.get("input_bps_percent", 0), 1)
+                    out_pct = round(v.get("output_bps_percent", 0), 1)
+
+                    key = (r, k)
+                    if key not in interface_map:
+                        interface_map[key] = {
+                            "router": r,
+                            "interface": k,
+                            "neighbor": v.get("neighbor", "Unknown"),
+                            "speed": v.get("speed", "Unknown"),
+                            "is_400g_upgraded": v.get("is_400g_upgraded", False),
+                            "upgrade_status": v.get("upgrade_status", "Not upgraded"),
+                            "peaks_per_date": {}  # date -> (in, out)
+                        }
+
+                    current_peak = interface_map[key]["peaks_per_date"].get(d)
+                    if not current_peak:
+                        interface_map[key]["peaks_per_date"][d] = (in_pct, out_pct)
+                    else:
+                        interface_map[key]["peaks_per_date"][d] = (
+                            max(current_peak[0], in_pct),
+                            max(current_peak[1], out_pct)
+                        )
+                    interface_map[key]["is_400g_upgraded"] = v.get("is_400g_upgraded", False)
+                    interface_map[key]["upgrade_status"] = v.get("upgrade_status", "Not upgraded")
+
+    p95_history = []
+    for key, val in interface_map.items():
+        peaks_per_date = val["peaks_per_date"]
+        overall_peak_input = 0.0
+        overall_peak_output = 0.0
+        inputs = []
+        outputs = []
+        
+        for d in filtered_dates:
+            if d in peaks_per_date:
+                in_val, out_val = peaks_per_date[d]
+                inputs.append(in_val)
+                outputs.append(out_val)
+                if in_val > overall_peak_input:
+                    overall_peak_input = in_val
+                if out_val > overall_peak_output:
+                    overall_peak_output = out_val
+            else:
+                inputs.append(None)
+                outputs.append(None)
+                
+        if overall_peak_input > threshold_percent or overall_peak_output > threshold_percent:
+            if upgrade_status == "upgraded" and not val["is_400g_upgraded"]:
+                continue
+            
+            p95_history.append({
+                "router": val["router"],
+                "interface": val["interface"],
+                "neighbor": val["neighbor"],
+                "speed": val["speed"],
+                "timestamps": filtered_dates,
+                "series": {"input": inputs, "output": outputs},
+                "peak_input": overall_peak_input,
+                "peak_output": overall_peak_output,
+                "is_400g_upgraded": val["is_400g_upgraded"],
+                "upgrade_status": val["upgrade_status"]
+            })
+
+    p95_history.sort(key=lambda x: (x["router"], x["interface"]))
+    return {"high_interfaces_history": p95_history}
 
 
 def main() -> None:

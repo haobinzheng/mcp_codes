@@ -1,18 +1,23 @@
 package main
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"strings"
+	"syscall"
+	"time"
 )
 
 //go:embed index.html
@@ -24,12 +29,16 @@ var (
 	rootDataDir = "Audit_interfaces_data"
 
 	// Regular expressions for input validation and filename parsing
-	dateParamRegex = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
+	dateParamRegex   = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 	routerParamRegex = regexp.MustCompile(`^[a-zA-Z0-9\._\-]+$`)
-	fileRegex      = regexp.MustCompile(`_(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})\.json$`)
+	fileRegex        = regexp.MustCompile(`_(\d{4})_(\d{2})_(\d{2})_(\d{2})_(\d{2})\.json$`)
 )
 
 func init() {
+	// Setup high-performance production-grade structured logger
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	if host := os.Getenv("WEB_HOST"); host != "" {
 		webHost = host
 	}
@@ -49,7 +58,6 @@ func getSafePath(subpaths ...string) (string, error) {
 	}
 	canonicalRoot, err := filepath.EvalSymlinks(absRoot)
 	if err != nil {
-		// If root directory itself does not exist, return path error
 		if os.IsNotExist(err) {
 			return "", err
 		}
@@ -63,7 +71,6 @@ func getSafePath(subpaths ...string) (string, error) {
 	}
 	canonicalTarget, err := filepath.EvalSymlinks(absTarget)
 	if err != nil {
-		// If target doesn't exist yet, filepath.Clean resolves traversal without symlink resolution.
 		canonicalTarget = filepath.Clean(absTarget)
 	}
 
@@ -101,7 +108,7 @@ type ParsedInterfaceDetail struct {
 	UpgradeStatus  string   `json:"upgrade_status"`
 }
 
-// Parses dynmic interface dictionary keys from Juniper audit JSON outputs
+// Parses dynamic interface dictionary keys from Juniper audit JSON outputs
 func parseAuditFile(filePath string) (*AuditFileContent, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -138,6 +145,68 @@ func parseAuditFile(filePath string) (*AuditFileContent, error) {
 	}
 
 	return content, nil
+}
+
+type parseJob struct {
+	index    int
+	filePath string
+}
+
+type parseResult struct {
+	index   int
+	content *AuditFileContent
+	err     error
+}
+
+// High-performance concurrent file parsing using a worker pool
+func parseFilesConcurrently(filePaths []string) (map[int]*AuditFileContent, error) {
+	numFiles := len(filePaths)
+	if numFiles == 0 {
+		return make(map[int]*AuditFileContent), nil
+	}
+
+	jobs := make(chan parseJob, numFiles)
+	results := make(chan parseResult, numFiles)
+
+	// Limit worker pool scale to 16 to prevent OS file descriptor exhaustion
+	numWorkers := 16
+	if numFiles < numWorkers {
+		numWorkers = numFiles
+	}
+
+	// Spin up concurrent worker pool
+	for w := 0; w < numWorkers; w++ {
+		go func() {
+			for job := range jobs {
+				content, err := parseAuditFile(job.filePath)
+				results <- parseResult{
+					index:   job.index,
+					content: content,
+					err:     err,
+				}
+			}
+		}()
+	}
+
+	// Dispatch jobs
+	for i, fp := range filePaths {
+		jobs <- parseJob{index: i, filePath: fp}
+	}
+	close(jobs)
+
+	// Aggregate results thread-safely
+	resultsMap := make(map[int]*AuditFileContent)
+	for i := 0; i < numFiles; i++ {
+		res := <-results
+		if res.err != nil {
+			// Skip malformed files gracefully without halting entire pipeline
+			slog.Warn("failed to parse audit file concurrently", "path", filePaths[res.index], "error", res.err)
+			continue
+		}
+		resultsMap[res.index] = res.content
+	}
+
+	return resultsMap, nil
 }
 
 // Response models for frontend APIs
@@ -201,6 +270,51 @@ func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 // Helper for error responses
 func writeError(w http.ResponseWriter, status int, detail string) {
 	writeJSON(w, status, map[string]string{"detail": detail})
+}
+
+type statusResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (w *statusResponseWriter) WriteHeader(statusCode int) {
+	w.statusCode = statusCode
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+// Logger middleware capturing metadata and latency
+func LoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		wrapped := &statusResponseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+		
+		next.ServeHTTP(wrapped, r)
+		
+		slog.Info("http request completed",
+			"method", r.Method,
+			"path", r.URL.Path,
+			"status", wrapped.statusCode,
+			"duration", time.Since(start).String(),
+			"client_ip", r.RemoteAddr,
+		)
+	})
+}
+
+// Recoverer middleware ensuring the server never crashes due to handler panics
+func RecovererMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				slog.Error("panic recovered in HTTP handler",
+					"error", err,
+					"path", r.URL.Path,
+					"stack", string(debug.Stack()),
+				)
+				writeError(w, http.StatusInternalServerError, "Internal Server Error")
+			}
+		}()
+		next.ServeHTTP(w, r)
+	})
 }
 
 func main() {
@@ -334,7 +448,7 @@ func main() {
 			}
 		}
 
-		// Sort files chronologically (alphabetical works perfectly due to filename schema)
+		// Sort files chronologically
 		sort.Slice(validFiles, func(i, j int) bool {
 			return validFiles[i].FilePath < validFiles[j].FilePath
 		})
@@ -347,9 +461,21 @@ func main() {
 		seriesMap := make(map[string]SeriesResponse)
 		latestIntfs := make(map[string]InterfaceInfoResponse)
 
-		for fileIdx, vf := range validFiles {
-			content, err := parseAuditFile(vf.FilePath)
-			if err != nil {
+		// Concurrent parsing of files
+		filePaths := make([]string, len(validFiles))
+		for i, vf := range validFiles {
+			filePaths[i] = vf.FilePath
+		}
+
+		resultsMap, err := parseFilesConcurrently(filePaths)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to parse files concurrently")
+			return
+		}
+
+		for fileIdx := range validFiles {
+			content := resultsMap[fileIdx]
+			if content == nil {
 				continue
 			}
 
@@ -358,7 +484,6 @@ func main() {
 				presentInterfaces[k] = true
 
 				if _, exists := seriesMap[k]; !exists {
-					// Backfill previous timestamps with null
 					inputs := make([]*float64, fileIdx)
 					outputs := make([]*float64, fileIdx)
 					seriesMap[k] = SeriesResponse{Input: inputs, Output: outputs}
@@ -383,7 +508,6 @@ func main() {
 				}
 			}
 
-			// Append null (nil) for missing interfaces at this timestamp
 			for k, series := range seriesMap {
 				if !presentInterfaces[k] {
 					series.Input = append(series.Input, nil)
@@ -483,9 +607,20 @@ func main() {
 			}
 			rMeta := make(map[string]IntfMetadata)
 
-			for fileIdx, vf := range validFiles {
-				content, err := parseAuditFile(vf.FilePath)
-				if err != nil {
+			// Concurrent file parsing
+			filePaths := make([]string, len(validFiles))
+			for i, vf := range validFiles {
+				filePaths[i] = vf.FilePath
+			}
+
+			resultsMap, err := parseFilesConcurrently(filePaths)
+			if err != nil {
+				continue
+			}
+
+			for fileIdx := range validFiles {
+				content := resultsMap[fileIdx]
+				if content == nil {
 					continue
 				}
 
@@ -563,6 +698,7 @@ func main() {
 		startDate := r.URL.Query().Get("start_date")
 		endDate := r.URL.Query().Get("end_date")
 		thresholdStr := r.URL.Query().Get("threshold_percent")
+		upgradeStatus := r.URL.Query().Get("upgrade_status")
 
 		thresholdPercent := 50.0
 		if thresholdStr != "" {
@@ -604,7 +740,7 @@ func main() {
 		}
 
 		interfaceMap := make(map[Key]*HighInterfaceResponse)
-		var keyOrder []Key // To keep a stable iteration/sorting order later
+		var keyOrder []Key
 
 		for _, d := range dateFolders {
 			datePath := filepath.Join(safeRoot, d)
@@ -651,9 +787,20 @@ func main() {
 					return validFiles[i].FilePath < validFiles[j].FilePath
 				})
 
-				for _, vf := range validFiles {
-					content, err := parseAuditFile(vf.FilePath)
-					if err != nil {
+				// Concurrent file parsing
+				filePaths := make([]string, len(validFiles))
+				for i, vf := range validFiles {
+					filePaths[i] = vf.FilePath
+				}
+
+				resultsMap, err := parseFilesConcurrently(filePaths)
+				if err != nil {
+					continue
+				}
+
+				for vfIdx, vf := range validFiles {
+					content := resultsMap[vfIdx]
+					if content == nil {
 						continue
 					}
 
@@ -664,14 +811,14 @@ func main() {
 
 						if _, exists := interfaceMap[key]; !exists {
 							item := &HighInterfaceResponse{
-								Router:        router,
-								Interface:     k,
-								Neighbor:      v.Neighbor,
-								Speed:         v.Speed,
-								Timestamps:    []string{},
-								Series:        SeriesResponse{Input: []*float64{}, Output: []*float64{}},
-								PeakInput:     0,
-								PeakOutput:    0,
+								Router:     router,
+								Interface:  k,
+								Neighbor:   v.Neighbor,
+								Speed:      v.Speed,
+								Timestamps: []string{},
+								Series:     SeriesResponse{Input: []*float64{}, Output: []*float64{}},
+								PeakInput:  0,
+								PeakOutput: 0,
 							}
 							interfaceMap[key] = item
 							keyOrder = append(keyOrder, key)
@@ -699,11 +846,13 @@ func main() {
 		for _, key := range keyOrder {
 			item := interfaceMap[key]
 			if item.PeakInput > thresholdPercent || item.PeakOutput > thresholdPercent {
+				if upgradeStatus == "upgraded" && !item.Is400GUpgraded {
+					continue
+				}
 				highHistory = append(highHistory, *item)
 			}
 		}
 
-		// Sort chronologically/alphabetically by router, then interface
 		sort.Slice(highHistory, func(i, j int) bool {
 			if highHistory[i].Router != highHistory[j].Router {
 				return highHistory[i].Router < highHistory[j].Router
@@ -714,7 +863,265 @@ func main() {
 		writeJSON(w, http.StatusOK, HighUtilizationHistoryResponse{HighInterfacesHistory: highHistory})
 	})
 
-	addr := fmt.Sprintf("%s:%s", webHost, webPort)
-	fmt.Printf("GFiber Interface Audit Dashboard running on http://%s\n", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	// API: P95 History Route
+	mux.HandleFunc("GET /api/p95_history", func(w http.ResponseWriter, r *http.Request) {
+		startDate := r.URL.Query().Get("start_date")
+		endDate := r.URL.Query().Get("end_date")
+		thresholdStr := r.URL.Query().Get("threshold_percent")
+		upgradeStatus := r.URL.Query().Get("upgrade_status")
+
+		thresholdPercent := 50.0
+		if thresholdStr != "" {
+			if val, err := strconv.ParseFloat(thresholdStr, 64); err == nil {
+				thresholdPercent = val
+			}
+		}
+
+		safeRoot, err := getSafePath()
+		if err != nil {
+			writeError(w, http.StatusForbidden, "Access Denied")
+			return
+		}
+
+		entries, err := os.ReadDir(safeRoot)
+		if err != nil {
+			writeJSON(w, http.StatusOK, HighUtilizationHistoryResponse{HighInterfacesHistory: []HighInterfaceResponse{}})
+			return
+		}
+
+		var dateFolders []string
+		for _, entry := range entries {
+			if entry.IsDir() && dateParamRegex.MatchString(entry.Name()) {
+				d := entry.Name()
+				if startDate != "" && d < startDate {
+					continue
+				}
+				if endDate != "" && d > endDate {
+					continue
+				}
+				dateFolders = append(dateFolders, d)
+			}
+		}
+		sort.Strings(dateFolders)
+
+		type Key struct {
+			Router    string
+			Interface string
+		}
+
+		type DatePeak struct {
+			Input  float64
+			Output float64
+			Exists bool
+		}
+
+		type InterfaceInfo struct {
+			Router         string
+			Interface      string
+			Neighbor       string
+			Speed          string
+			Is400GUpgraded bool
+			UpgradeStatus  string
+			PeaksPerDate   map[string]DatePeak
+		}
+
+		interfaceMap := make(map[Key]*InterfaceInfo)
+		var keyOrder []Key
+
+		for _, d := range dateFolders {
+			datePath := filepath.Join(safeRoot, d)
+			routersEntries, err := os.ReadDir(datePath)
+			if err != nil {
+				continue
+			}
+
+			for _, re := range routersEntries {
+				if !re.IsDir() {
+					continue
+				}
+				router := re.Name()
+				routerPath := filepath.Join(datePath, router)
+				files, err := os.ReadDir(routerPath)
+				if err != nil {
+					continue
+				}
+
+				type FileData struct {
+					TimestampLabel string
+					FilePath       string
+				}
+
+				var validFiles []FileData
+				for _, f := range files {
+					if f.IsDir() {
+						continue
+					}
+					name := f.Name()
+					if strings.HasPrefix(name, router+"_") && strings.HasSuffix(name, ".json") {
+						matches := fileRegex.FindStringSubmatch(name)
+						if len(matches) >= 6 {
+							tsLabel := fmt.Sprintf("%s-%s-%s %s:%s", matches[1], matches[2], matches[3], matches[4], matches[5])
+							validFiles = append(validFiles, FileData{
+								TimestampLabel: tsLabel,
+								FilePath:       filepath.Join(routerPath, name),
+							})
+						}
+					}
+				}
+
+				sort.Slice(validFiles, func(i, j int) bool {
+					return validFiles[i].FilePath < validFiles[j].FilePath
+				})
+
+				// Concurrent file parsing
+				filePaths := make([]string, len(validFiles))
+				for i, vf := range validFiles {
+					filePaths[i] = vf.FilePath
+				}
+
+				resultsMap, err := parseFilesConcurrently(filePaths)
+				if err != nil {
+					continue
+				}
+
+				for vfIdx := range validFiles {
+					content := resultsMap[vfIdx]
+					if content == nil {
+						continue
+					}
+
+					for k, v := range content.Interfaces {
+						key := Key{Router: router, Interface: k}
+						inVal := v.InputPercent
+						outVal := v.OutputPercent
+
+						if _, exists := interfaceMap[key]; !exists {
+							item := &InterfaceInfo{
+								Router:       router,
+								Interface:    k,
+								Neighbor:     v.Neighbor,
+								Speed:        v.Speed,
+								PeaksPerDate: make(map[string]DatePeak),
+							}
+							interfaceMap[key] = item
+							keyOrder = append(keyOrder, key)
+						}
+
+						item := interfaceMap[key]
+						item.Is400GUpgraded = v.Is400GUpgraded
+						item.UpgradeStatus = v.UpgradeStatus
+
+						dp := item.PeaksPerDate[d]
+						if !dp.Exists {
+							dp.Input = inVal
+							dp.Output = outVal
+							dp.Exists = true
+						} else {
+							if inVal > dp.Input {
+								dp.Input = inVal
+							}
+							if outVal > dp.Output {
+								dp.Output = outVal
+							}
+						}
+						item.PeaksPerDate[d] = dp
+					}
+				}
+			}
+		}
+
+		var p95History []HighInterfaceResponse
+		for _, key := range keyOrder {
+			info := interfaceMap[key]
+			var overallPeakInput, overallPeakOutput float64
+
+			inputs := make([]*float64, len(dateFolders))
+			outputs := make([]*float64, len(dateFolders))
+
+			for i, d := range dateFolders {
+				dp, exists := info.PeaksPerDate[d]
+				if exists {
+					inVal := dp.Input
+					outVal := dp.Output
+					inputs[i] = &inVal
+					outputs[i] = &outVal
+
+					if inVal > overallPeakInput {
+						overallPeakInput = inVal
+					}
+					if outVal > overallPeakOutput {
+						overallPeakOutput = outVal
+					}
+				} else {
+					inputs[i] = nil
+					outputs[i] = nil
+				}
+			}
+
+			if overallPeakInput > thresholdPercent || overallPeakOutput > thresholdPercent {
+				if upgradeStatus == "upgraded" && !info.Is400GUpgraded {
+					continue
+				}
+
+				p95History = append(p95History, HighInterfaceResponse{
+					Router:         info.Router,
+					Interface:      info.Interface,
+					Neighbor:       info.Neighbor,
+					Speed:          info.Speed,
+					PeakInput:      overallPeakInput,
+					PeakOutput:     overallPeakOutput,
+					Timestamps:     dateFolders,
+					Series:         SeriesResponse{Input: inputs, Output: outputs},
+					Is400GUpgraded: info.Is400GUpgraded,
+					UpgradeStatus:  info.UpgradeStatus,
+				})
+			}
+		}
+
+		sort.Slice(p95History, func(i, j int) bool {
+			if p95History[i].Router != p95History[j].Router {
+				return p95History[i].Router < p95History[j].Router
+			}
+			return p95History[i].Interface < p95History[j].Interface
+		})
+
+		writeJSON(w, http.StatusOK, HighUtilizationHistoryResponse{HighInterfacesHistory: p95History})
+	})
+
+	// Wrap http.Handler with robust Logging and Recoverer Middlewares
+	handler := RecovererMiddleware(LoggingMiddleware(mux))
+
+	srv := &http.Server{
+		Addr:         fmt.Sprintf("%s:%s", webHost, webPort),
+		Handler:      handler,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	// Start HTTP server inside a goroutine
+	go func() {
+		slog.Info("GFiber Interface Audit Dashboard running", "url", fmt.Sprintf("http://%s", srv.Addr))
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("Server failed to listen", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	// Listen for OS signals concurrently for graceful shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	slog.Info("Shutting down web server gracefully...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		slog.Error("Server forced to shutdown", "error", err)
+		os.Exit(1)
+	}
+
+	slog.Info("Server exited cleanly")
 }

@@ -91,6 +91,7 @@ This repository does not currently include dependency manifests such as `require
 - Treat the `.txt` files here as real working data. Do not delete or overwrite them casually.
 - If adding configuration, prefer small explicit constants or a simple env-var fallback instead of introducing a large framework.
 - If adding dependencies, also add a dependency manifest because the repo currently has none.
+- **Feature Alignment**: Always keep both the Go implementation (`main.go` / `index.html`) and the FastAPI implementation (`view_interfaces_fastapi.py`) strictly aligned. Any new features, visual upgrades, or filtering capabilities added to one dashboard must be immediately ported and aligned in the other.
 
 ## Safe Ways To Run
 
