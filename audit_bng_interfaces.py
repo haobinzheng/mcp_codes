@@ -104,88 +104,147 @@ def parse_monitor_lag_totals(lines):
     return 0, 0
 
 async def audit_device(target):
-    print(f"Starting BGP Interface Audit on target: {target}...")
+    logs = []
+    def log(msg):
+        logs.append(msg)
+
+    log(f"Starting BNG Interface Audit on target: {target}...")
     
-    # 1) show router isis adjacency
-    print("Executing show router isis adjacency...")
-    isis_output = await rate_limited_gnetch_command("show router isis adjacency", target)
-    adjacencies = parse_isis_adjacencies(isis_output)
-    
-    if not adjacencies:
-        print("No active ISIS adjacencies on bundle interfaces found.")
-        return
-    
-    print(f"Found {len(adjacencies)} active adjacencies.")
-    
-    for adj in adjacencies:
-        intf = adj["interface"]
-        system_id = adj["system_id"]
-        print(f"\nAuditing Interface: {intf} (Neighbor: {system_id})")
+    try:
+        # 1) show router isis adjacency
+        log("Executing show router isis adjacency...")
+        isis_output = await rate_limited_gnetch_command("show router isis adjacency", target)
+        adjacencies = parse_isis_adjacencies(isis_output)
         
-        # 2) show router interface <intf>
-        intf_output = await rate_limited_gnetch_command(f'show router interface {intf}', target)
-        lag_id = parse_router_interface(intf_output, intf)
+        if not adjacencies:
+            log("No active ISIS adjacencies on bundle interfaces found.")
+            print("\n".join(logs) + "\n")
+            return
         
-        if not lag_id:
-            print(f"Could not find LAG associated with interface {intf}.")
-            continue
+        log(f"Found {len(adjacencies)} active adjacencies.")
+        
+        for adj in adjacencies:
+            intf = adj["interface"]
+            system_id = adj["system_id"]
+            log(f"\nAuditing Interface: {intf} (Neighbor: {system_id})")
             
-        print(f"Associated LAG: {lag_id}")
-        
-        # 3) show lag <lag_id> port
-        lag_output = await rate_limited_gnetch_command(f'show lag {lag_id} port', target)
-        ports = parse_lag_ports(lag_output, lag_id)
-        
-        if not ports:
-            print(f"No active ports found in LAG {lag_id}.")
-            continue
+            # 2) show router interface <intf>
+            intf_output = await rate_limited_gnetch_command(f'show router interface {intf}', target)
+            lag_id = parse_router_interface(intf_output, intf)
             
-        print(f"LAG Member Ports: {ports}")
-        
-        total_lag_speed = 0
-        port_speeds = {}
-        
-        # 4) find out the speed of each port
-        for port in ports:
-            port_output = await rate_limited_gnetch_command(f"show port {port}", target)
-            speed = parse_port_speed(port_output)
-            port_speeds[port] = speed
-            total_lag_speed += speed
+            if not lag_id:
+                log(f"Could not find LAG associated with interface {intf}.")
+                continue
+                
+            log(f"Associated LAG: {lag_id}")
             
-        if total_lag_speed == 0:
-            print(f"Total speed for LAG {lag_id} could not be determined.")
-            continue
+            # 3) show lag <lag_id> port
+            lag_output = await rate_limited_gnetch_command(f'show lag {lag_id} port', target)
+            ports = parse_lag_ports(lag_output, lag_id)
             
-        print(f"Total LAG Capacity: {total_lag_speed / 1e9} Gbps")
-        
-        # 5) use monitor lag command to get total input and output bytes
-        lag_num_match = re.search(r"\d+", lag_id)
-        if not lag_num_match:
-            print(f"Could not extract LAG number from {lag_id}.")
-            continue
+            if not ports:
+                log(f"No active ports found in LAG {lag_id}.")
+                continue
+                
+            log(f"LAG Member Ports: {ports}")
             
-        lag_num = lag_num_match.group(0)
-        print(f"Monitoring LAG ID {lag_num} over 3s interval...")
+            total_lag_speed = 0
+            port_speeds = {}
+            
+            # 4) find out the speed of each port
+            for port in ports:
+                port_output = await rate_limited_gnetch_command(f"show port {port}", target)
+                speed = parse_port_speed(port_output)
+                port_speeds[port] = speed
+                total_lag_speed += speed
+                
+            if total_lag_speed == 0:
+                log(f"Total speed for LAG {lag_id} could not be determined.")
+                continue
+                
+            log(f"Total LAG Capacity: {total_lag_speed / 1e9} Gbps")
+            
+            # 5) use monitor lag command to get total input and output bytes
+            lag_num_match = re.search(r"\d+", lag_id)
+            if not lag_num_match:
+                log(f"Could not extract LAG number from {lag_id}.")
+                continue
+                
+            lag_num = lag_num_match.group(0)
+            log(f"Monitoring LAG ID {lag_num} over 3s interval...")
+            
+            monitor_output = await rate_limited_gnetch_command(f"monitor lag {lag_num} interval 3 repeat 3", target)
+            in_bytes, out_bytes = parse_monitor_lag_totals(monitor_output)
+            
+            # Convert bytes into bits, divided by 3 seconds to get bps
+            in_bps = (in_bytes * 8) / 3.0
+            out_bps = (out_bytes * 8) / 3.0
+            
+            # Calculate utilization percents
+            input_util = (in_bps / total_lag_speed) * 100
+            output_util = (out_bps / total_lag_speed) * 100
+            
+            log(f"{intf}: input: {input_util:.0f}%, output: {output_util:.0f}%")
+            
+    except Exception as e:
+        log(f"Error auditing device {target}: {e}")
         
-        monitor_output = await rate_limited_gnetch_command(f"monitor lag {lag_num} interval 3 repeat 3", target)
-        in_bytes, out_bytes = parse_monitor_lag_totals(monitor_output)
-        
-        # Convert bytes into bits, divided by 3 seconds to get bps
-        in_bps = (in_bytes * 8) / 3.0
-        out_bps = (out_bytes * 8) / 3.0
-        
-        # Calculate utilization percents
-        input_util = (in_bps / total_lag_speed) * 100
-        output_util = (out_bps / total_lag_speed) * 100
-        
-        print(f"{intf}: input: {input_util:.0f}%, output: {output_util:.0f}%")
+    print("\n".join(logs) + "\n")
 
 async def main():
-    parser = argparse.ArgumentParser(description="Audit SROS BGP/ISIS interfaces utilization using monitor snapshots.")
-    parser.add_argument("-t", "--target", required=True, help="Target SROS device hostname (e.g. bng01.atl101)")
+    parser = argparse.ArgumentParser(description="Audit SROS BNG/ISIS interfaces utilization using monitor snapshots.")
+    parser.add_argument("-t", "--target", required=False, help="Directly specify a single target SROS device hostname")
+    parser.add_argument("-d", "--device", required=False, help="Specify device prefixes to filter from rancid (e.g., 'bng' or 'bng,re')")
+    parser.add_argument("-m", "--metro", required=False, help="Specify the metro name to filter from rancid")
     args = parser.parse_args()
     
-    await audit_device(args.target)
+    if args.target:
+        await audit_device(args.target)
+        return
+        
+    # Dynamic SROS BNG rancid discovery
+    rancid_folder = "/google/src/head/depot/ops/network/rancid/gfiber/alcatellucentsr"
+    all_devices = []
+    
+    if os.path.isdir(rancid_folder):
+        print(f"Collecting BNG devices from live Rancid depot: {rancid_folder}")
+        all_entries = os.listdir(rancid_folder)
+        for entry in all_entries:
+            base = entry.strip()
+            if base.endswith(",v"):
+                base = base[:-2]
+            if base.startswith(".") or base.endswith((".md", ".html", ".pdf")):
+                continue
+            all_devices.append(base)
+    else:
+        print(f"Error: SROS BNG Rancid depot unreachable at: {rancid_folder}")
+        exit(-1)
+        
+    all_devices = sorted(set(all_devices))
+    
+    if args.metro:
+        all_devices = [d for d in all_devices if args.metro in d]
+        
+    if args.device:
+        cleaned = args.device.strip("[]")
+        prefixes = tuple(p.strip().lower() for p in cleaned.split(",") if p.strip())
+        device_list = [
+            d for d in all_devices
+            if d.lower().startswith(prefixes)
+        ]
+    else:
+        # Default prefix filter to only match BNG SROS routers
+        device_list = [d for d in all_devices if d.lower().startswith("bng")]
+        
+    if not device_list:
+        print("No SROS BNG devices matched your filters.")
+        return
+        
+    print(f"Discovered and matched {len(device_list)} BNG SROS devices: {device_list}")
+    print("Starting concurrent BNG interface audits...\n")
+    
+    tasks = [audit_device(device) for device in device_list]
+    await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
     asyncio.run(main())
