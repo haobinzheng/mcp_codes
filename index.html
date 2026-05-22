@@ -1469,25 +1469,56 @@
             <th>Interface</th>
             <th>Neighbor</th>
             <th>Speed</th>
+            <th>Upgrade Status</th>
+            <th>Date</th>
             <th>Peak Input %</th>
             <th>Peak Output %</th>
-            <th>Upgrade Status</th>
           </tr>
         `;
 
         const tbody = document.createElement('tbody');
         lastP95Data.high_interfaces_history.forEach(item => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td style="font-weight: 600; color: var(--accent-purple);">${item.router}</td>
-            <td style="font-family: 'JetBrains Mono', monospace; font-weight: 600;">${item.interface}</td>
-            <td>${item.neighbor}</td>
-            <td>${item.speed}</td>
-            <td><span class="badge ${item.peak_input > 80 ? 'badge-high' : 'badge-warn'}">${Math.round(item.peak_input)}%</span></td>
-            <td><span class="badge ${item.peak_output > 80 ? 'badge-high' : 'badge-warn'}">${Math.round(item.peak_output)}%</span></td>
-            <td><span class="badge ${item.is_400g_upgraded ? 'badge-ok' : 'badge-warn'}">${item.upgrade_status}</span></td>
+          const inputs = item.series.input || [];
+          const outputs = item.series.output || [];
+          const times = item.timestamps || [];
+
+          const activeDays = [];
+          for (let idx = 0; idx < times.length; idx++) {
+            if (inputs[idx] !== null || outputs[idx] !== null) {
+              activeDays.push({
+                dateStr: times[idx],
+                inVal: inputs[idx] !== null ? inputs[idx] : 0,
+                outVal: outputs[idx] !== null ? outputs[idx] : 0
+              });
+            }
+          }
+
+          const N = activeDays.length;
+          if (N === 0) return;
+
+          const tr0 = document.createElement('tr');
+          tr0.style.borderTop = '2px solid var(--border)';
+          tr0.innerHTML = `
+            <td rowspan="${N}" style="font-weight: 600; color: var(--accent-purple); vertical-align: top;">${item.router}</td>
+            <td rowspan="${N}" style="font-family: 'JetBrains Mono', monospace; font-weight: 600; vertical-align: top;">${item.interface}</td>
+            <td rowspan="${N}" style="vertical-align: top; color: var(--text-muted);">${item.neighbor}</td>
+            <td rowspan="${N}" style="vertical-align: top; color: var(--text-muted);">${item.speed}</td>
+            <td rowspan="${N}" style="vertical-align: top;"><span class="badge ${item.is_400g_upgraded ? 'badge-ok' : 'badge-warn'}">${item.upgrade_status}</span></td>
+            <td style="color: var(--text-muted); font-size: 13px; font-weight: 600;">${activeDays[0].dateStr}</td>
+            <td><span class="badge ${activeDays[0].inVal > 80 ? 'badge-high' : 'badge-warn'}">${Math.round(activeDays[0].inVal)}%</span></td>
+            <td><span class="badge ${activeDays[0].outVal > 80 ? 'badge-high' : 'badge-warn'}">${Math.round(activeDays[0].outVal)}%</span></td>
           `;
-          tbody.appendChild(tr);
+          tbody.appendChild(tr0);
+
+          for (let i = 1; i < N; i++) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+              <td style="color: var(--text-muted); font-size: 13px; font-weight: 600;">${activeDays[i].dateStr}</td>
+              <td><span class="badge ${activeDays[i].inVal > 80 ? 'badge-high' : 'badge-warn'}">${Math.round(activeDays[i].inVal)}%</span></td>
+              <td><span class="badge ${activeDays[i].outVal > 80 ? 'badge-high' : 'badge-warn'}">${Math.round(activeDays[i].outVal)}%</span></td>
+            `;
+            tbody.appendChild(tr);
+          }
         });
 
         table.append(thead, tbody);
@@ -1501,25 +1532,56 @@
         return;
       }
 
-      const headers = ["Router", "Interface", "Neighbor", "Speed", "Peak Input %", "Peak Output %", "Upgrade Status"];
+      const headers = ["Router", "Interface", "Neighbor", "Speed", "Upgrade Status", "Date", "Peak Input %", "Peak Output %"];
       const csvRows = [headers.join(",")];
 
       lastP95Data.high_interfaces_history.forEach(item => {
-        const escapeCSV = val => {
-          const str = String(val).replace(/"/g, '""');
-          return str.includes(',') || str.includes('\n') || str.includes('"') ? `"${str}"` : str;
-        };
+        const inputs = item.series.input || [];
+        const outputs = item.series.output || [];
+        const times = item.timestamps || [];
 
-        const row = [
-          escapeCSV(item.router),
-          escapeCSV(item.interface),
-          escapeCSV(item.neighbor),
-          escapeCSV(item.speed),
-          escapeCSV(Math.round(item.peak_input) + "%"),
-          escapeCSV(Math.round(item.peak_output) + "%"),
-          escapeCSV(item.upgrade_status)
-        ];
-        csvRows.push(row.join(","));
+        let isFirst = true;
+
+        for (let idx = 0; idx < times.length; idx++) {
+          if (inputs[idx] === null && outputs[idx] === null) {
+            continue;
+          }
+          const inVal = inputs[idx] !== null ? inputs[idx] : 0;
+          const outVal = outputs[idx] !== null ? outputs[idx] : 0;
+          const dateStr = times[idx];
+
+          const escapeCSV = val => {
+            const str = String(val).replace(/"/g, '""');
+            return str.includes(',') || str.includes('\n') || str.includes('"') ? `"${str}"` : str;
+          };
+
+          let row;
+          if (isFirst) {
+            row = [
+              escapeCSV(item.router),
+              escapeCSV(item.interface),
+              escapeCSV(item.neighbor),
+              escapeCSV(item.speed),
+              escapeCSV(item.upgrade_status),
+              escapeCSV(dateStr),
+              escapeCSV(Math.round(inVal) + "%"),
+              escapeCSV(Math.round(outVal) + "%")
+            ];
+            isFirst = false;
+          } else {
+            row = [
+              "",
+              "",
+              "",
+              "",
+              "",
+              escapeCSV(dateStr),
+              escapeCSV(Math.round(inVal) + "%"),
+              escapeCSV(Math.round(outVal) + "%")
+            ];
+          }
+          csvRows.push(row.join(","));
+        }
       });
 
       const csvContent = "\ufeff" + csvRows.join("\n");
