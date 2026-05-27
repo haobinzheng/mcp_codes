@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-const defaultPort = "9001"
+const defaultPort = "9002"
 
 func main() {
 	// Setup structured logger
