@@ -75,13 +75,13 @@ const htmlContent = `<!doctype html>
       --text-main: #fafafa;
       --text-muted: #a1a1aa;
       
-      /* Device Colors matching photo legend */
-      --color-rr: #06b6d4;       /* Cyan */
-      --color-cr-core: #3b82f6;  /* Backbone Core - Blue */
-      --color-cr-metro: #10b981; /* Metro Core - Teal/Green */
-      --color-pr: #22c55e;       /* Peering - Green */
-      --color-bng: #f97316;      /* BNG - Orange */
-      --color-unknown: #a1a1aa;
+      /* High-contrast glowing device colors */
+      --color-rr: #00f5ff;       /* Neon Electric Cyan */
+      --color-cr-core: #2f72ff;  /* Backbone Core - Intense Cobalt Blue */
+      --color-cr-metro: #ccff00; /* Metro Core - Electric Lime/Yellow-Green */
+      --color-pr: #00ff66;       /* Peering - Vivid Emerald/Spring Green */
+      --color-bng: #ff6c00;      /* BNG - Vibrant Edge Orange */
+      --color-unknown: #8a8a93;
       
       /* Capacity Colors */
       --cap-100g: #3b82f6;
@@ -224,43 +224,68 @@ const htmlContent = `<!doctype html>
 
     /* Map Elements styling */
     .us-outline {
-      fill: rgba(24, 24, 27, 0.4);
-      stroke: rgba(234, 179, 8, 0.06);
-      stroke-width: 1.5;
+      fill: rgba(15, 23, 42, 0.15);
+      stroke: rgba(234, 179, 8, 0.08);
+      stroke-width: 2;
+      stroke-dasharray: 8, 8;
+      filter: drop-shadow(0 0 15px rgba(234, 179, 8, 0.05));
     }
 
     .metro-bubble {
-      fill: rgba(39, 39, 42, 0.65);
-      stroke: rgba(255,255,255,0.1);
+      fill: rgba(39, 39, 42, 0.45);
+      stroke: rgba(255,255,255,0.06);
       stroke-width: 1;
       transition: all 0.25s ease;
+      cursor: grab;
+    }
+
+    .metro-bubble:active {
+      cursor: grabbing;
+    }
+
+    .metro-bubble:hover {
+      fill: rgba(63, 63, 70, 0.45);
+      stroke: rgba(255,255,255,0.15);
     }
 
     .metro-label {
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
       fill: var(--text-muted);
-      letter-spacing: 0.05em;
+      letter-spacing: 0.08em;
       pointer-events: none;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0,0,0,0.9);
     }
 
     .topology-link {
       stroke-linecap: round;
-      transition: stroke-width 0.2s, stroke 0.2s;
-      opacity: 0.85;
+      transition: opacity 0.25s, stroke-width 0.2s;
+      opacity: 0.7;
     }
 
     .topology-link:hover {
       stroke-width: 6 !important;
-      opacity: 1;
+      opacity: 1 !important;
       cursor: pointer;
+    }
+
+    @keyframes flow-anim {
+      to {
+        stroke-dashoffset: -16;
+      }
+    }
+
+    .topology-flow {
+      stroke-linecap: round;
+      pointer-events: none;
+      transition: opacity 0.25s;
     }
 
     .device-node {
       stroke: var(--bg);
       stroke-width: 1.5;
       cursor: pointer;
-      transition: r 0.2s, stroke-width 0.2s;
+      transition: r 0.2s, stroke-width 0.2s, opacity 0.25s;
     }
 
     .device-node:hover {
@@ -271,7 +296,14 @@ const htmlContent = `<!doctype html>
     .device-node.active {
       stroke: #ffffff;
       stroke-width: 3;
-      box-shadow: 0 0 20px white;
+      box-shadow: 0 0 25px white;
+    }
+
+    /* Dimming overlay for inactive focus highlight */
+    .device-node.dimmed,
+    .topology-link.dimmed,
+    .topology-flow.dimmed {
+      opacity: 0.12 !important;
     }
 
     .badge {
@@ -387,6 +419,7 @@ const htmlContent = `<!doctype html>
             <div class="info-label">Core Adjacency Interfaces</div>
             <div id="info-interfaces" class="info-value info-mono" style="max-height: 180px; overflow-y: auto; white-space: pre-wrap;">-</div>
           </div>
+          <button class="tab-btn" onclick="resetSelection()" style="width: 100%; margin-top: 12px; padding: 8px; font-size: 13px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;">Clear Focus Highlight</button>
         </div>
       </div>
     </div>
@@ -423,38 +456,39 @@ const htmlContent = `<!doctype html>
   <script>
     // Geographical center coordinates inside the SVG grid
     const metroCoordinates = {
-      "sfo": { x: 80, y: 400, name: "San Francisco, CA" },
-      "sjc": { x: 80, y: 430, name: "San Jose, CA" },
-      "svl": { x: 80, y: 415, name: "Sunnyvale, CA" },
-      "lax": { x: 120, y: 650, name: "Los Angeles, CA" },
-      "pih": { x: 320, y: 150, name: "Pocatello, ID" },
-      "lgu": { x: 350, y: 240, name: "Logan, UT" },
-      "slc": { x: 350, y: 290, name: "Salt Lake City, UT" },
-      "las": { x: 280, y: 520, name: "Las Vegas, NV" },
-      "phx": { x: 300, y: 680, name: "Phoenix, AZ" },
-      "den": { x: 550, y: 360, name: "Denver, CO" },
-      "sat": { x: 720, y: 820, name: "San Antonio, TX" },
-      "aus": { x: 760, y: 780, name: "Austin, TX" },
-      "dfw": { x: 780, y: 640, name: "Dallas-Fort Worth, TX" },
-      "oma": { x: 780, y: 280, name: "Omaha, NE" },
-      "cbf": { x: 820, y: 280, name: "Council Bluffs, IA" },
-      "dsm": { x: 920, y: 260, name: "Des Moines, IA" },
-      "mci": { x: 880, y: 380, name: "Kansas City, MO" },
-      "jef": { x: 980, y: 420, name: "Jefferson City, MO" },
-      "ord": { x: 1100, y: 220, name: "Chicago, IL" },
-      "bna": { x: 1180, y: 560, name: "Nashville, TN" },
-      "hsv": { x: 1200, y: 660, name: "Huntsville, AL" },
-      "atl": { x: 1240, y: 720, name: "Atlanta, GA" },
-      "clt": { x: 1360, y: 580, name: "Charlotte, NC" },
-      "rdu": { x: 1420, y: 520, name: "Raleigh-Durham, NC" },
-      "iad": { x: 1440, y: 340, name: "Washington D.C." },
-      "ewr": { x: 1520, y: 200, name: "Newark, NJ" }
+      "sfo": { x: 70, y: 420, name: "San Francisco, CA" },
+      "sjc": { x: 70, y: 470, name: "San Jose, CA" },
+      "svl": { x: 70, y: 445, name: "Sunnyvale, CA" },
+      "lax": { x: 100, y: 690, name: "Los Angeles, CA" },
+      "pih": { x: 300, y: 120, name: "Pocatello, ID" },
+      "lgu": { x: 340, y: 210, name: "Logan, UT" },
+      "slc": { x: 340, y: 280, name: "Salt Lake City, UT" },
+      "las": { x: 260, y: 530, name: "Las Vegas, NV" },
+      "phx": { x: 280, y: 710, name: "Phoenix, AZ" },
+      "den": { x: 530, y: 360, name: "Denver, CO" },
+      "sat": { x: 660, y: 870, name: "San Antonio, TX" },
+      "aus": { x: 790, y: 770, name: "Austin, TX" },
+      "dfw": { x: 740, y: 590, name: "Dallas-Fort Worth, TX" },
+      "oma": { x: 740, y: 240, name: "Omaha, NE" },
+      "cbf": { x: 800, y: 250, name: "Council Bluffs, IA" },
+      "dsm": { x: 940, y: 200, name: "Des Moines, IA" },
+      "mci": { x: 860, y: 420, name: "Kansas City, MO" },
+      "jef": { x: 1020, y: 460, name: "Jefferson City, MO" },
+      "ord": { x: 1140, y: 180, name: "Chicago, IL" },
+      "bna": { x: 1200, y: 540, name: "Nashville, TN" },
+      "hsv": { x: 1210, y: 680, name: "Huntsville, AL" },
+      "atl": { x: 1240, y: 760, name: "Atlanta, GA" },
+      "clt": { x: 1340, y: 580, name: "Charlotte, NC" },
+      "rdu": { x: 1460, y: 470, name: "Raleigh-Durham, NC" },
+      "iad": { x: 1480, y: 280, name: "Washington D.C." },
+      "ewr": { x: 1560, y: 120, name: "Newark, NJ" }
     };
 
     let topologyData = {};
     let deviceCoords = {};
+    let devicesByMetro = {};
 
-    // Drag & Zoom parameters
+    // Drag & Zoom & Node Drag parameters
     const container = document.getElementById('map-container');
     const viewport = document.getElementById('viewport');
     let isDragging = false;
@@ -462,9 +496,50 @@ const htmlContent = `<!doctype html>
     let posX = 0, posY = 0;
     let scale = 1.0;
 
+    let draggedNode = null;
+    let dragOffset = { x: 0, y: 0 };
+
+    let draggedMetro = null;
+    let dragMetroStart = { x: 0, y: 0 };
+
+    // Convert client coordinates to local SVG coordinate space
+    function getSVGCoords(e) {
+      const svg = document.getElementById('map-svg');
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const svgPoint = pt.matrixTransform(svg.getScreenCTM().inverse());
+      return { x: svgPoint.x, y: svgPoint.y };
+    }
+
+    function startDragNode(e, device) {
+      e.stopPropagation();
+      e.preventDefault();
+      draggedNode = device;
+      const coords = getSVGCoords(e);
+      const nodeCoords = deviceCoords[device];
+      dragOffset = {
+        x: coords.x - nodeCoords.x,
+        y: coords.y - nodeCoords.y
+      };
+      container.style.cursor = 'grabbing';
+    }
+
+    function startDragMetro(e, metro) {
+      e.stopPropagation();
+      e.preventDefault();
+      draggedMetro = metro;
+      const coords = getSVGCoords(e);
+      dragMetroStart = {
+        x: coords.x,
+        y: coords.y
+      };
+      container.style.cursor = 'grabbing';
+    }
+
     // SVG zooming handlers
     container.addEventListener('mousedown', (e) => {
-      if (e.target.closest('.device-node')) return; // Don't drag if clicking node
+      if (e.target.closest('.device-node') || e.target.closest('.metro-bubble')) return; // Don't drag if clicking node or bubble
       isDragging = true;
       startX = e.clientX - posX;
       startY = e.clientY - posY;
@@ -473,14 +548,130 @@ const htmlContent = `<!doctype html>
 
     window.addEventListener('mouseup', () => {
       isDragging = false;
+      draggedNode = null;
+      draggedMetro = null;
       container.style.cursor = 'grab';
     });
 
     container.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      posX = e.clientX - startX;
-      posY = e.clientY - startY;
-      updateViewportTransform();
+      if (draggedNode) {
+        e.preventDefault();
+        const coords = getSVGCoords(e);
+        const newX = coords.x - dragOffset.x;
+        const newY = coords.y - dragOffset.y;
+
+        // Update coordinates in database
+        deviceCoords[draggedNode] = { x: newX, y: newY };
+
+        // Update Node Position
+        const circle = document.getElementById('node-' + draggedNode);
+        if (circle) {
+          circle.setAttribute('cx', newX);
+          circle.setAttribute('cy', newY);
+        }
+
+        // Update connected links & flows (Start side)
+        document.querySelectorAll('.topology-link[data-start="' + draggedNode + '"]').forEach(link => {
+          link.setAttribute('x1', newX);
+          link.setAttribute('y1', newY);
+          const flowId = link.id.replace('link-', 'flow-');
+          const flow = document.getElementById(flowId);
+          if (flow) {
+            flow.setAttribute('x1', newX);
+            flow.setAttribute('y1', newY);
+          }
+        });
+
+        // Update connected links & flows (End side)
+        document.querySelectorAll('.topology-link[data-end="' + draggedNode + '"]').forEach(link => {
+          link.setAttribute('x2', newX);
+          link.setAttribute('y2', newY);
+          const flowId = link.id.replace('link-', 'flow-');
+          const flow = document.getElementById(flowId);
+          if (flow) {
+            flow.setAttribute('x2', newX);
+            flow.setAttribute('y2', newY);
+          }
+        });
+      } else if (draggedMetro) {
+        e.preventDefault();
+        const coords = getSVGCoords(e);
+        const dx = coords.x - dragMetroStart.x;
+        const dy = coords.y - dragMetroStart.y;
+
+        if (dx !== 0 || dy !== 0) {
+          dragMetroStart = { x: coords.x, y: coords.y };
+
+          // Update metro coordinate data
+          const base = metroCoordinates[draggedMetro];
+          if (base) {
+            base.x += dx;
+            base.y += dy;
+          }
+
+          // Update metro bubble position in DOM
+          const bubble = document.getElementById('bubble-' + draggedMetro);
+          if (bubble) {
+            const cx = parseFloat(bubble.getAttribute('cx')) + dx;
+            const cy = parseFloat(bubble.getAttribute('cy')) + dy;
+            bubble.setAttribute('cx', cx);
+            bubble.setAttribute('cy', cy);
+          }
+
+          // Update metro label position in DOM
+          const label = document.getElementById('label-' + draggedMetro);
+          if (label) {
+            const lx = parseFloat(label.getAttribute('x')) + dx;
+            const ly = parseFloat(label.getAttribute('y')) + dy;
+            label.setAttribute('x', lx);
+            label.setAttribute('y', ly);
+          }
+
+          // Shift all nested devices and their links
+          const devices = devicesByMetro[draggedMetro] || [];
+          devices.forEach(dev => {
+            const nodeCoords = deviceCoords[dev];
+            if (nodeCoords) {
+              nodeCoords.x += dx;
+              nodeCoords.y += dy;
+
+              const circle = document.getElementById('node-' + dev);
+              if (circle) {
+                circle.setAttribute('cx', nodeCoords.x);
+                circle.setAttribute('cy', nodeCoords.y);
+              }
+
+              // Update connected links & flows (Start side)
+              document.querySelectorAll('.topology-link[data-start="' + dev + '"]').forEach(link => {
+                link.setAttribute('x1', nodeCoords.x);
+                link.setAttribute('y1', nodeCoords.y);
+                const flowId = link.id.replace('link-', 'flow-');
+                const flow = document.getElementById(flowId);
+                if (flow) {
+                  flow.setAttribute('x1', nodeCoords.x);
+                  flow.setAttribute('y1', nodeCoords.y);
+                }
+              });
+
+              // Update connected links & flows (End side)
+              document.querySelectorAll('.topology-link[data-end="' + dev + '"]').forEach(link => {
+                link.setAttribute('x2', nodeCoords.x);
+                link.setAttribute('y2', nodeCoords.y);
+                const flowId = link.id.replace('link-', 'flow-');
+                const flow = document.getElementById(flowId);
+                if (flow) {
+                  flow.setAttribute('x2', nodeCoords.x);
+                  flow.setAttribute('y2', nodeCoords.y);
+                }
+              });
+            }
+          });
+        }
+      } else if (isDragging) {
+        posX = e.clientX - startX;
+        posY = e.clientY - startY;
+        updateViewportTransform();
+      }
     });
 
     container.addEventListener('wheel', (e) => {
@@ -594,15 +785,26 @@ const htmlContent = `<!doctype html>
         const resp = await fetch('/api/topology');
         topologyData = await resp.json();
         
-        // 1. Group devices by metro to compute radial orbits
-        const devicesByMetro = {};
-        Object.keys(topologyData).forEach(device => {
+        // 1. Group ALL unique devices (both local and discovered remote peers!) by metro
+        const allDevices = new Set(Object.keys(topologyData));
+        Object.keys(topologyData).forEach(localDev => {
+          const intfs = topologyData[localDev];
+          Object.keys(intfs).forEach(intf => {
+            const remoteDev = intfs[intf].remote_device;
+            if (remoteDev && remoteDev !== "unknown") {
+              allDevices.add(remoteDev);
+            }
+          });
+        });
+
+        devicesByMetro = {};
+        allDevices.forEach(device => {
           const metro = getMetroOfDevice(device);
           devicesByMetro[metro] = devicesByMetro[metro] || [];
           devicesByMetro[metro].push(device);
         });
 
-        // 2. Calculate coordinates for each device node
+        // 2. Calculate coordinates for ALL device nodes (including peers)
         deviceCoords = {};
         const metroBubbles = document.getElementById('metro-bubbles');
         const metroLabels = document.getElementById('metro-labels');
@@ -616,10 +818,10 @@ const htmlContent = `<!doctype html>
           
           // Draw Metro Bubble in the background
           const bubbleRadius = 22 + (devices.length * 3.5);
-          bubblesHTML += ` + "`" + `<circle class="metro-bubble" cx="${base.x}" cy="${base.y}" r="${bubbleRadius}" />` + "`" + `;
+          bubblesHTML += ` + "`" + `<circle class="metro-bubble" id="bubble-${metro}" data-metro="${metro}" cx="${base.x}" cy="${base.y}" r="${bubbleRadius}" onmousedown="startDragMetro(event, '${metro}')" />` + "`" + `;
           
           // Draw Metro Label
-          labelsHTML += ` + "`" + `<text class="metro-label" x="${base.x}" y="${base.y + bubbleRadius + 14}" text-anchor="middle">${metro.toUpperCase()}</text>` + "`" + `;
+          labelsHTML += ` + "`" + `<text class="metro-label" id="label-${metro}" x="${base.x}" y="${base.y + bubbleRadius + 14}" text-anchor="middle">${metro.toUpperCase()}</text>` + "`" + `;
 
           if (devices.length === 1) {
             deviceCoords[devices[0]] = { x: base.x, y: base.y };
@@ -651,17 +853,13 @@ const htmlContent = `<!doctype html>
 
             if (!remoteDev || remoteDev === "unknown") return;
 
-            // Standardize key to de-duplicate links (e.g. A->B and B->A)
             const linkKey = [localDev, remoteDev].sort().join('---');
             if (drawnLinks.has(linkKey)) return;
             drawnLinks.add(linkKey);
 
-            // Get coordinates
             const start = deviceCoords[localDev];
-            // Remote device coordinates might be on another cluster
             let end = deviceCoords[remoteDev];
             
-            // If remote device has no explicit data, map it to the coordinates of its metro
             if (!end) {
               const remoteMetro = getMetroOfDevice(remoteDev);
               const base = metroCoordinates[remoteMetro] || { x: 500, y: 300 };
@@ -673,7 +871,8 @@ const htmlContent = `<!doctype html>
             const width = getCapacityWidth(capBps);
 
             linksHTML += ` + "`" + `
-              <line class="topology-link" 
+              <line class="topology-link" id="link-${linkKey}"
+                data-start="${localDev}" data-end="${remoteDev}"
                 x1="${start.x}" y1="${start.y}" 
                 x2="${end.x}" y2="${end.y}" 
                 stroke="${color}" 
@@ -682,24 +881,41 @@ const htmlContent = `<!doctype html>
                 onmouseenter="showLinkTooltip(event, '${localDev}', '${intf}')"
                 onmouseleave="hideTooltip()"
               />
+              <line class="topology-flow" id="flow-${linkKey}"
+                x1="${start.x}" y1="${start.y}" 
+                x2="${end.x}" y2="${end.y}" 
+                stroke="rgba(255, 255, 255, 0.5)" 
+                stroke-width="${Math.max(1.0, width * 0.25)}"
+                stroke-dasharray="6, 10"
+                style="animation: flow-anim 1.5s linear infinite; pointer-events: none;"
+              />
             ` + "`" + `;
           });
         });
         linksGroup.innerHTML = linksHTML;
 
-        // 4. Draw Device Nodes
+        // Helper for sizing nodes hierarchically
+        function getNodeRadius(role) {
+          if (role === "cr-backbone" || role === "cr-metro" || role === "rr") return 9.5;
+          if (role === "pr") return 7.5;
+          return 5.5; // BNG
+        }
+
+        // 4. Draw Device Nodes (Local + Discovered Peers)
         const nodesGroup = document.getElementById('device-nodes');
         let nodesHTML = '';
 
-        Object.keys(topologyData).forEach(dev => {
+        allDevices.forEach(dev => {
           const coord = deviceCoords[dev];
           const role = getDeviceRole(dev);
           const color = getDeviceColor(role);
+          const radius = getNodeRadius(role);
 
           nodesHTML += ` + "`" + `
             <circle class="device-node" id="node-${dev}"
-              cx="${coord.x}" cy="${coord.y}" r="6.5" 
+              cx="${coord.x}" cy="${coord.y}" r="${radius}" 
               fill="${color}"
+              onmousedown="startDragNode(event, '${dev}')"
               onclick="selectNode('${dev}')"
               onmouseenter="showNodeTooltip(event, '${dev}')"
               onmouseleave="hideTooltip()"
@@ -727,6 +943,7 @@ const htmlContent = `<!doctype html>
       positionTooltip(e);
     }
 
+    // Links Tooltip Logic
     function showLinkTooltip(e, localDev, intf) {
       const link = topologyData[localDev][intf];
       tooltip.innerHTML = ` + "`" + `
@@ -751,20 +968,33 @@ const htmlContent = `<!doctype html>
     let selectedNode = null;
 
     function selectNode(device) {
-      // Reset node styles
+      // Helper for sizing nodes hierarchically
+      function getNodeRadius(role) {
+        if (role === "cr-backbone" || role === "cr-metro" || role === "rr") return 9.5;
+        if (role === "pr") return 7.5;
+        return 5.5; // BNG
+      }
+
+      // Reset all dimming and active classes
       document.querySelectorAll('.device-node').forEach(node => {
-        node.classList.remove('active');
-        node.setAttribute('r', '6.5');
+        node.classList.remove('active', 'dimmed');
+        const devName = node.id.replace('node-', '');
+        const role = getDeviceRole(devName);
+        node.setAttribute('r', getNodeRadius(role));
+      });
+      document.querySelectorAll('.topology-link, .topology-flow').forEach(el => {
+        el.classList.remove('dimmed');
       });
 
       const circle = document.getElementById(` + "`" + `node-${device}` + "`" + `);
       if (circle) {
         circle.classList.add('active');
-        circle.setAttribute('r', '9');
+        const role = getDeviceRole(device);
+        circle.setAttribute('r', getNodeRadius(role) + 3);
       }
 
       selectedNode = device;
-      const details = topologyData[device];
+      const details = topologyData[device] || {};
       const role = getDeviceRole(device).toUpperCase().replace('-', ' ');
       const metro = getMetroOfDevice(device).toUpperCase();
 
@@ -772,14 +1002,74 @@ const htmlContent = `<!doctype html>
       document.getElementById('info-site').textContent = metroCoordinates[metro.toLowerCase()]?.name || metro;
       document.getElementById('info-role').textContent = role;
 
+      const connectedDevices = new Set();
       let intfsStr = '';
+      
+      // 1. Map outgoing connections if this device responded to audit
       Object.keys(details).forEach(intf => {
         const link = details[intf];
+        connectedDevices.add(link.remote_device);
         intfsStr += ` + "`" + `${intf} -> ${link.remote_device} (${link.capacity_human})\n` + "`" + `;
       });
-      document.getElementById('info-interfaces').textContent = intfsStr || 'No active core-facing links recorded.';
+
+      // 2. Scan other audited devices for incoming connections pointing to this device
+      Object.keys(topologyData).forEach(localDev => {
+        const intfs = topologyData[localDev];
+        Object.keys(intfs).forEach(intf => {
+          if (intfs[intf].remote_device === device) {
+            connectedDevices.add(localDev);
+            intfsStr += ` + "`" + `[Peer] ${localDev} (${intf}) -> This Device (${intfs[intf].capacity_human})\n` + "`" + `;
+          }
+        });
+      });
+
+      document.getElementById('info-interfaces').textContent = intfsStr || 'Device was unreachable during audit cycle.';
       
+      // Dim out non-connected nodes
+      document.querySelectorAll('.device-node').forEach(node => {
+        const devName = node.id.replace('node-', '');
+        if (devName !== device && !connectedDevices.has(devName)) {
+          node.classList.add('dimmed');
+        }
+      });
+
+      // Dim out non-connected links and their flows
+      document.querySelectorAll('.topology-link').forEach(link => {
+        const startDev = link.getAttribute('data-start');
+        const endDev = link.getAttribute('data-end');
+        if (startDev !== device && endDev !== device) {
+          link.classList.add('dimmed');
+          const flowId = link.id.replace('link-', 'flow-');
+          const flow = document.getElementById(flowId);
+          if (flow) flow.classList.add('dimmed');
+        }
+      });
+
       document.getElementById('selection-panel').style.display = 'block';
+    }
+
+    function selectLink(localDev, intf) {
+      selectNode(localDev);
+    }
+
+    function resetSelection() {
+      function getNodeRadius(role) {
+        if (role === "cr-backbone" || role === "cr-metro" || role === "rr") return 9.5;
+        if (role === "pr") return 7.5;
+        return 5.5; // BNG
+      }
+
+      selectedNode = null;
+      document.querySelectorAll('.device-node').forEach(node => {
+        node.classList.remove('active', 'dimmed');
+        const devName = node.id.replace('node-', '');
+        const role = getDeviceRole(devName);
+        node.setAttribute('r', getNodeRadius(role));
+      });
+      document.querySelectorAll('.topology-link, .topology-flow').forEach(el => {
+        el.classList.remove('dimmed');
+      });
+      document.getElementById('selection-panel').style.display = 'none';
     }
 
     function selectLink(localDev, intf) {
