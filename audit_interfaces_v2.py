@@ -18,7 +18,7 @@ from juniper_lib import *
 from linux_message import *
 
 DEBUG = False
-RATE_LIMIT = 2.0  # seconds between commands for the same device
+RATE_LIMIT = 0.5  # seconds between commands for the same device
 rate_limiters = {}
 
 def get_device_type(hostname):
@@ -400,13 +400,10 @@ async def process_device_interfaces(hostname, folder_name, regex_site):
                     "description": "BNG LAG interface"
                 })
                 
-                intf_output = await rate_limited_gnetch_command(f'show router interface {intf}', host)
-                with open(device_log_file, 'a') as log_file:
-                    log_file.write(f"\n--- show router interface {intf} ---\n")
-                    log_file.write("\n".join(intf_output) + "\n")
-                
-                lag_id = parse_router_interface(intf_output, intf)
-                if not lag_id:
+                lag_num_match = re.search(r"ae(\d+)", intf, re.IGNORECASE)
+                if lag_num_match:
+                    lag_id = f"lag-{lag_num_match.group(1)}"
+                else:
                     continue
                     
                 lag_output = await rate_limited_gnetch_command(f'show lag {lag_id} port', host)
@@ -449,7 +446,7 @@ async def process_device_interfaces(hostname, folder_name, regex_site):
                     continue
                 lag_num = lag_num_match.group(0)
                 
-                monitor_output = await rate_limited_gnetch_command(f"monitor lag {lag_num} interval 3 repeat 3", host)
+                monitor_output = await rate_limited_gnetch_command(f"monitor lag {lag_num} interval 3 repeat 1", host)
                 with open(device_log_file, 'a') as log_file:
                     log_file.write(f"\n--- monitor lag {lag_id} ---\n")
                     log_file.write("\n".join(monitor_output) + "\n")
@@ -478,7 +475,13 @@ async def process_device_interfaces(hostname, folder_name, regex_site):
 
 async def run_audit_cycle(device_list, folder_name, regex_site, args):
     async_start = time.time()
-    tasks = [process_device_interfaces(device, folder_name, regex_site) for device in device_list]
+    sem = asyncio.Semaphore(20)  # Limit to 20 concurrent devices
+
+    async def sem_device_audit(device):
+        async with sem:
+            return await process_device_interfaces(device, folder_name, regex_site)
+
+    tasks = [sem_device_audit(device) for device in device_list]
     results = await asyncio.gather(*tasks)
 
     audit_result = {host: data for device_result in results for host, data in device_result.items()}
@@ -593,8 +596,7 @@ async def main():
 
     if total_duration > 0:
         start_time = time.time()
-        sleep_interval = 300.0
-        print(f"Starting continuous auditing every 5 minutes for duration: {args.duration}")
+        print(f"Starting continuous auditing (5-minute target interval) for duration: {args.duration}")
         while True:
             elapsed = time.time() - start_time
             if elapsed >= total_duration:
@@ -602,15 +604,19 @@ async def main():
                 break
 
             print(f"\n=== Starting audit cycle at {get_pacific_timestamp()} ===")
+            cycle_start = time.time()
             await run_audit_cycle(device_list, folder_name, regex_site, args)
+            cycle_duration = time.time() - cycle_start
 
-            sleep_needed = sleep_interval
-            if (time.time() - start_time + sleep_needed) >= total_duration:
-                sleep_needed = total_duration - (time.time() - start_time)
-
+            sleep_needed = 300.0 - cycle_duration
             if sleep_needed > 0:
-                print(f"Waiting {sleep_needed:.1f} seconds before next cycle...")
-                await asyncio.sleep(sleep_needed)
+                remaining_time = total_duration - (time.time() - start_time)
+                if sleep_needed > remaining_time:
+                    sleep_needed = remaining_time
+
+                if sleep_needed > 0:
+                    print(f"Waiting {sleep_needed:.1f} seconds to complete the 5-minute cycle interval...")
+                    await asyncio.sleep(sleep_needed)
     else:
         await run_audit_cycle(device_list, folder_name, regex_site, args)
 
