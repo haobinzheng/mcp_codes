@@ -112,6 +112,26 @@ const htmlContent = `<!doctype html>
       flex-direction: column;
       box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
       z-index: 10;
+      flex-shrink: 0;
+    }
+
+    /* Sidebar Resizer */
+    #sidebar-resizer {
+      width: 6px;
+      background: rgba(234, 179, 8, 0.02);
+      border-left: 1px solid rgba(234, 179, 8, 0.1);
+      border-right: 1px solid rgba(234, 179, 8, 0.1);
+      cursor: col-resize;
+      z-index: 20;
+      transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+      flex-shrink: 0;
+    }
+
+    #sidebar-resizer:hover,
+    #sidebar-resizer.resizing {
+      background: rgba(234, 179, 8, 0.25);
+      border-color: rgba(234, 179, 8, 0.6);
+      box-shadow: 0 0 10px rgba(234, 179, 8, 0.3);
     }
 
     .sidebar-header {
@@ -232,9 +252,7 @@ const htmlContent = `<!doctype html>
     }
 
     .metro-bubble {
-      fill: rgba(39, 39, 42, 0.45);
-      stroke: rgba(255,255,255,0.06);
-      stroke-width: 1;
+      stroke-width: 1.5px;
       transition: all 0.25s ease;
       cursor: grab;
     }
@@ -244,17 +262,18 @@ const htmlContent = `<!doctype html>
     }
 
     .metro-bubble:hover {
-      fill: rgba(63, 63, 70, 0.45);
-      stroke: rgba(255,255,255,0.15);
+      fill: rgba(39, 39, 42, 0.5);
+      stroke: rgba(234, 179, 8, 0.25);
+      filter: drop-shadow(0 4px 20px rgba(0,0,0,0.4));
     }
 
     .metro-label {
-      font-size: 11px;
-      font-weight: 700;
-      fill: var(--text-muted);
-      letter-spacing: 0.08em;
+      font-size: 13px;
+      font-weight: 800;
+      fill: #ffffff;
+      letter-spacing: 0.1em;
       pointer-events: none;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0,0,0,0.9);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 0 10px rgba(0,0,0,0.9);
     }
 
     .topology-link {
@@ -281,26 +300,43 @@ const htmlContent = `<!doctype html>
       transition: opacity 0.25s;
     }
 
+    .topology-link.edge-link {
+      transition: opacity 0.25s, stroke-width 0.2s;
+    }
+
+    .topology-link.edge-link:hover {
+      opacity: 1 !important;
+      stroke-width: 2px !important;
+    }
+
     .device-node {
-      stroke: var(--bg);
-      stroke-width: 1.5;
       cursor: pointer;
-      transition: r 0.2s, stroke-width 0.2s, opacity 0.25s;
+      transition: stroke-width 0.2s, fill 0.2s, stroke 0.2s;
     }
 
     .device-node:hover {
-      stroke: #ffffff;
-      stroke-width: 2.5;
+      stroke: #ffffff !important;
+      stroke-width: 2.5px !important;
+      fill: #1e1e24 !important;
     }
 
     .device-node.active {
-      stroke: #ffffff;
-      stroke-width: 3;
-      box-shadow: 0 0 25px white;
+      stroke: #ffffff !important;
+      stroke-width: 3px !important;
+      fill: #272730 !important;
+      filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.8));
+    }
+
+    /* Target the whole group for dimming */
+    .device-node-group {
+      transition: opacity 0.25s ease;
+    }
+
+    .device-node-group.dimmed {
+      opacity: 0.15 !important;
     }
 
     /* Dimming overlay for inactive focus highlight */
-    .device-node.dimmed,
     .topology-link.dimmed,
     .topology-flow.dimmed {
       opacity: 0.12 !important;
@@ -333,6 +369,46 @@ const htmlContent = `<!doctype html>
       stroke: rgba(234, 179, 8, 0.03);
       stroke-width: 1;
     }
+
+    /* Search Box Styling */
+    .search-container {
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .search-input {
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(234, 179, 8, 0.2);
+      border-radius: 8px;
+      padding: 10px 12px 10px 36px;
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: rgba(234, 179, 8, 0.6);
+      box-shadow: 0 0 10px rgba(234, 179, 8, 0.15);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      fill: none;
+      stroke: var(--text-muted);
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -345,6 +421,15 @@ const htmlContent = `<!doctype html>
       </h1>
     </div>
     <div class="sidebar-content">
+      <!-- Search Section -->
+      <div class="search-container">
+        <svg class="search-icon" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8" stroke="#a1a1aa" stroke-width="2" fill="none"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#a1a1aa" stroke-width="2"></line>
+        </svg>
+        <input type="text" class="search-input" id="search-box" placeholder="Search device..." oninput="filterTopologyBySearch(this.value)" />
+      </div>
+
       <!-- Legend Section -->
       <div>
         <div class="section-title">Device Class Legend</div>
@@ -425,6 +510,9 @@ const htmlContent = `<!doctype html>
     </div>
   </div>
 
+  <!-- Sidebar Resizer -->
+  <div id="sidebar-resizer"></div>
+
   <!-- Interactive Map Container -->
   <div id="map-container">
     <div id="viewport">
@@ -456,32 +544,32 @@ const htmlContent = `<!doctype html>
   <script>
     // Geographical center coordinates inside the SVG grid
     const metroCoordinates = {
-      "sfo": { x: 70, y: 420, name: "San Francisco, CA" },
-      "sjc": { x: 70, y: 470, name: "San Jose, CA" },
-      "svl": { x: 70, y: 445, name: "Sunnyvale, CA" },
-      "lax": { x: 100, y: 690, name: "Los Angeles, CA" },
-      "pih": { x: 300, y: 120, name: "Pocatello, ID" },
-      "lgu": { x: 340, y: 210, name: "Logan, UT" },
-      "slc": { x: 340, y: 280, name: "Salt Lake City, UT" },
-      "las": { x: 260, y: 530, name: "Las Vegas, NV" },
-      "phx": { x: 280, y: 710, name: "Phoenix, AZ" },
-      "den": { x: 530, y: 360, name: "Denver, CO" },
-      "sat": { x: 660, y: 870, name: "San Antonio, TX" },
-      "aus": { x: 790, y: 770, name: "Austin, TX" },
-      "dfw": { x: 740, y: 590, name: "Dallas-Fort Worth, TX" },
-      "oma": { x: 740, y: 240, name: "Omaha, NE" },
-      "cbf": { x: 800, y: 250, name: "Council Bluffs, IA" },
-      "dsm": { x: 940, y: 200, name: "Des Moines, IA" },
-      "mci": { x: 860, y: 420, name: "Kansas City, MO" },
-      "jef": { x: 1020, y: 460, name: "Jefferson City, MO" },
-      "ord": { x: 1140, y: 180, name: "Chicago, IL" },
-      "bna": { x: 1200, y: 540, name: "Nashville, TN" },
-      "hsv": { x: 1210, y: 680, name: "Huntsville, AL" },
-      "atl": { x: 1240, y: 760, name: "Atlanta, GA" },
-      "clt": { x: 1340, y: 580, name: "Charlotte, NC" },
-      "rdu": { x: 1460, y: 470, name: "Raleigh-Durham, NC" },
-      "iad": { x: 1480, y: 280, name: "Washington D.C." },
-      "ewr": { x: 1560, y: 120, name: "Newark, NJ" }
+      "sfo": { x: 80, y: 280, name: "San Francisco, CA" },
+      "svl": { x: 80, y: 440, name: "Sunnyvale, CA" },
+      "sjc": { x: 80, y: 600, name: "San Jose, CA" },
+      "lax": { x: 120, y: 780, name: "Los Angeles, CA" },
+      "pih": { x: 300, y: 70, name: "Pocatello, ID" },
+      "lgu": { x: 310, y: 190, name: "Logan, UT" },
+      "slc": { x: 330, y: 330, name: "Salt Lake City, UT" },
+      "las": { x: 230, y: 530, name: "Las Vegas, NV" },
+      "phx": { x: 260, y: 740, name: "Phoenix, AZ" },
+      "den": { x: 520, y: 380, name: "Denver, CO" },
+      "sat": { x: 550, y: 870, name: "San Antonio, TX" },
+      "aus": { x: 720, y: 830, name: "Austin, TX" },
+      "dfw": { x: 700, y: 640, name: "Dallas-Fort Worth, TX" },
+      "oma": { x: 680, y: 180, name: "Omaha, NE" },
+      "cbf": { x: 840, y: 240, name: "Council Bluffs, IA" },
+      "dsm": { x: 980, y: 160, name: "Des Moines, IA" },
+      "mci": { x: 890, y: 440, name: "Kansas City, MO" },
+      "jef": { x: 1080, y: 460, name: "Jefferson City, MO" },
+      "ord": { x: 1180, y: 140, name: "Chicago, IL" },
+      "bna": { x: 980, y: 490, name: "Nashville, TN" },
+      "hsv": { x: 980, y: 860, name: "Huntsville, AL" },
+      "atl": { x: 1280, y: 810, name: "Atlanta, GA" },
+      "clt": { x: 1380, y: 590, name: "Charlotte, NC" },
+      "rdu": { x: 1490, y: 470, name: "Raleigh-Durham, NC" },
+      "iad": { x: 1490, y: 280, name: "Washington D.C." },
+      "ewr": { x: 1560, y: 100, name: "Newark, NJ" }
     };
 
     let topologyData = {};
@@ -563,11 +651,10 @@ const htmlContent = `<!doctype html>
         // Update coordinates in database
         deviceCoords[draggedNode] = { x: newX, y: newY };
 
-        // Update Node Position
-        const circle = document.getElementById('node-' + draggedNode);
-        if (circle) {
-          circle.setAttribute('cx', newX);
-          circle.setAttribute('cy', newY);
+        // Update Node Group transform
+        const group = document.getElementById('node-group-' + draggedNode);
+        if (group) {
+          group.setAttribute('transform', 'translate(' + newX + ', ' + newY + ')');
         }
 
         // Update connected links & flows (Start side)
@@ -609,13 +696,13 @@ const htmlContent = `<!doctype html>
             base.y += dy;
           }
 
-          // Update metro bubble position in DOM
+          // Update metro bubble rect position in DOM
           const bubble = document.getElementById('bubble-' + draggedMetro);
           if (bubble) {
-            const cx = parseFloat(bubble.getAttribute('cx')) + dx;
-            const cy = parseFloat(bubble.getAttribute('cy')) + dy;
-            bubble.setAttribute('cx', cx);
-            bubble.setAttribute('cy', cy);
+            const bx = parseFloat(bubble.getAttribute('x')) + dx;
+            const by = parseFloat(bubble.getAttribute('y')) + dy;
+            bubble.setAttribute('x', bx);
+            bubble.setAttribute('y', by);
           }
 
           // Update metro label position in DOM
@@ -635,10 +722,9 @@ const htmlContent = `<!doctype html>
               nodeCoords.x += dx;
               nodeCoords.y += dy;
 
-              const circle = document.getElementById('node-' + dev);
-              if (circle) {
-                circle.setAttribute('cx', nodeCoords.x);
-                circle.setAttribute('cy', nodeCoords.y);
+              const group = document.getElementById('node-group-' + dev);
+              if (group) {
+                group.setAttribute('transform', 'translate(' + nodeCoords.x + ', ' + nodeCoords.y + ')');
               }
 
               // Update connected links & flows (Start side)
@@ -804,37 +890,220 @@ const htmlContent = `<!doctype html>
           devicesByMetro[metro].push(device);
         });
 
-        // 2. Calculate coordinates for ALL device nodes (including peers)
+        // 2. Calculate bubble sizes and coordinates for ALL device nodes (including peers)
+        const bubbleSizes = {};
+        const bngGroupsByMetro = {}; // maps metro -> bngGroups
+        const bngRepsByMetro = {};   // maps metro -> bngReps
+
+        const getConnectingCR = (bngName) => {
+          const details = topologyData[bngName];
+          if (!details) return 'cr01';
+          for (const intf of Object.keys(details)) {
+            const remote = details[intf].remote_device;
+            if (remote && remote.startsWith('cr')) {
+              return remote;
+            }
+          }
+          return 'cr01';
+        };
+
+        Object.keys(devicesByMetro).forEach(metro => {
+          const devices = devicesByMetro[metro];
+          
+          // Sort devices by role (placing CRs at the top of the grid to receive backbone connection lines)
+          devices.sort((a, b) => {
+            const roleA = getDeviceRole(a);
+            const roleB = getDeviceRole(b);
+            const order = { "cr-backbone": 1, "cr-metro": 2, "rr": 3, "pr": 4, "bng": 5, "unknown": 6 };
+            return (order[roleA] || 99) - (order[roleB] || 99);
+          });
+
+          const bngs = devices.filter(d => getDeviceRole(d) === 'bng');
+          const nonBngs = devices.filter(d => getDeviceRole(d) !== 'bng');
+
+          const bngGroups = {};
+          bngs.forEach(bng => {
+            const cr = getConnectingCR(bng);
+            bngGroups[cr] = bngGroups[cr] || [];
+            bngGroups[cr].push(bng);
+          });
+
+          const logicalNodes = [...nonBngs];
+          const bngReps = {};
+          Object.keys(bngGroups).forEach(cr => {
+            const group = bngGroups[cr];
+            if (group.length > 0) {
+              const rep = group[0];
+              logicalNodes.push(rep);
+              bngReps[rep] = group;
+            }
+          });
+
+          bngGroupsByMetro[metro] = bngGroups;
+          bngRepsByMetro[metro] = bngReps;
+
+          let cols = 1;
+          if (logicalNodes.length > 1) cols = 2;
+          if (logicalNodes.length > 6) cols = 3;
+          if (logicalNodes.length > 12) cols = 4;
+          
+          const rows = Math.ceil(logicalNodes.length / cols);
+          const dx = 105;
+          const dy = 36;
+          
+          const gridWidth = (cols - 1) * dx;
+          const gridHeight = (rows - 1) * dy;
+          
+          const maxStackSize = Math.max(...Object.keys(bngGroups).map(k => bngGroups[k].length), 0);
+          const stackHeightPadding = maxStackSize > 0 ? (maxStackSize - 1) * 8 : 0;
+          const stackWidthPadding = maxStackSize > 0 ? (maxStackSize - 1) * 3 : 0;
+
+          bubbleSizes[metro] = {
+            width: gridWidth + 85 + 30 + stackWidthPadding,
+            height: gridHeight + 22 + 30 + stackHeightPadding,
+            cols: cols,
+            rows: rows,
+            dx: dx,
+            dy: dy,
+            gridWidth: gridWidth,
+            gridHeight: gridHeight,
+            logicalNodes: logicalNodes,
+            bngReps: bngReps
+          };
+        });
+
+        // Copy base coordinates and run physics solver to prevent any overlapping bubbles
+        const adjustedCoordinates = {};
+        Object.keys(devicesByMetro).forEach(metro => {
+          const base = metroCoordinates[metro] || { x: 500, y: 300 };
+          adjustedCoordinates[metro] = { x: base.x, y: base.y };
+        });
+
+        // Physics solver: 50 iterations to push overlapping bubble boundaries apart
+        for (let iter = 0; iter < 50; iter++) {
+          let shifted = false;
+          const metros = Object.keys(devicesByMetro);
+          for (let i = 0; i < metros.length; i++) {
+            for (let j = i + 1; j < metros.length; j++) {
+              const m1 = metros[i];
+              const m2 = metros[j];
+              
+              const c1 = adjustedCoordinates[m1];
+              const c2 = adjustedCoordinates[m2];
+              
+              const s1 = bubbleSizes[m1];
+              const s2 = bubbleSizes[m2];
+              
+              const halfW1 = s1.width / 2;
+              const halfH1 = s1.height / 2;
+              const halfW2 = s2.width / 2;
+              const halfH2 = s2.height / 2;
+              
+              const margin = 35; // Ensure a clean gap of at least 35px between bubbles
+              
+              const dx = c2.x - c1.x;
+              const dy = c2.y - c1.y;
+              
+              const minXDist = halfW1 + halfW2 + margin;
+              const minYDist = halfH1 + halfH2 + margin;
+              
+              const overlapX = minXDist - Math.abs(dx);
+              const overlapY = minYDist - Math.abs(dy);
+              
+              if (overlapX > 0 && overlapY > 0) {
+                // We have an overlap! Push them apart along the smaller axis
+                if (overlapX < overlapY) {
+                  const push = overlapX / 2;
+                  const dir = dx >= 0 ? 1 : -1;
+                  c1.x -= push * dir;
+                  c2.x += push * dir;
+                } else {
+                  const push = overlapY / 2;
+                  const dir = dy >= 0 ? 1 : -1;
+                  c1.y -= push * dir;
+                  c2.y += push * dir;
+                }
+                shifted = true;
+              }
+            }
+          }
+          
+          // Clamp all bubbles to stay strictly within the 1600x900 SVG viewBox bounds
+          metros.forEach(metro => {
+            const coord = adjustedCoordinates[metro];
+            const size = bubbleSizes[metro];
+            const halfW = size.width / 2;
+            const halfH = size.height / 2;
+            
+            const minX = halfW + 20;
+            const maxX = 1600 - halfW - 20;
+            const minY = halfH + 20;
+            const maxY = 900 - halfH - 20;
+            
+            if (coord.x < minX) coord.x = minX;
+            if (coord.x > maxX) coord.x = maxX;
+            if (coord.y < minY) coord.y = minY;
+            if (coord.y > maxY) coord.y = maxY;
+          });
+
+          if (!shifted) break;
+        }
+
         deviceCoords = {};
         const metroBubbles = document.getElementById('metro-bubbles');
         const metroLabels = document.getElementById('metro-labels');
         
         let bubblesHTML = '';
         let labelsHTML = '';
+        
+        // Map device to its stack index for render layering order
+        const stackIndices = {};
 
         Object.keys(devicesByMetro).forEach(metro => {
           const devices = devicesByMetro[metro];
-          const base = metroCoordinates[metro] || { x: 500, y: 300, name: "Unknown Location" };
+          const base = adjustedCoordinates[metro];
+          const size = bubbleSizes[metro];
           
-          // Draw Metro Bubble in the background
-          const bubbleRadius = 22 + (devices.length * 3.5);
-          bubblesHTML += ` + "`" + `<circle class="metro-bubble" id="bubble-${metro}" data-metro="${metro}" cx="${base.x}" cy="${base.y}" r="${bubbleRadius}" onmousedown="startDragMetro(event, '${metro}')" />` + "`" + `;
+          const bx = base.x - size.width / 2;
+          const by = base.y - size.height / 2;
+
+          // Check if it is a Backbone Site (BB Site) or standard Metro Site
+          const bbMetros = new Set(["lax", "sjc", "slc", "cbf", "ord", "iad", "ewr"]);
+          const isBB = bbMetros.has(metro.toLowerCase());
+          
+          const fill = isBB ? "rgba(69, 45, 10, 0.55)" : "rgba(30, 41, 59, 0.65)";
+          const stroke = isBB ? "rgba(234, 179, 8, 0.55)" : "rgba(148, 163, 184, 0.45)";
+          const shadowGlow = isBB ? "rgba(234, 179, 8, 0.25)" : "rgba(148, 163, 184, 0.15)";
+
+          // Draw Metro Bubble with premium drop-shadow glow and distinguished background color
+          bubblesHTML += '<rect class="metro-bubble" id="bubble-' + metro + '" data-metro="' + metro + '" x="' + bx + '" y="' + by + '" width="' + size.width + '" height="' + size.height + '" rx="16" ry="16" fill="' + fill + '" stroke="' + stroke + '" style="filter: drop-shadow(0 4px 12px ' + shadowGlow + ');" onmousedown="startDragMetro(event, \'' + metro + '\')" />';
           
           // Draw Metro Label
-          labelsHTML += ` + "`" + `<text class="metro-label" id="label-${metro}" x="${base.x}" y="${base.y + bubbleRadius + 14}" text-anchor="middle">${metro.toUpperCase()}</text>` + "`" + `;
+          labelsHTML += '<text class="metro-label" id="label-' + metro + '" x="' + base.x + '" y="' + (base.y + size.height / 2 + 14) + '" text-anchor="middle">' + metro.toUpperCase() + '</text>';
 
-          if (devices.length === 1) {
-            deviceCoords[devices[0]] = { x: base.x, y: base.y };
-          } else {
-            const offsetRadius = 13 + (devices.length * 1.5);
-            devices.forEach((dev, idx) => {
-              const angle = (idx / devices.length) * 2 * Math.PI;
+          const offsetX = -size.gridWidth / 2;
+          const offsetY = -size.gridHeight / 2;
+          
+          size.logicalNodes.forEach((dev, idx) => {
+            const r = Math.floor(idx / size.cols);
+            const c = idx % size.cols;
+            const group = size.bngReps[dev];
+            
+            if (group) {
+              group.forEach((gDev, gIdx) => {
+                stackIndices[gDev] = gIdx;
+                deviceCoords[gDev] = {
+                  x: base.x + offsetX + c * size.dx + gIdx * 3,
+                  y: base.y + offsetY + r * size.dy + gIdx * 8
+                };
+              });
+            } else {
               deviceCoords[dev] = {
-                x: base.x + offsetRadius * Math.cos(angle),
-                y: base.y + offsetRadius * Math.sin(angle)
+                x: base.x + offsetX + c * size.dx,
+                y: base.y + offsetY + r * size.dy
               };
-            });
-          }
+            }
+          });
         });
 
         metroBubbles.innerHTML = bubblesHTML;
@@ -868,59 +1137,73 @@ const htmlContent = `<!doctype html>
 
             const capBps = linkDetail.capacity_bps || 100000000000;
             const color = getCapacityColor(capBps);
-            const width = getCapacityWidth(capBps);
 
-            linksHTML += ` + "`" + `
-              <line class="topology-link" id="link-${linkKey}"
-                data-start="${localDev}" data-end="${remoteDev}"
-                x1="${start.x}" y1="${start.y}" 
-                x2="${end.x}" y2="${end.y}" 
-                stroke="${color}" 
-                stroke-width="${width}"
-                onclick="selectLink('${localDev}', '${intf}')"
-                onmouseenter="showLinkTooltip(event, '${localDev}', '${intf}')"
-                onmouseleave="hideTooltip()"
-              />
-              <line class="topology-flow" id="flow-${linkKey}"
-                x1="${start.x}" y1="${start.y}" 
-                x2="${end.x}" y2="${end.y}" 
-                stroke="rgba(255, 255, 255, 0.5)" 
-                stroke-width="${Math.max(1.0, width * 0.25)}"
-                stroke-dasharray="6, 10"
-                style="animation: flow-anim 1.5s linear infinite; pointer-events: none;"
-              />
-            ` + "`" + `;
+            const roleLocal = getDeviceRole(localDev);
+            const roleRemote = getDeviceRole(remoteDev);
+            const isCoreLocal = (roleLocal === "cr-backbone" || roleLocal === "cr-metro" || roleLocal === "rr");
+            const isCoreRemote = (roleRemote === "cr-backbone" || roleRemote === "cr-metro" || roleRemote === "rr");
+            const isCoreLink = isCoreLocal && isCoreRemote;
+
+            if (isCoreLink) {
+              const width = getCapacityWidth(capBps);
+              linksHTML += '<line class="topology-link" id="link-' + linkKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="' + color + '" stroke-width="' + width + '" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" />';
+              linksHTML += '<line class="topology-flow" id="flow-' + linkKey + '" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="rgba(255, 255, 255, 0.5)" stroke-width="' + Math.max(1.0, width * 0.25) + '" stroke-dasharray="6, 10" style="animation: flow-anim 1.5s linear infinite; pointer-events: none;" />';
+            } else {
+              linksHTML += '<line class="topology-link edge-link" id="link-' + linkKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" opacity="0.45" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" />';
+            }
+            // Invisible thick hover helper (makes line hovering extremely responsive and sensitive)
+            linksHTML += '<line class="topology-hover-helper" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="transparent" stroke-width="15" style="cursor: pointer;" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\'); highlightLinkLine(\'' + linkKey + '\')" onmouseleave="hideTooltip(); unhighlightLinkLine(\'' + linkKey + '\')" />';
           });
         });
         linksGroup.innerHTML = linksHTML;
-
-        // Helper for sizing nodes hierarchically
-        function getNodeRadius(role) {
-          if (role === "cr-backbone" || role === "cr-metro" || role === "rr") return 9.5;
-          if (role === "pr") return 7.5;
-          return 5.5; // BNG
-        }
 
         // 4. Draw Device Nodes (Local + Discovered Peers)
         const nodesGroup = document.getElementById('device-nodes');
         let nodesHTML = '';
 
-        allDevices.forEach(dev => {
+        const renderDevices = Array.from(allDevices);
+        renderDevices.sort((a, b) => {
+          const idxA = stackIndices[a] || 0;
+          const idxB = stackIndices[b] || 0;
+          return idxB - idxA; // Draw larger stack index (behind) first!
+        });
+
+        renderDevices.forEach(dev => {
           const coord = deviceCoords[dev];
           const role = getDeviceRole(dev);
           const color = getDeviceColor(role);
-          const radius = getNodeRadius(role);
 
-          nodesHTML += ` + "`" + `
-            <circle class="device-node" id="node-${dev}"
-              cx="${coord.x}" cy="${coord.y}" r="${radius}" 
-              fill="${color}"
-              onmousedown="startDragNode(event, '${dev}')"
-              onclick="selectNode('${dev}')"
-              onmouseenter="showNodeTooltip(event, '${dev}')"
-              onmouseleave="hideTooltip()"
-            />
-          ` + "`" + `;
+          const isCR = (role === "cr-backbone" || role === "cr-metro");
+          const isRR = (role === "rr");
+          const isCore = isCR || isRR;
+
+          const w = isCore ? 90 : 76;
+          const h = isCore ? 24 : 18;
+          const halfW = w / 2;
+          const halfH = h / 2;
+          
+          const fontSize = isCore ? "9px" : "7.8px";
+          const textDy = isCore ? "3px" : "2.5px";
+          const strokeW = isCore ? 2 : 1.2;
+
+          nodesHTML += '<g class="device-node-group" id="node-group-' + dev + '" transform="translate(' + coord.x + ', ' + coord.y + ')">';
+          
+          if (isCR) {
+            // Core Router: Hexagon shape
+            nodesHTML += '  <polygon class="device-node-glow" points="-45,0 -33,-12 33,-12 45,0 33,12 -33,12" fill="none" stroke="' + color + '" stroke-width="4" opacity="0.18" style="pointer-events: none;" />';
+            nodesHTML += '  <polygon class="device-node" id="node-' + dev + '" points="-45,0 -33,-12 33,-12 45,0 33,12 -33,12" fill="#121214" stroke="' + color + '" stroke-width="' + strokeW + '" onmousedown="startDragNode(event, \'' + dev + '\')" onclick="selectNode(\'' + dev + '\')" onmouseenter="showNodeTooltip(event, \'' + dev + '\')" onmouseleave="hideTooltip()" />';
+          } else {
+            // Route Reflector / Peering / BNG: Rectangle shape
+            const rx = isRR ? 12 : 5;
+            const ry = isRR ? 12 : 5;
+            if (isCore) {
+              nodesHTML += '  <rect class="device-node-glow" x="-' + halfW + '" y="-' + halfH + '" width="' + w + '" height="' + h + '" rx="' + rx + '" ry="' + ry + '" fill="none" stroke="' + color + '" stroke-width="4" opacity="0.18" style="pointer-events: none;" />';
+            }
+            nodesHTML += '  <rect class="device-node" id="node-' + dev + '" x="-' + halfW + '" y="-' + halfH + '" width="' + w + '" height="' + h + '" rx="' + rx + '" ry="' + ry + '" fill="#121214" stroke="' + color + '" stroke-width="' + strokeW + '" onmousedown="startDragNode(event, \'' + dev + '\')" onclick="selectNode(\'' + dev + '\')" onmouseenter="showNodeTooltip(event, \'' + dev + '\')" onmouseleave="hideTooltip()" />';
+          }
+          
+          nodesHTML += '  <text class="device-node-text" x="0" y="0" dy="' + textDy + '" text-anchor="middle" fill="#ffffff" style="font-family: \'JetBrains Mono\', monospace; font-size: ' + fontSize + '; font-weight: 600; pointer-events: none; text-shadow: 0 1px 2px rgba(0,0,0,0.8);">' + dev + '</text>';
+          nodesHTML += '</g>';
         });
         nodesGroup.innerHTML = nodesHTML;
 
@@ -956,41 +1239,57 @@ const htmlContent = `<!doctype html>
     }
 
     function positionTooltip(e) {
-      tooltip.style.left = (e.clientX + 15) + 'px';
-      tooltip.style.top = (e.clientY + 15) + 'px';
+      const containerRect = container.getBoundingClientRect();
+      const x = e.clientX - containerRect.left;
+      const y = e.clientY - containerRect.top;
+      tooltip.style.left = (x + 15) + 'px';
+      tooltip.style.top = (y + 15) + 'px';
     }
 
     function hideTooltip() {
       tooltip.style.display = 'none';
     }
 
+    function highlightLinkLine(linkKey) {
+      const link = document.getElementById('link-' + linkKey);
+      if (link) {
+        const baseWidth = parseFloat(link.getAttribute('stroke-width')) || 1.2;
+        link.style.strokeWidth = (baseWidth + 2.5) + 'px';
+        link.style.opacity = '1.0';
+      }
+    }
+
+    function unhighlightLinkLine(linkKey) {
+      const link = document.getElementById('link-' + linkKey);
+      if (link) {
+        link.style.strokeWidth = '';
+        link.style.opacity = '';
+      }
+    }
+
     // Node & Link Selection Panels
     let selectedNode = null;
 
     function selectNode(device) {
-      // Helper for sizing nodes hierarchically
-      function getNodeRadius(role) {
-        if (role === "cr-backbone" || role === "cr-metro" || role === "rr") return 9.5;
-        if (role === "pr") return 7.5;
-        return 5.5; // BNG
+      // Toggle selection off if clicking already selected node
+      if (selectedNode === device) {
+        resetSelection();
+        return;
       }
-
       // Reset all dimming and active classes
+      document.querySelectorAll('.device-node-group').forEach(group => {
+        group.classList.remove('dimmed');
+      });
       document.querySelectorAll('.device-node').forEach(node => {
-        node.classList.remove('active', 'dimmed');
-        const devName = node.id.replace('node-', '');
-        const role = getDeviceRole(devName);
-        node.setAttribute('r', getNodeRadius(role));
+        node.classList.remove('active');
       });
       document.querySelectorAll('.topology-link, .topology-flow').forEach(el => {
         el.classList.remove('dimmed');
       });
 
-      const circle = document.getElementById(` + "`" + `node-${device}` + "`" + `);
-      if (circle) {
-        circle.classList.add('active');
-        const role = getDeviceRole(device);
-        circle.setAttribute('r', getNodeRadius(role) + 3);
+      const rect = document.getElementById('node-' + device);
+      if (rect) {
+        rect.classList.add('active');
       }
 
       selectedNode = device;
@@ -1009,7 +1308,7 @@ const htmlContent = `<!doctype html>
       Object.keys(details).forEach(intf => {
         const link = details[intf];
         connectedDevices.add(link.remote_device);
-        intfsStr += ` + "`" + `${intf} -> ${link.remote_device} (${link.capacity_human})\n` + "`" + `;
+        intfsStr += intf + ' -> ' + link.remote_device + ' (' + link.capacity_human + ')\n';
       });
 
       // 2. Scan other audited devices for incoming connections pointing to this device
@@ -1018,7 +1317,7 @@ const htmlContent = `<!doctype html>
         Object.keys(intfs).forEach(intf => {
           if (intfs[intf].remote_device === device) {
             connectedDevices.add(localDev);
-            intfsStr += ` + "`" + `[Peer] ${localDev} (${intf}) -> This Device (${intfs[intf].capacity_human})\n` + "`" + `;
+            intfsStr += '[Peer] ' + localDev + ' (' + intf + ') -> This Device (' + intfs[intf].capacity_human + ')\n';
           }
         });
       });
@@ -1026,10 +1325,10 @@ const htmlContent = `<!doctype html>
       document.getElementById('info-interfaces').textContent = intfsStr || 'Device was unreachable during audit cycle.';
       
       // Dim out non-connected nodes
-      document.querySelectorAll('.device-node').forEach(node => {
-        const devName = node.id.replace('node-', '');
+      document.querySelectorAll('.device-node-group').forEach(group => {
+        const devName = group.id.replace('node-group-', '');
         if (devName !== device && !connectedDevices.has(devName)) {
-          node.classList.add('dimmed');
+          group.classList.add('dimmed');
         }
       });
 
@@ -1053,18 +1352,12 @@ const htmlContent = `<!doctype html>
     }
 
     function resetSelection() {
-      function getNodeRadius(role) {
-        if (role === "cr-backbone" || role === "cr-metro" || role === "rr") return 9.5;
-        if (role === "pr") return 7.5;
-        return 5.5; // BNG
-      }
-
       selectedNode = null;
+      document.querySelectorAll('.device-node-group').forEach(group => {
+        group.classList.remove('dimmed');
+      });
       document.querySelectorAll('.device-node').forEach(node => {
-        node.classList.remove('active', 'dimmed');
-        const devName = node.id.replace('node-', '');
-        const role = getDeviceRole(devName);
-        node.setAttribute('r', getNodeRadius(role));
+        node.classList.remove('active');
       });
       document.querySelectorAll('.topology-link, .topology-flow').forEach(el => {
         el.classList.remove('dimmed');
@@ -1072,10 +1365,116 @@ const htmlContent = `<!doctype html>
       document.getElementById('selection-panel').style.display = 'none';
     }
 
+    function filterTopologyBySearch(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        resetSelection();
+        return;
+      }
+
+      selectedNode = null;
+      document.getElementById('selection-panel').style.display = 'none';
+
+      const matchingDevices = new Set();
+      
+      document.querySelectorAll('.device-node-group').forEach(group => {
+        const devName = group.id.replace('node-group-', '');
+        if (devName.toLowerCase().indexOf(q) !== -1) {
+          matchingDevices.add(devName);
+        }
+      });
+
+      if (matchingDevices.size === 1) {
+        const singleDev = Array.from(matchingDevices)[0];
+        selectNode(singleDev);
+        return;
+      }
+
+      // Highlight matching groups, dim non-matches
+      document.querySelectorAll('.device-node-group').forEach(group => {
+        const devName = group.id.replace('node-group-', '');
+        if (matchingDevices.has(devName)) {
+          group.classList.remove('dimmed');
+          const node = document.getElementById('node-' + devName);
+          if (node) {
+            node.classList.add('active');
+          }
+        } else {
+          group.classList.add('dimmed');
+          const node = document.getElementById('node-' + devName);
+          if (node) {
+            node.classList.remove('active');
+          }
+        }
+      });
+
+      // Dim out links where neither end matches
+      document.querySelectorAll('.topology-link').forEach(link => {
+        const startDev = link.getAttribute('data-start');
+        const endDev = link.getAttribute('data-end');
+        if (matchingDevices.has(startDev) || matchingDevices.has(endDev)) {
+          link.classList.remove('dimmed');
+          const flowId = link.id.replace('link-', 'flow-');
+          const flow = document.getElementById(flowId);
+          if (flow) flow.classList.remove('dimmed');
+        } else {
+          link.classList.add('dimmed');
+          const flowId = link.id.replace('link-', 'flow-');
+          const flow = document.getElementById(flowId);
+          if (flow) flow.classList.add('dimmed');
+        }
+      });
+    }
+
     function selectLink(localDev, intf) {
       // Programmatically select the local device
       selectNode(localDev);
     }
+
+    // Clear highlights by clicking on empty/blank SVG canvas areas
+    document.addEventListener('DOMContentLoaded', () => {
+      const svg = document.getElementById('map-svg');
+      if (svg) {
+        svg.addEventListener('click', (e) => {
+          if (e.target.closest('.device-node') || e.target.closest('.topology-link') || e.target.closest('.metro-bubble') || e.target.closest('.device-node-glow')) return;
+          resetSelection();
+        });
+      }
+    });
+
+    // Sidebar Resizing Logic
+    document.addEventListener('DOMContentLoaded', () => {
+      const sidebar = document.getElementById('sidebar');
+      const resizer = document.getElementById('sidebar-resizer');
+      let isResizing = false;
+
+      if (resizer && sidebar) {
+        resizer.addEventListener('mousedown', (e) => {
+          isResizing = true;
+          resizer.classList.add('resizing');
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+          e.preventDefault();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+          if (!isResizing) return;
+          let newWidth = e.clientX;
+          if (newWidth < 280) newWidth = 280;
+          if (newWidth > 600) newWidth = 600;
+          sidebar.style.width = newWidth + 'px';
+        });
+
+        window.addEventListener('mouseup', () => {
+          if (isResizing) {
+            isResizing = false;
+            resizer.classList.remove('resizing');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+          }
+        });
+      }
+    });
 
     document.addEventListener('DOMContentLoaded', loadTopology);
   </script>
