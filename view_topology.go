@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-const defaultPort = "9090"
+const defaultPort = "9001"
 
 func main() {
 	// Setup structured logger
@@ -395,12 +395,12 @@ const htmlContent = `<!doctype html>
   <!-- Interactive Map Container -->
   <div id="map-container">
     <div id="viewport">
-      <svg id="map-svg" viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet">
+      <svg id="map-svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet">
         <!-- Grids -->
         <g id="svg-grid"></g>
 
-        <!-- US Contour Approximation path to give geographic context -->
-        <path class="us-outline" d="M 100,150 C 150,100 300,110 350,90 C 400,70 500,80 600,70 C 700,60 800,80 850,110 C 890,130 920,110 940,180 C 960,220 950,280 930,300 C 910,320 930,380 910,400 C 890,420 850,400 820,440 C 800,460 820,520 780,530 C 750,540 700,480 680,480 C 660,480 620,500 590,480 C 560,460 510,460 470,480 C 450,490 430,520 400,530 C 380,540 340,520 310,480 C 280,450 250,460 230,420 C 210,400 180,380 160,370 C 140,360 130,320 110,310 C 90,300 60,310 50,270 C 40,230 70,210 80,190 Z" />
+        <!-- US Contour Approximation path scaled up by 1.6 for expanded viewbox -->
+        <path class="us-outline" transform="scale(1.6)" d="M 100,150 C 150,100 300,110 350,90 C 400,70 500,80 600,70 C 700,60 800,80 850,110 C 890,130 920,110 940,180 C 960,220 950,280 930,300 C 910,320 930,380 910,400 C 890,420 850,400 820,440 C 800,460 820,520 780,530 C 750,540 700,480 680,480 C 660,480 620,500 590,480 C 560,460 510,460 470,480 C 450,490 430,520 400,530 C 380,540 340,520 310,480 C 280,450 250,460 230,420 C 210,400 180,380 160,370 C 140,360 130,320 110,310 C 90,300 60,310 50,270 C 40,230 70,210 80,190 Z" />
 
         <!-- Metro Bubbles group -->
         <g id="metro-bubbles"></g>
@@ -423,32 +423,32 @@ const htmlContent = `<!doctype html>
   <script>
     // Geographical center coordinates inside the SVG grid
     const metroCoordinates = {
-      "atl": { x: 780, y: 390, name: "Atlanta, GA" },
-      "aus": { x: 490, y: 470, name: "Austin, TX" },
-      "bna": { x: 710, y: 340, name: "Nashville, TN" },
-      "cbf": { x: 540, y: 230, name: "Council Bluffs, IA" },
-      "clt": { x: 810, y: 330, name: "Charlotte, NC" },
-      "den": { x: 360, y: 240, name: "Denver, CO" },
-      "dfw": { x: 510, y: 410, name: "Dallas-Fort Worth, TX" },
-      "dsm": { x: 580, y: 220, name: "Des Moines, IA" },
-      "ewr": { x: 890, y: 180, name: "Newark, NJ" },
-      "hsv": { x: 720, y: 380, name: "Huntsville, AL" },
-      "iad": { x: 860, y: 240, name: "Washington D.C." },
-      "jef": { x: 610, y: 290, name: "Jefferson City, MO" },
-      "las": { x: 180, y: 330, name: "Las Vegas, NV" },
-      "lax": { x: 90, y: 380, name: "Los Angeles, CA" },
-      "lgu": { x: 230, y: 190, name: "Logan, UT" },
-      "mci": { x: 560, y: 280, name: "Kansas City, MO" },
-      "oma": { x: 530, y: 230, name: "Omaha, NE" },
-      "ord": { x: 680, y: 200, name: "Chicago, IL" },
-      "phx": { x: 200, y: 410, name: "Phoenix, AZ" },
-      "pih": { x: 220, y: 130, name: "Pocatello, ID" },
-      "rdu": { x: 840, y: 310, name: "Raleigh-Durham, NC" },
-      "sat": { x: 470, y: 500, name: "San Antonio, TX" },
-      "sfo": { x: 40, y: 240, name: "San Francisco, CA" },
-      "sjc": { x: 50, y: 260, name: "San Jose, CA" },
-      "slc": { x: 220, y: 200, name: "Salt Lake City, UT" },
-      "svl": { x: 50, y: 250, name: "Sunnyvale, CA" }
+      "sfo": { x: 80, y: 400, name: "San Francisco, CA" },
+      "sjc": { x: 80, y: 430, name: "San Jose, CA" },
+      "svl": { x: 80, y: 415, name: "Sunnyvale, CA" },
+      "lax": { x: 120, y: 650, name: "Los Angeles, CA" },
+      "pih": { x: 320, y: 150, name: "Pocatello, ID" },
+      "lgu": { x: 350, y: 240, name: "Logan, UT" },
+      "slc": { x: 350, y: 290, name: "Salt Lake City, UT" },
+      "las": { x: 280, y: 520, name: "Las Vegas, NV" },
+      "phx": { x: 300, y: 680, name: "Phoenix, AZ" },
+      "den": { x: 550, y: 360, name: "Denver, CO" },
+      "sat": { x: 720, y: 820, name: "San Antonio, TX" },
+      "aus": { x: 760, y: 780, name: "Austin, TX" },
+      "dfw": { x: 780, y: 640, name: "Dallas-Fort Worth, TX" },
+      "oma": { x: 780, y: 280, name: "Omaha, NE" },
+      "cbf": { x: 820, y: 280, name: "Council Bluffs, IA" },
+      "dsm": { x: 920, y: 260, name: "Des Moines, IA" },
+      "mci": { x: 880, y: 380, name: "Kansas City, MO" },
+      "jef": { x: 980, y: 420, name: "Jefferson City, MO" },
+      "ord": { x: 1100, y: 220, name: "Chicago, IL" },
+      "bna": { x: 1180, y: 560, name: "Nashville, TN" },
+      "hsv": { x: 1200, y: 660, name: "Huntsville, AL" },
+      "atl": { x: 1240, y: 720, name: "Atlanta, GA" },
+      "clt": { x: 1360, y: 580, name: "Charlotte, NC" },
+      "rdu": { x: 1420, y: 520, name: "Raleigh-Durham, NC" },
+      "iad": { x: 1440, y: 340, name: "Washington D.C." },
+      "ewr": { x: 1520, y: 200, name: "Newark, NJ" }
     };
 
     let topologyData = {};
@@ -513,12 +513,12 @@ const htmlContent = `<!doctype html>
       const gridGroup = document.getElementById('svg-grid');
       let gridHTML = '';
       // Vertical Lines
-      for (let x = 0; x <= 1000; x += 50) {
-        gridHTML += ` + "`" + `<line class="grid-line" x1="${x}" y1="0" x2="${x}" y2="600" />` + "`" + `;
+      for (let x = 0; x <= 1600; x += 80) {
+        gridHTML += ` + "`" + `<line class="grid-line" x1="${x}" y1="0" x2="${x}" y2="900" />` + "`" + `;
       }
       // Horizontal Lines
-      for (let y = 0; y <= 600; y += 50) {
-        gridHTML += ` + "`" + `<line class="grid-line" x1="0" y1="${y}" x2="1000" y2="${y}" />` + "`" + `;
+      for (let y = 0; y <= 900; y += 80) {
+        gridHTML += ` + "`" + `<line class="grid-line" x1="0" y1="${y}" x2="1600" y2="${y}" />` + "`" + `;
       }
       gridGroup.innerHTML = gridHTML;
     }
