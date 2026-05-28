@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export WEB_HOST="${WEB_HOST:-127.0.0.1}"
+export WEB_PORT="${WEB_PORT:-9002}"
+export ANTIGRAVITY_SIDECAR_WEB_PORT="${ANTIGRAVITY_SIDECAR_WEB_PORT:-$WEB_PORT}"
+
+cd "${SCRIPT_DIR}"
+
+# Find and kill any running view_topology process before starting
+echo "Checking for running view_topology processes..."
+PIDS=$(pgrep -x "view_topology" || true)
+if [ -n "${PIDS}" ]; then
+  echo "Found running view_topology process with PID: ${PIDS}. Killing it."
+  kill -9 ${PIDS} || true
+  sleep 1
+else
+  echo "No running view_topology processes found."
+fi
+
+# Recompile the binary dynamically if 'go' is installed to ensure native compatibility on the host machine
+if command -v go >/dev/null 2>&1; then
+  echo "Compiling native topology server binary..."
+  go build -o view_topology view_topology.go
+elif [ ! -f "view_topology" ]; then
+  echo "Error: 'go' command not found, and no pre-compiled 'view_topology' binary exists."
+  echo "Please install Go or compile view_topology.go manually."
+  exit 1
+fi
+
+echo "Starting GFiber Topology Map on ${WEB_HOST}:${ANTIGRAVITY_SIDECAR_WEB_PORT}."
+echo "If running remotely, open an SSH tunnel from your Mac and browse to:"
+echo "http://127.0.0.1:${ANTIGRAVITY_SIDECAR_WEB_PORT}"
+
+exec ./view_topology

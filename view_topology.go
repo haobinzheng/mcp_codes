@@ -1201,6 +1201,10 @@ const htmlContent = `<!doctype html>
             flow.setAttribute('y1', newY);
           }
         });
+        document.querySelectorAll('.topology-hover-helper[data-start="' + draggedNode + '"]').forEach(helper => {
+          helper.setAttribute('x1', newX);
+          helper.setAttribute('y1', newY);
+        });
 
         // Update connected links & flows (End side)
         document.querySelectorAll('.topology-link[data-end="' + draggedNode + '"]').forEach(link => {
@@ -1212,6 +1216,10 @@ const htmlContent = `<!doctype html>
             flow.setAttribute('x2', newX);
             flow.setAttribute('y2', newY);
           }
+        });
+        document.querySelectorAll('.topology-hover-helper[data-end="' + draggedNode + '"]').forEach(helper => {
+          helper.setAttribute('x2', newX);
+          helper.setAttribute('y2', newY);
         });
       } else if (draggedMetro) {
         e.preventDefault();
@@ -1271,6 +1279,10 @@ const htmlContent = `<!doctype html>
                   flow.setAttribute('y1', nodeCoords.y);
                 }
               });
+              document.querySelectorAll('.topology-hover-helper[data-start="' + dev + '"]').forEach(helper => {
+                helper.setAttribute('x1', nodeCoords.x);
+                helper.setAttribute('y1', nodeCoords.y);
+              });
 
               // Update connected links & flows (End side)
               document.querySelectorAll('.topology-link[data-end="' + dev + '"]').forEach(link => {
@@ -1282,6 +1294,10 @@ const htmlContent = `<!doctype html>
                   flow.setAttribute('x2', nodeCoords.x);
                   flow.setAttribute('y2', nodeCoords.y);
                 }
+              });
+              document.querySelectorAll('.topology-hover-helper[data-end="' + dev + '"]').forEach(helper => {
+                helper.setAttribute('x2', nodeCoords.x);
+                helper.setAttribute('y2', nodeCoords.y);
               });
             }
           });
@@ -1719,7 +1735,7 @@ const htmlContent = `<!doctype html>
               linksHTML += '<line class="topology-link edge-link" id="link-' + linkKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" opacity="0.45" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" />';
             }
             // Invisible thick hover helper (makes line hovering extremely responsive and sensitive)
-            linksHTML += '<line class="topology-hover-helper" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="transparent" stroke-width="15" style="cursor: pointer;" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\'); highlightLinkLine(\'' + linkKey + '\')" onmouseleave="hideTooltip(); unhighlightLinkLine(\'' + linkKey + '\')" />';
+            linksHTML += '<line class="topology-hover-helper" id="hover-link-' + linkKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="transparent" stroke-width="15" style="cursor: pointer;" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\'); highlightLinkLine(\'' + linkKey + '\')" onmouseleave="hideTooltip(); unhighlightLinkLine(\'' + linkKey + '\')" />';
           });
         });
         linksGroup.innerHTML = linksHTML;
