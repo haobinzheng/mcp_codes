@@ -1452,7 +1452,7 @@ const htmlContent = `<!doctype html>
           });
 
           const bngs = devices.filter(d => getDeviceRole(d) === 'bng');
-          const nonBngs = devices.filter(d => getDeviceRole(d) !== 'bng');
+          const nonBngs = devices.filter(d => getDeviceRole(d) !== 'bng' && getDeviceRole(d) !== 'rr');
 
           const bngGroups = {};
           bngs.forEach(bng => {
@@ -1634,6 +1634,40 @@ const htmlContent = `<!doctype html>
               deviceCoords[dev] = {
                 x: base.x + offsetX + c * size.dx,
                 y: base.y + offsetY + r * size.dy
+              };
+            }
+          });
+
+          // Position Route Reflectors (RRs) slightly outside the bubble grid
+          const rrs = devices.filter(d => getDeviceRole(d) === 'rr');
+          rrs.forEach(rr => {
+            let associatedCR = null;
+            const parts = rr.split('.');
+            if (parts.length >= 2) {
+              const suffix = parts[1];
+              const matchingCRs = devices.filter(d => getDeviceRole(d).startsWith('cr') && d.includes('.' + suffix));
+              if (matchingCRs.length > 0) {
+                associatedCR = matchingCRs[0];
+              }
+            }
+            if (!associatedCR) {
+              const allCrs = devices.filter(d => getDeviceRole(d).startsWith('cr'));
+              if (allCrs.length > 0) {
+                associatedCR = allCrs[0];
+              }
+            }
+
+            if (associatedCR && deviceCoords[associatedCR]) {
+              const crCoords = deviceCoords[associatedCR];
+              const direction = crCoords.x < base.x ? -1 : 1;
+              deviceCoords[rr] = {
+                x: crCoords.x + direction * 95,
+                y: crCoords.y
+              };
+            } else {
+              deviceCoords[rr] = {
+                x: base.x - size.width / 2 - 45,
+                y: base.y
               };
             }
           });
