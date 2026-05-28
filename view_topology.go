@@ -1,19 +1,264 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
+	"time"
 )
 
 const defaultPort = "9002"
+
+type HighUtilFlow struct {
+	Source string  `json:"source"`
+	Target string  `json:"target"`
+	Util   float64 `json:"util"`
+}
+
+var (
+	highUtilFlows   []HighUtilFlow
+	highUtilFlowsMu sync.RWMutex
+
+	validTopologyNodes   = make(map[string]bool)
+	validTopologyNodesMu sync.RWMutex
+)
+
+func normalizeHostname(name string) string {
+	name = strings.ToLower(name)
+	name = strings.TrimSpace(name)
+
+	// Remove re0- or re1- prefixes
+	if strings.HasPrefix(name, "re0-") {
+		name = strings.TrimPrefix(name, "re0-")
+	} else if strings.HasPrefix(name, "re1-") {
+		name = strings.TrimPrefix(name, "re1-")
+	}
+
+	// Map dr01 -> bng01, dr02 -> bng02, etc.
+	if strings.HasPrefix(name, "dr") {
+		parts := strings.Split(name, ".")
+		if len(parts) > 0 && len(parts[0]) >= 4 && strings.HasPrefix(parts[0], "dr") {
+			digits := parts[0][2:]
+			parts[0] = "bng" + digits
+			name = strings.Join(parts, ".")
+		}
+	}
+
+	return name
+}
+
+func loadValidTopologyNodes(logger *slog.Logger) {
+	jsonPath := "topology_discovery.json"
+	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
+		jsonPath = filepath.Join(".", "topology_discovery.json")
+	}
+
+	data, err := os.ReadFile(jsonPath)
+	if err != nil {
+		logger.Error("Failed to read topology JSON file for validation", "path", jsonPath, "error", err)
+		return
+	}
+
+	var rawTopology map[string]interface{}
+	if err := json.Unmarshal(data, &rawTopology); err != nil {
+		logger.Error("Failed to unmarshal topology for validation", "error", err)
+		return
+	}
+
+	validNodes := make(map[string]bool)
+	for localDev, val := range rawTopology {
+		validNodes[normalizeHostname(localDev)] = true
+
+		intfs, ok := val.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		for _, intfVal := range intfs {
+			intfDetails, ok := intfVal.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			remoteDev, _ := intfDetails["remote_device"].(string)
+			if remoteDev != "" && strings.ToLower(remoteDev) != "unknown" {
+				validNodes[normalizeHostname(remoteDev)] = true
+			}
+		}
+	}
+
+	validTopologyNodesMu.Lock()
+	validTopologyNodes = validNodes
+	validTopologyNodesMu.Unlock()
+
+	logger.Info("Loaded valid topology nodes for validation", "count", len(validNodes))
+}
+
+func scanHighUtilization(logger *slog.Logger) {
+	logger.Info("Starting high utilization scan...")
+	today := time.Now().Format("2006-01-02")
+	auditDir := filepath.Join("Audit_interfaces_data", today)
+
+	// For safety/testing fallback, if today's directory doesn't exist or has no files,
+	// we can check the most recent date folder in Audit_interfaces_data
+	if _, err := os.Stat(auditDir); os.IsNotExist(err) {
+		logger.Warn("Today's audit directory not found, finding most recent date directory...", "path", auditDir)
+		files, err := ioutil.ReadDir("Audit_interfaces_data")
+		if err == nil && len(files) > 0 {
+			var mostRecent string
+			for _, f := range files {
+				if f.IsDir() && len(f.Name()) == 10 && strings.Count(f.Name(), "-") == 2 {
+					if f.Name() > mostRecent {
+						mostRecent = f.Name()
+					}
+				}
+			}
+			if mostRecent != "" {
+				auditDir = filepath.Join("Audit_interfaces_data", mostRecent)
+				logger.Info("Using most recent date directory instead", "path", auditDir)
+			}
+		}
+	}
+
+	deviceDirs, err := ioutil.ReadDir(auditDir)
+	if err != nil {
+		logger.Error("Failed to read audit directory", "dir", auditDir, "error", err)
+		return
+	}
+
+	var newFlows []HighUtilFlow
+
+	for _, d := range deviceDirs {
+		if !d.IsDir() {
+			continue
+		}
+		devName := normalizeHostname(d.Name())
+		devDirPath := filepath.Join(auditDir, d.Name())
+
+		// Find latest JSON file in this folder
+		jsonFiles, err := ioutil.ReadDir(devDirPath)
+		if err != nil || len(jsonFiles) == 0 {
+			continue
+		}
+
+		var latestFile string
+		for _, jf := range jsonFiles {
+			if !jf.IsDir() && strings.HasSuffix(jf.Name(), ".json") {
+				if jf.Name() > latestFile {
+					latestFile = jf.Name()
+				}
+			}
+		}
+
+		if latestFile == "" {
+			continue
+		}
+
+		filePath := filepath.Join(devDirPath, latestFile)
+		data, err := os.ReadFile(filePath)
+		if err != nil {
+			continue
+		}
+
+		var result map[string]interface{}
+		if err := json.Unmarshal(data, &result); err != nil {
+			continue
+		}
+
+		for key, val := range result {
+			if key == "role" || key == "year" || key == "audit_timestamp" {
+				continue
+			}
+
+			intfDetails, ok := val.(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			neighbor, _ := intfDetails["neighbor"].(string)
+			if neighbor == "" || strings.ToLower(neighbor) == "unknown" {
+				continue
+			}
+
+			remoteDev := normalizeHostname(neighbor)
+
+			// Validate that both devName and remoteDev exist in the topology
+			validTopologyNodesMu.RLock()
+			isSourceValid := validTopologyNodes[devName]
+			isTargetValid := validTopologyNodes[remoteDev]
+			validTopologyNodesMu.RUnlock()
+
+			if !isSourceValid || !isTargetValid {
+				continue
+			}
+
+			inputPct, _ := intfDetails["input_bps_percent"].(float64)
+			outputPct, _ := intfDetails["output_bps_percent"].(float64)
+
+			if outputPct > 0.0 {
+				newFlows = append(newFlows, HighUtilFlow{
+					Source: devName,
+					Target: remoteDev,
+					Util:   outputPct,
+				})
+			}
+			if inputPct > 0.0 {
+				newFlows = append(newFlows, HighUtilFlow{
+					Source: remoteDev,
+					Target: devName,
+					Util:   inputPct,
+				})
+			}
+		}
+	}
+
+	// Deduplicate flows based on Source -> Target
+	uniqueFlows := make(map[string]HighUtilFlow)
+	for _, flow := range newFlows {
+		key := flow.Source + "-->" + flow.Target
+		existing, exists := uniqueFlows[key]
+		if !exists || flow.Util > existing.Util {
+			uniqueFlows[key] = flow
+		}
+	}
+
+	var finalFlows []HighUtilFlow
+	for _, flow := range uniqueFlows {
+		finalFlows = append(finalFlows, flow)
+	}
+
+	highUtilFlowsMu.Lock()
+	highUtilFlows = finalFlows
+	highUtilFlowsMu.Unlock()
+
+	logger.Info("Completed high utilization scan", "found_flows", len(finalFlows))
+}
+
+func startPeriodicAuditScanner(logger *slog.Logger) {
+	scanHighUtilization(logger)
+
+	ticker := time.NewTicker(10 * time.Minute)
+	go func() {
+		for range ticker.C {
+			scanHighUtilization(logger)
+		}
+	}()
+}
 
 func main() {
 	// Setup structured logger
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
+
+	// Load valid topology nodes
+	loadValidTopologyNodes(logger)
+
+	// Start background audit scanner
+	startPeriodicAuditScanner(logger)
 
 	port := os.Getenv("ANTIGRAVITY_SIDECAR_WEB_PORT")
 	if port == "" {
@@ -40,6 +285,26 @@ func main() {
 			_, _ = w.Write([]byte(`{"error": "topology file not found"}`))
 			return
 		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(data)
+	})
+
+	// Endpoint to serve high utilization directed flows
+	mux.HandleFunc("GET /api/high_utilization", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		highUtilFlowsMu.RLock()
+		data, err := json.Marshal(highUtilFlows)
+		highUtilFlowsMu.RUnlock()
+
+		if err != nil {
+			slog.Error("Failed to marshal high utilization flows", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`[]`))
+			return
+		}
+
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(data)
 	})
@@ -409,6 +674,137 @@ const htmlContent = `<!doctype html>
       stroke-linejoin: round;
       pointer-events: none;
     }
+
+    /* High Utilization Link Glow & Highlight */
+    .high-util-link {
+      stroke: #ef4444;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 8px #ef4444);
+      opacity: 0.95;
+      animation: high-util-pulse 2s infinite ease-in-out;
+    }
+
+    .high-util-flow-line {
+      stroke: #ffffff;
+      stroke-linecap: round;
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    @keyframes high-util-pulse {
+      0%, 100% {
+        opacity: 0.75;
+        stroke-width: 3.5px;
+      }
+      50% {
+        opacity: 1.0;
+        stroke-width: 5px;
+        filter: drop-shadow(0 0 12px #ef4444);
+      }
+    }
+
+    /* High-Utilization Flashing Alarm Styling */
+    .alarm-dot-flashing {
+      width: 8px;
+      height: 8px;
+      background-color: #ef4444;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 8px #ef4444;
+      animation: alarm-dot-pulse 1.2s infinite ease-in-out;
+    }
+
+    @keyframes alarm-dot-pulse {
+      0%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+        box-shadow: 0 0 4px #ef4444;
+      }
+      50% {
+        transform: scale(1.2);
+        opacity: 1.0;
+        box-shadow: 0 0 12px #ef4444;
+      }
+    }
+
+    .alarms-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
+
+    .alarm-card {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .alarm-card:hover {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.5);
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .alarm-arrow {
+      color: #ef4444;
+      font-weight: bold;
+      margin: 0 4px;
+    }
+
+    .alarm-pct {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+
+    .control-card {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+
+    .control-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(234, 179, 8, 0.1);
+      outline: none;
+      margin: 8px 0;
+    }
+
+    .control-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--cap-high);
+      box-shadow: 0 0 8px var(--cap-high);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .control-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
   </style>
 </head>
 <body>
@@ -428,6 +824,27 @@ const htmlContent = `<!doctype html>
           <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="#a1a1aa" stroke-width="2"></line>
         </svg>
         <input type="text" class="search-input" id="search-box" placeholder="Search device..." oninput="filterTopologyBySearch(this.value)" />
+      </div>
+
+      <!-- High Utilization Alarms Panel -->
+      <div id="alarms-panel" style="display: none;">
+        <div class="section-title" style="color: #ef4444; display: flex; align-items: center; gap: 6px;">
+          <span class="alarm-dot-flashing"></span>
+          <span>High Utilization Alarms</span>
+        </div>
+        <div class="alarms-list" id="alarms-list"></div>
+      </div>
+
+      <!-- Control Panel Section -->
+      <div>
+        <div class="section-title">Topology Controls</div>
+        <div class="control-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <span style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em;">Alarm Threshold</span>
+            <span id="threshold-value" style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: #ef4444;">70%</span>
+          </div>
+          <input type="range" id="threshold-slider" min="10" max="100" value="70" class="control-slider" oninput="updateThreshold(this.value)" />
+        </div>
       </div>
 
       <!-- Legend Section -->
@@ -517,6 +934,13 @@ const htmlContent = `<!doctype html>
   <div id="map-container">
     <div id="viewport">
       <svg id="map-svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <!-- Glowing Red Arrowhead Marker -->
+          <marker id="high-util-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#ef4444" />
+          </marker>
+        </defs>
+
         <!-- Grids -->
         <g id="svg-grid"></g>
 
@@ -528,6 +952,9 @@ const htmlContent = `<!doctype html>
 
         <!-- Topologies links group -->
         <g id="topology-links"></g>
+
+        <!-- High Utilization Flows group -->
+        <g id="high-utilization-flows"></g>
 
         <!-- Device Nodes group -->
         <g id="device-nodes"></g>
@@ -598,6 +1025,112 @@ const htmlContent = `<!doctype html>
       pt.y = e.clientY;
       const svgPoint = pt.matrixTransform(svg.getScreenCTM().inverse());
       return { x: svgPoint.x, y: svgPoint.y };
+    }
+
+    function getOffsetCoords(start, end, offsetStart, offsetEnd) {
+      const dx = end.x - start.x;
+      const dy = end.y - start.y;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      if (len === 0) return { start: start, end: end };
+
+      // Scale down offsets if the distance is too small to prevent lines/arrows from crossing
+      let os = offsetStart;
+      let oe = offsetEnd;
+      if (len < (offsetStart + offsetEnd)) {
+        const scale = (len * 0.6) / (offsetStart + offsetEnd);
+        os = offsetStart * scale;
+        oe = offsetEnd * scale;
+      }
+
+      return {
+        start: {
+          x: start.x + (dx / len) * os,
+          y: start.y + (dy / len) * os
+        },
+        end: {
+          x: end.x - (dx / len) * oe,
+          y: end.y - (dy / len) * oe
+        }
+      };
+    }
+
+    let alarmThreshold = 70;
+    let currentFlows = [];
+
+    function updateThreshold(val) {
+      alarmThreshold = parseInt(val);
+      document.getElementById('threshold-value').textContent = alarmThreshold + '%';
+      
+      const valEl = document.getElementById('threshold-value');
+      if (alarmThreshold >= 70) {
+        valEl.style.color = '#ef4444';
+      } else if (alarmThreshold >= 50) {
+        valEl.style.color = '#f97316';
+      } else {
+        valEl.style.color = '#3b82f6';
+      }
+      
+      renderFlows(currentFlows);
+    }
+
+    async function loadHighUtilizationFlows() {
+      try {
+        const resp = await fetch('/api/high_utilization');
+        currentFlows = await resp.json();
+        renderFlows(currentFlows);
+      } catch (err) {
+        console.error("Failed to load high utilization flows", err);
+      }
+    }
+
+    function renderFlows(flows) {
+      const container = document.getElementById('high-utilization-flows');
+      if (!container) return;
+
+      let html = '';
+      const filteredFlows = flows.filter(flow => flow.util >= alarmThreshold);
+
+      filteredFlows.forEach(flow => {
+        const start = deviceCoords[flow.source];
+        const end = deviceCoords[flow.target];
+
+        if (start && end) {
+          const offset = getOffsetCoords(start, end, 48, 48);
+          const flowKey = 'high-util-' + flow.source + '-' + flow.target;
+
+          html += '<line class="high-util-link" id="' + flowKey + '" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" marker-end="url(#high-util-arrow)" />';
+          html += '<line class="high-util-flow-line" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" stroke-width="1.2" stroke-dasharray="5, 8" style="animation: flow-anim 1.2s linear infinite;" />';
+        }
+      });
+
+      container.innerHTML = html;
+
+      // Update Sidebar Alarms Panel
+      const alarmsPanel = document.getElementById('alarms-panel');
+      const alarmsList = document.getElementById('alarms-list');
+
+      if (alarmsPanel && alarmsList) {
+        if (filteredFlows.length > 0) {
+          alarmsPanel.style.display = 'block';
+          let alarmsHTML = '';
+
+          filteredFlows.forEach(flow => {
+            alarmsHTML += '<div class="alarm-card" onclick="selectNode(\'' + flow.source + '\')">' +
+              '<div>' +
+                '<span style="font-weight:600; color:#fafafa;">' + flow.source + '</span>' +
+                '<span class="alarm-arrow">➔</span>' +
+                '<span style="font-weight:600; color:#fafafa;">' + flow.target + '</span>' +
+              '</div>' +
+              '<span class="alarm-pct">' + Math.round(flow.util) + '%</span>' +
+            '</div>';
+          });
+
+          alarmsList.innerHTML = alarmsHTML;
+        } else {
+          alarmsPanel.style.display = 'none';
+          alarmsList.innerHTML = '';
+        }
+      }
     }
 
     function startDragNode(e, device) {
@@ -1207,6 +1740,9 @@ const htmlContent = `<!doctype html>
         });
         nodesGroup.innerHTML = nodesHTML;
 
+        // Load directed high utilization overlays (>= 70%)
+        await loadHighUtilizationFlows();
+
       } catch (err) {
         console.error("Failed to load topology", err);
       }
@@ -1474,6 +2010,9 @@ const htmlContent = `<!doctype html>
           }
         });
       }
+
+      // Poll high utilization flows every 30 seconds to keep map state reactive
+      setInterval(loadHighUtilizationFlows, 30000);
     });
 
     document.addEventListener('DOMContentLoaded', loadTopology);
