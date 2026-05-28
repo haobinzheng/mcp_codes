@@ -798,6 +798,20 @@ def _rancid_read_file_for_model_scan(path: str, max_bytes: int) -> tuple[str, bo
     return text, truncated, None
 
 
+def _normalize_command(cmd: str) -> str:
+    cmd = cmd.lower().strip()
+    # Normalize singular interface to plural interfaces
+    cmd = re.sub(r"\bshow\s+interface\b", "show interfaces", cmd)
+    cmd = re.sub(r"\bshow\s+interface\s+", "show interfaces ", cmd)
+    # Remove trailing extensive, detail, brief, etc.
+    cmd = re.sub(r"\s+(extensive|detail|brief)\b", "", cmd)
+    return cmd.strip()
+
+
+def _commands_match(cmd1: str, cmd2: str) -> bool:
+    return _normalize_command(cmd1) == _normalize_command(cmd2)
+
+
 def _iter_results(
     run_data: dict[str, Any], command: str = "", hosts: set[str] | None = None
 ) -> list[tuple[str, str, dict[str, Any]]]:
@@ -806,7 +820,7 @@ def _iter_results(
         if hosts and hostname not in hosts:
             continue
         for command_name, result in sorted(per_host.items()):
-            if command and command_name != command:
+            if command and not _commands_match(command_name, command):
                 continue
             items.append((hostname, command_name, result))
     return items
