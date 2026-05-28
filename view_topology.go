@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +20,7 @@ type HighUtilFlow struct {
 	Source string  `json:"source"`
 	Target string  `json:"target"`
 	Util   float64 `json:"util"`
+	Peak   float64 `json:"peak"`
 }
 
 var (
@@ -139,17 +141,81 @@ func scanHighUtilization(logger *slog.Logger) {
 		devName := normalizeHostname(d.Name())
 		devDirPath := filepath.Join(auditDir, d.Name())
 
-		// Find latest JSON file in this folder
 		jsonFiles, err := ioutil.ReadDir(devDirPath)
 		if err != nil || len(jsonFiles) == 0 {
 			continue
 		}
 
+		// Track peak utilization for each neighbor from all files today
+		type neighborPeaks struct {
+			outPeak float64
+			inPeak  float64
+			hasOut  bool
+			hasIn   bool
+		}
+		peaksMap := make(map[string]*neighborPeaks)
+
 		var latestFile string
 		for _, jf := range jsonFiles {
-			if !jf.IsDir() && strings.HasSuffix(jf.Name(), ".json") {
-				if jf.Name() > latestFile {
-					latestFile = jf.Name()
+			if jf.IsDir() || !strings.HasSuffix(jf.Name(), ".json") {
+				continue
+			}
+			if jf.Name() > latestFile {
+				latestFile = jf.Name()
+			}
+
+			filePath := filepath.Join(devDirPath, jf.Name())
+			data, err := os.ReadFile(filePath)
+			if err != nil {
+				continue
+			}
+
+			var result map[string]interface{}
+			if err := json.Unmarshal(data, &result); err != nil {
+				continue
+			}
+
+			for key, val := range result {
+				if key == "role" || key == "year" || key == "audit_timestamp" {
+					continue
+				}
+
+				intfDetails, ok := val.(map[string]interface{})
+				if !ok {
+					continue
+				}
+
+				neighbor, _ := intfDetails["neighbor"].(string)
+				if neighbor == "" || strings.ToLower(neighbor) == "unknown" {
+					continue
+				}
+
+				remoteDev := normalizeHostname(neighbor)
+
+				outputVal, okOut := intfDetails["output_bps_percent"]
+				inputVal, okIn := intfDetails["input_bps_percent"]
+
+				p, exists := peaksMap[remoteDev]
+				if !exists {
+					p = &neighborPeaks{}
+					peaksMap[remoteDev] = p
+				}
+
+				if okOut && outputVal != nil {
+					if valFloat, ok := outputVal.(float64); ok {
+						p.hasOut = true
+						if valFloat > p.outPeak {
+							p.outPeak = valFloat
+						}
+					}
+				}
+				if okIn && inputVal != nil {
+					if valFloat, ok := inputVal.(float64); ok {
+						p.hasIn = true
+						if valFloat > p.inPeak {
+							p.inPeak = valFloat
+						}
+					}
 				}
 			}
 		}
@@ -158,18 +224,18 @@ func scanHighUtilization(logger *slog.Logger) {
 			continue
 		}
 
-		filePath := filepath.Join(devDirPath, latestFile)
-		data, err := os.ReadFile(filePath)
+		latestPath := filepath.Join(devDirPath, latestFile)
+		latestData, err := os.ReadFile(latestPath)
 		if err != nil {
 			continue
 		}
 
-		var result map[string]interface{}
-		if err := json.Unmarshal(data, &result); err != nil {
+		var latestResult map[string]interface{}
+		if err := json.Unmarshal(latestData, &latestResult); err != nil {
 			continue
 		}
 
-		for key, val := range result {
+		for key, val := range latestResult {
 			if key == "role" || key == "year" || key == "audit_timestamp" {
 				continue
 			}
@@ -196,22 +262,38 @@ func scanHighUtilization(logger *slog.Logger) {
 				continue
 			}
 
-			inputPct, _ := intfDetails["input_bps_percent"].(float64)
-			outputPct, _ := intfDetails["output_bps_percent"].(float64)
+			outputVal, okOut := intfDetails["output_bps_percent"]
+			inputVal, okIn := intfDetails["input_bps_percent"]
 
-			if outputPct > 0.0 {
-				newFlows = append(newFlows, HighUtilFlow{
-					Source: devName,
-					Target: remoteDev,
-					Util:   outputPct,
-				})
+			p := peaksMap[remoteDev]
+
+			if okOut && outputVal != nil {
+				if outputPct, ok := outputVal.(float64); ok {
+					peakVal := outputPct
+					if p != nil && p.hasOut {
+						peakVal = p.outPeak
+					}
+					newFlows = append(newFlows, HighUtilFlow{
+						Source: devName,
+						Target: remoteDev,
+						Util:   outputPct,
+						Peak:   peakVal,
+					})
+				}
 			}
-			if inputPct > 0.0 {
-				newFlows = append(newFlows, HighUtilFlow{
-					Source: remoteDev,
-					Target: devName,
-					Util:   inputPct,
-				})
+			if okIn && inputVal != nil {
+				if inputPct, ok := inputVal.(float64); ok {
+					peakVal := inputPct
+					if p != nil && p.hasIn {
+						peakVal = p.inPeak
+					}
+					newFlows = append(newFlows, HighUtilFlow{
+						Source: remoteDev,
+						Target: devName,
+						Util:   inputPct,
+						Peak:   peakVal,
+					})
+				}
 			}
 		}
 	}
@@ -223,6 +305,9 @@ func scanHighUtilization(logger *slog.Logger) {
 		existing, exists := uniqueFlows[key]
 		if !exists || flow.Util > existing.Util {
 			uniqueFlows[key] = flow
+		} else if exists && flow.Peak > existing.Peak {
+			existing.Peak = flow.Peak
+			uniqueFlows[key] = existing
 		}
 	}
 
@@ -236,6 +321,124 @@ func scanHighUtilization(logger *slog.Logger) {
 	highUtilFlowsMu.Unlock()
 
 	logger.Info("Completed high utilization scan", "found_flows", len(finalFlows))
+}
+
+type HistoricalPeakFlow struct {
+	Source string  `json:"source"`
+	Target string  `json:"target"`
+	Peak   float64 `json:"peak"`
+}
+
+func scanHistoricalPeaks(startDate, endDate, filterType string, threshold float64) ([]HistoricalPeakFlow, error) {
+	entries, err := os.ReadDir("Audit_interfaces_data")
+	if err != nil {
+		return nil, err
+	}
+
+	var activeDates []string
+	for _, entry := range entries {
+		if entry.IsDir() && len(entry.Name()) == 10 && strings.Count(entry.Name(), "-") == 2 {
+			d := entry.Name()
+			if (startDate == "" || d >= startDate) && (endDate == "" || d <= endDate) {
+				activeDates = append(activeDates, d)
+			}
+		}
+	}
+
+	type flowKey struct {
+		source string
+		target string
+	}
+	peaksMap := make(map[flowKey]float64)
+
+	for _, date := range activeDates {
+		dateDir := filepath.Join("Audit_interfaces_data", date)
+		deviceDirs, err := os.ReadDir(dateDir)
+		if err != nil {
+			continue
+		}
+
+		for _, d := range deviceDirs {
+			if !d.IsDir() {
+				continue
+			}
+			devName := normalizeHostname(d.Name())
+			devDirPath := filepath.Join(dateDir, d.Name())
+
+			jsonFiles, err := os.ReadDir(devDirPath)
+			if err != nil {
+				continue
+			}
+
+			for _, jf := range jsonFiles {
+				if jf.IsDir() || !strings.HasSuffix(jf.Name(), ".json") {
+					continue
+				}
+
+				filePath := filepath.Join(devDirPath, jf.Name())
+				data, err := os.ReadFile(filePath)
+				if err != nil {
+					continue
+				}
+
+				var result map[string]interface{}
+				if err := json.Unmarshal(data, &result); err != nil {
+					continue
+				}
+
+				for key, val := range result {
+					if key == "role" || key == "year" || key == "audit_timestamp" {
+						continue
+					}
+
+					intfDetails, ok := val.(map[string]interface{})
+					if !ok {
+						continue
+					}
+
+					neighbor, _ := intfDetails["neighbor"].(string)
+					if neighbor == "" || strings.ToLower(neighbor) == "unknown" {
+						continue
+					}
+
+					remoteDev := normalizeHostname(neighbor)
+
+					if filterType == "output" {
+						if outputVal, ok := intfDetails["output_bps_percent"]; ok && outputVal != nil {
+							if valFloat, ok := outputVal.(float64); ok {
+								k := flowKey{source: devName, target: remoteDev}
+								if valFloat > peaksMap[k] {
+									peaksMap[k] = valFloat
+								}
+							}
+						}
+					} else if filterType == "input" {
+						if inputVal, ok := intfDetails["input_bps_percent"]; ok && inputVal != nil {
+							if valFloat, ok := inputVal.(float64); ok {
+								k := flowKey{source: remoteDev, target: devName}
+								if valFloat > peaksMap[k] {
+									peaksMap[k] = valFloat
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	var flows []HistoricalPeakFlow
+	for k, peak := range peaksMap {
+		if peak >= threshold {
+			flows = append(flows, HistoricalPeakFlow{
+				Source: k.source,
+				Target: k.target,
+				Peak:   peak,
+			})
+		}
+	}
+
+	return flows, nil
 }
 
 func startPeriodicAuditScanner(logger *slog.Logger) {
@@ -273,6 +476,67 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
+	// Endpoint to list available audit dates
+	mux.HandleFunc("GET /api/dates", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		entries, err := os.ReadDir("Audit_interfaces_data")
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"error": "failed to read audit directory"}`))
+			return
+		}
+
+		var dates []string
+		for _, entry := range entries {
+			if entry.IsDir() && len(entry.Name()) == 10 && strings.Count(entry.Name(), "-") == 2 {
+				dates = append(dates, entry.Name())
+			}
+		}
+		sort.Strings(dates)
+
+		type DatesResponse struct {
+			Dates []string `json:"dates"`
+		}
+		data, _ := json.Marshal(DatesResponse{Dates: dates})
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(data)
+	})
+
+	// Endpoint to query historical peak utilization flows
+	mux.HandleFunc("GET /api/historical_peak", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		startDate := r.URL.Query().Get("start_date")
+		endDate := r.URL.Query().Get("end_date")
+		filterType := r.URL.Query().Get("type")
+		thresholdStr := r.URL.Query().Get("threshold")
+
+		var threshold float64 = 50.0
+		if thresholdStr != "" {
+			fmt.Sscanf(thresholdStr, "%f", &threshold)
+		}
+
+		if filterType != "input" && filterType != "output" {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"error": "invalid type, must be input or output"}`))
+			return
+		}
+
+		flows, err := scanHistoricalPeaks(startDate, endDate, filterType, threshold)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`{"error": "failed to scan historical peaks"}`))
+			return
+		}
+
+		data, _ := json.Marshal(flows)
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(data)
+	})
 
 	// Endpoint to serve topology JSON
 	mux.HandleFunc("GET /api/topology", func(w http.ResponseWriter, r *http.Request) {
@@ -703,6 +967,34 @@ const htmlContent = `<!doctype html>
       }
     }
 
+    /* Historical Peak Link Glow & Highlight */
+    .historical-peak-link {
+      stroke: #eab308;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 8px #eab308);
+      opacity: 0.95;
+      animation: historical-peak-pulse 2s infinite ease-in-out;
+    }
+
+    .historical-peak-flow-line {
+      stroke: #ffffff;
+      stroke-linecap: round;
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    @keyframes historical-peak-pulse {
+      0%, 100% {
+        opacity: 0.75;
+        stroke-width: 3.5px;
+      }
+      50% {
+        opacity: 1.0;
+        stroke-width: 5px;
+        filter: drop-shadow(0 0 12px #eab308);
+      }
+    }
+
     /* High-Utilization Flashing Alarm Styling */
     .alarm-dot-flashing {
       width: 8px;
@@ -847,6 +1139,48 @@ const htmlContent = `<!doctype html>
         </div>
       </div>
 
+      <!-- Historical Peak Filter Section -->
+      <div>
+        <div class="section-title">Historical Peak Filters</div>
+        <div class="control-card" style="font-size: 12px;">
+          <div style="margin-bottom: 8px;">
+            <label style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Filter Mode</label>
+            <div style="display: flex; gap: 16px; margin-top: 4px;">
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                <input type="radio" name="peak-mode" value="input" checked onchange="togglePeakMode()" />
+                <span>Peak Input</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
+                <input type="radio" name="peak-mode" value="output" onchange="togglePeakMode()" />
+                <span>Peak Output</span>
+              </label>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 8px;">
+            <label style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 4px;">Date Range</label>
+            <div style="display: flex; gap: 6px;">
+              <select id="peak-start-date" style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 4px; padding: 4px; color: var(--text-main); font-size: 11px;" onchange="onPeakFilterChange()"></select>
+              <span style="color: var(--text-muted); display: flex; align-items: center;">to</span>
+              <select id="peak-end-date" style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 4px; padding: 4px; color: var(--text-main); font-size: 11px;" onchange="onPeakFilterChange()"></select>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Peak Threshold</label>
+              <span id="peak-threshold-val" style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #eab308;">50%</span>
+            </div>
+            <input type="range" id="peak-threshold-slider" min="0" max="100" value="50" class="control-slider" style="margin: 4px 0;" oninput="updatePeakThresholdVal(this.value)" onchange="onPeakFilterChange()" />
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 10px;">
+            <button class="tab-btn" onclick="applyPeakFilter()" style="flex: 1; padding: 6px; font-size: 12px; font-weight: 600; background: rgba(234, 179, 8, 0.15); border: 1px solid var(--border); color: #eab308; border-radius: 4px; cursor: pointer;">Apply Peak Filter</button>
+            <button class="tab-btn" onclick="clearPeakFilter()" style="padding: 6px; font-size: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; border-radius: 4px; cursor: pointer;">Clear</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Legend Section -->
       <div>
         <div class="section-title">Device Class Legend</div>
@@ -938,6 +1272,10 @@ const htmlContent = `<!doctype html>
           <!-- Glowing Red Arrowhead Marker -->
           <marker id="high-util-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
             <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#ef4444" />
+          </marker>
+          <!-- Glowing Gold/Yellow Arrowhead Marker for Historical Peak Filters -->
+          <marker id="historical-peak-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#eab308" />
           </marker>
         </defs>
 
@@ -1090,45 +1428,47 @@ const htmlContent = `<!doctype html>
       let html = '';
       const filteredFlows = flows.filter(flow => flow.util >= alarmThreshold);
 
-      filteredFlows.forEach(flow => {
-        const start = deviceCoords[flow.source];
-        const end = deviceCoords[flow.target];
+      if (!peakFilterApplied) {
+        filteredFlows.forEach(flow => {
+          const start = deviceCoords[flow.source];
+          const end = deviceCoords[flow.target];
 
-        if (start && end) {
-          const offset = getOffsetCoords(start, end, 48, 48);
-          const flowKey = 'high-util-' + flow.source + '-' + flow.target;
+          if (start && end) {
+            const offset = getOffsetCoords(start, end, 48, 48);
+            const flowKey = 'high-util-' + flow.source + '-' + flow.target;
 
-          html += '<line class="high-util-link" id="' + flowKey + '" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" marker-end="url(#high-util-arrow)" />';
-          html += '<line class="high-util-flow-line" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" stroke-width="1.2" stroke-dasharray="5, 8" style="animation: flow-anim 1.2s linear infinite;" />';
-        }
-      });
+            html += '<line class="high-util-link" id="' + flowKey + '" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" marker-end="url(#high-util-arrow)" />';
+            html += '<line class="high-util-flow-line" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" stroke-width="1.2" stroke-dasharray="5, 8" style="animation: flow-anim 1.2s linear infinite;" />';
+          }
+        });
 
-      container.innerHTML = html;
+        container.innerHTML = html;
 
-      // Update Sidebar Alarms Panel
-      const alarmsPanel = document.getElementById('alarms-panel');
-      const alarmsList = document.getElementById('alarms-list');
+        // Update Sidebar Alarms Panel
+        const alarmsPanel = document.getElementById('alarms-panel');
+        const alarmsList = document.getElementById('alarms-list');
 
-      if (alarmsPanel && alarmsList) {
-        if (filteredFlows.length > 0) {
-          alarmsPanel.style.display = 'block';
-          let alarmsHTML = '';
+        if (alarmsPanel && alarmsList) {
+          if (filteredFlows.length > 0) {
+            alarmsPanel.style.display = 'block';
+            let alarmsHTML = '';
 
-          filteredFlows.forEach(flow => {
-            alarmsHTML += '<div class="alarm-card" onclick="selectNode(\'' + flow.source + '\')">' +
-              '<div>' +
-                '<span style="font-weight:600; color:#fafafa;">' + flow.source + '</span>' +
-                '<span class="alarm-arrow">➔</span>' +
-                '<span style="font-weight:600; color:#fafafa;">' + flow.target + '</span>' +
-              '</div>' +
-              '<span class="alarm-pct">' + Math.round(flow.util) + '%</span>' +
-            '</div>';
-          });
+            filteredFlows.forEach(flow => {
+              alarmsHTML += '<div class="alarm-card" onclick="selectNode(\'' + flow.source + '\')">' +
+                '<div>' +
+                  '<span style="font-weight:600; color:#fafafa;">' + flow.source + '</span>' +
+                  '<span class="alarm-arrow">➔</span>' +
+                  '<span style="font-weight:600; color:#fafafa;">' + flow.target + '</span>' +
+                '</div>' +
+                '<span class="alarm-pct">' + Math.round(flow.util) + '%</span>' +
+              '</div>';
+            });
 
-          alarmsList.innerHTML = alarmsHTML;
-        } else {
-          alarmsPanel.style.display = 'none';
-          alarmsList.innerHTML = '';
+            alarmsList.innerHTML = alarmsHTML;
+          } else {
+            alarmsPanel.style.display = 'none';
+            alarmsList.innerHTML = '';
+          }
         }
       }
     }
@@ -1792,6 +2132,7 @@ const htmlContent = `<!doctype html>
 
         // Load directed high utilization overlays (>= 70%)
         await loadHighUtilizationFlows();
+        await loadPeakFilterDates();
 
       } catch (err) {
         console.error("Failed to load topology", err);
@@ -1812,13 +2153,73 @@ const htmlContent = `<!doctype html>
       positionTooltip(e);
     }
 
+    function normalizeDevName(name) {
+      name = name.toLowerCase().trim();
+      if (name.startsWith("re0-")) name = name.replace("re0-", "");
+      if (name.startsWith("re1-")) name = name.replace("re1-", "");
+      if (name.startsWith("dr")) {
+        const parts = name.split(".");
+        if (parts.length > 0 && parts[0].length >= 4 && parts[0].startsWith("dr")) {
+          const digits = parts[0].substring(2);
+          parts[0] = "bng" + digits;
+          name = parts.join(".");
+        }
+      }
+      return name;
+    }
+
+    function getRemoteInterface(localDev, remoteDev, localIntf) {
+      const remoteDevData = topologyData[remoteDev];
+      if (!remoteDevData) return null;
+      for (const remoteIntf of Object.keys(remoteDevData)) {
+        const remoteLink = remoteDevData[remoteIntf];
+        if (remoteLink.remote_device === localDev) {
+          return remoteIntf;
+        }
+      }
+      return null;
+    }
+
+    function getLinkUtilization(localDev, remoteDev) {
+      if (!currentFlows) return { outUtil: null, inUtil: null, outPeak: null, inPeak: null };
+      const nLocal = normalizeDevName(localDev);
+      const nRemote = normalizeDevName(remoteDev);
+      
+      let outFlow = currentFlows.find(f => normalizeDevName(f.source) === nLocal && normalizeDevName(f.target) === nRemote);
+      let inFlow = currentFlows.find(f => normalizeDevName(f.source) === nRemote && normalizeDevName(f.target) === nLocal);
+      
+      return {
+        outUtil: outFlow ? outFlow.util : null,
+        inUtil: inFlow ? inFlow.util : null,
+        outPeak: outFlow ? outFlow.peak : null,
+        inPeak: inFlow ? inFlow.peak : null
+      };
+    }
+
     // Links Tooltip Logic
     function showLinkTooltip(e, localDev, intf) {
       const link = topologyData[localDev][intf];
+      const remoteDev = link.remote_device;
+      const remoteIntf = getRemoteInterface(localDev, remoteDev, intf);
+      const remoteIntfStr = remoteIntf ? " (" + remoteIntf + ")" : "";
+      
+      const utils = getLinkUtilization(localDev, remoteDev);
+      const outStr = utils.outUtil !== null ? Math.round(utils.outUtil) + "%" : "n/a";
+      const inStr = utils.inUtil !== null ? Math.round(utils.inUtil) + "%" : "n/a";
+      const outPeakStr = utils.outPeak !== null ? Math.round(utils.outPeak) + "%" : "n/a";
+      const inPeakStr = utils.inPeak !== null ? Math.round(utils.inPeak) + "%" : "n/a";
+      
       tooltip.innerHTML = ` + "`" + `
-        <strong>Link: ${localDev} (${intf})</strong><br/>
-        <span style="color:#a1a1aa">To Peer: ${link.remote_device}</span><br/>
-        <span style="color:#a1a1aa">Capacity: ${link.capacity_human}</span>
+        <strong>Link Details</strong><br/>
+        <span style="color:#fafafa">${localDev} (${intf})</span><br/>
+        <span style="color:#a1a1aa">to</span><br/>
+        <span style="color:#fafafa">${remoteDev}${remoteIntfStr}</span><br/>
+        <span style="color:#eab308; font-weight: 600; margin-top: 4px; display: inline-block;">Capacity: ${link.capacity_human}</span><br/>
+        <div style="border-top: 1px solid rgba(234, 179, 8, 0.2); margin-top: 6px; padding-top: 6px; font-size: 11px;">
+          <span style="color:#a1a1aa; font-weight: 600;">Utilization (${localDev}):</span><br/>
+          <span style="color:#fafafa;">Current: TX: ${outStr} | RX: ${inStr}</span><br/>
+          <span style="color:#fafafa;">Daily Peak: TX: ${outPeakStr} | RX: ${inPeakStr}</span>
+        </div>
       ` + "`" + `;
       tooltip.style.display = 'block';
       positionTooltip(e);
@@ -1826,10 +2227,24 @@ const htmlContent = `<!doctype html>
 
     function positionTooltip(e) {
       const containerRect = container.getBoundingClientRect();
-      const x = e.clientX - containerRect.left;
-      const y = e.clientY - containerRect.top;
-      tooltip.style.left = (x + 15) + 'px';
-      tooltip.style.top = (y + 15) + 'px';
+      let x = e.clientX - containerRect.left + 15;
+      let y = e.clientY - containerRect.top + 15;
+      
+      // Prevent overflowing right boundary
+      if (x + tooltip.offsetWidth > containerRect.width) {
+        x = e.clientX - containerRect.left - tooltip.offsetWidth - 15;
+      }
+      // Prevent overflowing bottom boundary
+      if (y + tooltip.offsetHeight > containerRect.height) {
+        y = e.clientY - containerRect.top - tooltip.offsetHeight - 15;
+      }
+      
+      // Ensure it doesn't go below 0 (top or left boundaries)
+      if (x < 0) x = 10;
+      if (y < 0) y = 10;
+      
+      tooltip.style.left = x + 'px';
+      tooltip.style.top = y + 'px';
     }
 
     function hideTooltip() {
@@ -2064,6 +2479,160 @@ const htmlContent = `<!doctype html>
       // Poll high utilization flows every 30 seconds to keep map state reactive
       setInterval(loadHighUtilizationFlows, 30000);
     });
+
+    let peakFilterApplied = false;
+    let peakFlows = [];
+    let peakThreshold = 50;
+    let peakMode = 'input';
+
+    async function loadPeakFilterDates() {
+      try {
+        const resp = await fetch('/api/dates');
+        const data = await resp.json();
+        const startSelect = document.getElementById('peak-start-date');
+        const endSelect = document.getElementById('peak-end-date');
+        
+        if (startSelect && endSelect && data.dates) {
+          startSelect.innerHTML = '';
+          endSelect.innerHTML = '';
+          
+          data.dates.forEach(date => {
+            const opt1 = document.createElement('option');
+            opt1.value = date;
+            opt1.textContent = date;
+            startSelect.appendChild(opt1);
+            
+            const opt2 = document.createElement('option');
+            opt2.value = date;
+            opt2.textContent = date;
+            endSelect.appendChild(opt2);
+          });
+          
+          if (data.dates.length > 0) {
+            startSelect.value = data.dates[0];
+            endSelect.value = data.dates[data.dates.length - 1];
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load peak filter dates", err);
+      }
+    }
+
+    function togglePeakMode() {
+      const radios = document.getElementsByName('peak-mode');
+      for (const r of radios) {
+        if (r.checked) {
+          peakMode = r.value;
+          break;
+        }
+      }
+      if (peakFilterApplied) {
+        applyPeakFilter();
+      }
+    }
+
+    function updatePeakThresholdVal(val) {
+      peakThreshold = val;
+      const el = document.getElementById('peak-threshold-val');
+      if (el) el.textContent = val + '%';
+    }
+
+    function onPeakFilterChange() {
+      if (peakFilterApplied) {
+        applyPeakFilter();
+      }
+    }
+
+    async function applyPeakFilter() {
+      const btn = document.querySelector("button[onclick='applyPeakFilter()']");
+      const originalText = btn ? btn.textContent : 'Apply Peak Filter';
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Applying Filter...';
+        btn.style.opacity = '0.6';
+      }
+
+      const startDate = document.getElementById('peak-start-date').value;
+      const endDate = document.getElementById('peak-end-date').value;
+      
+      try {
+        const resp = await fetch("/api/historical_peak?start_date=" + encodeURIComponent(startDate) + "&end_date=" + encodeURIComponent(endDate) + "&type=" + encodeURIComponent(peakMode) + "&threshold=" + encodeURIComponent(peakThreshold));
+        peakFlows = await resp.json();
+        peakFilterApplied = true;
+        renderPeakFlows();
+      } catch (err) {
+        console.error("Failed to apply peak filter", err);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = originalText;
+          btn.style.opacity = '';
+        }
+      }
+    }
+
+    function clearPeakFilter() {
+      peakFilterApplied = false;
+      peakFlows = [];
+      const container = document.getElementById('high-utilization-flows');
+      if (container) container.innerHTML = '';
+      
+      const alarmsPanel = document.getElementById('alarms-panel');
+      if (alarmsPanel) {
+        const titleSpan = alarmsPanel.querySelector('.section-title span:last-child');
+        if (titleSpan) titleSpan.textContent = 'High Utilization Alarms';
+      }
+      
+      renderFlows(currentFlows);
+    }
+
+    function renderPeakFlows() {
+      const container = document.getElementById('high-utilization-flows');
+      if (!container) return;
+      
+      let html = '';
+      
+      peakFlows.forEach(flow => {
+        const start = deviceCoords[flow.source];
+        const end = deviceCoords[flow.target];
+        
+        if (start && end) {
+          const offset = getOffsetCoords(start, end, 48, 48);
+          const flowKey = 'peak-flow-' + flow.source + '-' + flow.target;
+          
+          html += '<line class="historical-peak-link" id="' + flowKey + '" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" marker-end="url(#historical-peak-arrow)" />';
+          html += '<line class="historical-peak-flow-line" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" stroke="#eab308" stroke-width="1.2" stroke-dasharray="5, 8" style="animation: flow-anim 1.2s linear infinite; pointer-events: none;" />';
+        }
+      });
+      
+      container.innerHTML = html;
+
+      const alarmsPanel = document.getElementById('alarms-panel');
+      const alarmsList = document.getElementById('alarms-list');
+      
+      if (alarmsPanel && alarmsList) {
+        alarmsPanel.style.display = 'block';
+        const titleSpan = alarmsPanel.querySelector('.section-title span:last-child');
+        if (titleSpan) titleSpan.textContent = 'Peak Highlights (' + peakMode.toUpperCase() + ')';
+        
+        if (peakFlows.length > 0) {
+          let listHTML = '';
+          peakFlows.forEach(flow => {
+            listHTML += '<div class="alarm-card" style="background: rgba(234, 179, 8, 0.08); border-color: rgba(234, 179, 8, 0.25);" onclick="selectNode(\'' + flow.source + '\')">' +
+              '<div>' +
+                '<span style="font-weight:600; color:#fafafa;">' + flow.source + '</span>' +
+                '<span class="alarm-arrow" style="color:#eab308;">➔</span>' +
+                '<span style="font-weight:600; color:#fafafa;">' + flow.target + '</span>' +
+              '</div>' +
+              '<span class="alarm-pct" style="background: rgba(234, 179, 8, 0.2); color:#eab308;">' + Math.round(flow.peak) + '%</span>' +
+            '</div>';
+          });
+          alarmsList.innerHTML = listHTML;
+        } else {
+          alarmsList.innerHTML = '<div style="padding:12px; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(234, 179, 8, 0.2); border-radius:8px; text-align:center; font-size:11.5px; color:var(--text-muted);">No links crossed the ' + peakThreshold + '% threshold in this date range.</div>';
+        }
+      }
+    }
 
     document.addEventListener('DOMContentLoaded', loadTopology);
   </script>
