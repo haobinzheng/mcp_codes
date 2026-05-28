@@ -291,8 +291,8 @@ async def discover_bng_topology(host, device_log_file):
             log_file.write("\n--- show system lldp neighbor ---\n")
             log_file.write("\n".join(lldp_output) + "\n")
 
-        # Filter for CR neighbors
-        cr_neighbors = []
+        # Filter for CR and BNG neighbors
+        topo_neighbors = []
         for line in lldp_output:
             line = line.strip()
             if not line or line.startswith("="):
@@ -303,19 +303,19 @@ async def discover_bng_topology(host, device_log_file):
                 peer_system = parts[-1].replace("*", "")
                 peer_port = parts[-2]
                 
-                if "cr0" in peer_system.lower() or "cr" in peer_system.lower():
-                    cr_neighbors.append({
+                if "cr0" in peer_system.lower() or "cr" in peer_system.lower() or "bng" in peer_system.lower():
+                    topo_neighbors.append({
                         "local_port": port,
                         "peer_system": normalize_system_name(peer_system),
                         "peer_port": peer_port
                     })
 
-        if not cr_neighbors:
+        if not topo_neighbors:
             with open(device_log_file, 'a') as log_file:
-                log_file.write("No CR neighbors found via show system lldp neighbor.\n")
+                log_file.write("No CR or BNG neighbors found via show system lldp neighbor.\n")
             return {}
 
-        # Collect port details (LAG mapping and speed) in parallel for CR neighbors
+        # Collect port details (LAG mapping and speed) in parallel for discovered neighbors
         async def get_port_details(n):
             port = n["local_port"]
             port_output = await rate_limited_gnetch_command(f"show port {port}", host)
@@ -352,7 +352,7 @@ async def discover_bng_topology(host, device_log_file):
                 "speed_bps": speed_bps
             }
 
-        port_tasks = [get_port_details(n) for n in cr_neighbors]
+        port_tasks = [get_port_details(n) for n in topo_neighbors]
         port_details_list = await asyncio.gather(*port_tasks)
 
         lag_groups = {}
