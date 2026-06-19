@@ -1,0 +1,71 @@
+path: mikezh@re0-pr01.aus122> show mpls lsp ingress name PR01AUS122-AR01NUQ102-HSD-1 detail
+
+Ingress LSP: 168 sessions
+
+
+
+192.119.16.189
+
+  From: 23.255.255.37, State: Up, ActiveRoute: 0, LSPname: PR01AUS122-AR01NUQ102-HSD-1, LSPid: 10
+
+  ActivePath:  (primary)
+
+  Node/Link protection desired
+
+  LSPtype: Static Configured, Penultimate hop popping
+
+  LoadBalance: Random
+
+  Follow destination IGP metric
+
+  Autobandwidth
+
+  MinBW: 800kbps
+
+  AdjustTimer: 1800 secs AdjustThreshold: 15%
+
+  Max AvgBW util: 10.0991kbps, Bandwidth Adjustment in 781 second(s).
+
+  Overflow limit: 0, Overflow sample count: 0
+
+  Underflow limit: 0, Underflow sample count: 3, Underflow Max AvgBW: 10.0991kbps
+
+  Encoding type: Packet, Switching type: Packet, GPID: IPv4
+
+  LSP Self-ping Status : Enabled
+
+ *Primary                    State: Up
+
+    Priorities: 6 6
+
+    Bandwidth: 800kbps
+
+    OptimizeTimer: 600
+
+    SmartOptimizeTimer: 180
+
+          Exclude: RED
+
+    Flap Count: 14
+
+    MBB Count: 374
+
+    Reoptimization in 171 second(s).
+
+    Computed ERO (S [L] denotes strict [loose] hops): (CSPF metric: 240210)
+
+ 23.255.225.44 S 23.255.225.157 S 23.255.225.154 S 23.255.225.176 S 23.255.224.80 S
+
+ 23.255.225.235 S
+
+    Received RRO (ProtectionFlag 1=Available 2=InUse 4=B/W 8=Node 10=SoftPreempt 20=Node-ID):
+
+          192.119.16.8(flag=0x29) 23.255.225.44(flag=9 Label=347958) 23.255.255.13(flag=0x29) 23.255.225.157(flag=9 Label=256502) 192.119.16.61(flag=0x29) 23.255.225.154(flag=9 Label=133155) 192.119.16.25(flag=0x21) 23.255.225.176(flag=1 Label=175717) 23.255.255.43(flag=0x20) 23.255.224.80(Label=727601) 192.119.16.189(flag=0x20) 23.255.225.235(Label=0)
+
+Total 1 displayed, Up 1, Down 0 
+
+Hello. Let's break down this Junos MPLS LSP detail output. As an ingress 
+
+LSP session, this router (re0-pr01.aus122) is the head-end generating the RSVP signaling for this specific path.Here is the structured architectural breakdown of what is happening with this LSP.1. High-Level LSP PropertiesLSP Name & Identity: PR01AUS122-AR01NUQ102-HSD-1 (LSP ID: 10).Endpoints: * Ingress (From): 23.255.255.37Egress (To): 192.119.16.189Status: Up and currently the ActiveRoute.Signaling & Popping: It is a standard RSVP-signaled LSP using Penultimate Hop Popping (PHP), meaning the second-to-last router will strip the outer MPLS label before handing the raw packet to the egress node.Resiliency Desired: Node/Link protection desired. The ingress router has requested that downstream transit routers establish bypass/detour paths (FRR) to protect against both link and node failures.2. Bandwidth & Optimization (Autobandwidth)This LSP is heavily utilizing Junos Autobandwidth to dynamically resize itself based on actual traffic demand:Current Configured Minimum BW: 800kbps (This is also its current operational reservation, as seen under Bandwidth: 800kbps).The Timers: * AdjustTimer: 1800 secs: Every 30 minutes, it samples traffic and decides whether to resize. The next adjustment is scheduled in 781 seconds.AdjustThreshold: 15%: It will only change the bandwidth reservation if the traffic change fluctuates by more than 15%.Current Usage: Max AvgBW util: 10.0991kbps. The traffic is vastly under its minimum 800kbps allocation. Because of this, it has triggered 3 underflow samples, but it won't drop below its absolute floor of 800kbps.Optimization: OptimizeTimer: 600 / SmartOptimizeTimer: 180. Every 10 minutes, the router checks CSPF to see if a more optimal path through the IGP network has opened up. The next reoptimization check happens in 171 seconds.Path Stability: The path has a Flap Count: 14 but a massive MBB Count: 374 (Make-Before-Break). This means Junos has successfully and seamlessly shifted traffic to newly resized or re-optimized paths 374 times without dropping a single packet.3. Path Constraints & CSPFSetup/Hold Priorities: 6 6 (Fairly low priority. 0 is the highest/most aggressive, 7 is the lowest).Administrative Groups (Colors): Exclude: RED. When calculating the path via CSPF, any links marked with the admin-group "RED" are strictly avoided.Computed ERO (Explicit Route Object): This is the path CSPF calculated. All hops are marked S (Strict), meaning the RSVP Path messages must transit through these precise interface IPs sequentially:$$\text{23.255.225.44} \rightarrow \text{23.255.225.157} \rightarrow \text{23.255.225.154} \rightarrow \text{23.255.225.176} \rightarrow \text{23.255.224.80} \rightarrow \text{23.255.225.235}$$CSPF Metric cost for this path: 240210.4. Received RRO (Record Route Object) Deep DiveThe RRO tells us the actual real-time state of the path returned by RSVP, detailing the interface IPs, Router-IDs, assigned labels, and protection states:Hop #IP Address ReportedTypeLabelHex / Flags Meaning1192.119.16.8Router ID—0x29 = Node protection available, Bandwidth protection available, In-use223.255.225.44Downstream Int.347958flag=9 = Link & Node protection available323.255.255.13Router ID—0x29 = Full FRR protection active and ready423.255.225.157Downstream Int.256502flag=9 = Link & Node protection available5192.119.16.61Router ID—0x29 = Full FRR protection active and ready623.255.225.154Downstream Int.133155flag=9 = Link & Node protection available7192.119.16.25Router ID—0x21 = Link protection available, Node protection available823.255.225.176Downstream Int.175717flag=1 = Link protection available923.255.255.43Router ID—0x20 = Node-ID flag1023.255.224.80Downstream Int.727601No flags (Protection not available/requested on this segment)11192.119.16.189Egress Router ID—0x20 = Node-ID flag1223.255.225.235Final Egress Int.
+
+Junos explicitly prints the bitmask values for the protection flags:1 = Link Protection Available8 = Node Protection Available9 (1 + 8) = Both Link and Node Protection are Available.Step-by-Step Breakdown of the Output1. The Core Path (Hops 1 to 7)Look at the interface IPs and Router IDs returned in the early part of the RRO path:23.255.225.44(flag=9 Label=347958) $\rightarrow$ Flag is 9, meaning the upstream router has successfully built both Link and Node protection bypasses for this interface.23.255.225.157(flag=9 Label=256502) $\rightarrow$ Flag is 9 (Protected).23.255.225.154(flag=9 Label=133155) $\rightarrow$ Flag is 9 (Protected).192.119.16.8(flag=0x29) $\rightarrow$ 0x29 is hex for 41 in decimal ($32 + 8 + 1$). In RSVP signaling, this indicates that the Node-ID (0x20/32) is present, and Node (8) and Link (1) protection are actively available at this hop.2. The Tail End (Hop 10)Now look at the downstream interface right before it hits the final egress node:23.255.224.80(Label=727601)Notice that there is no flag= value printed at all for this hop.Why does this happen?When a hop shows a label but completely lacks protection flags, it means the transit router owning that interface (23.255.224.80) has not allocated a bypass LSP (Fast Reroute) for this specific segment.This usually happens for one of two reasons:Next-Hop is the Egress: By default, routers do not calculate node protection for the final egress router (there is no "next-next-hop" to route around it to). If link protection isn't explicitly configured or available on that final link, flags disappear entirely.Resource/Config Constraints: The transit router may lack an available alternate path to reach the destination, or RSVP link-protection isn't enabled on that specific interface.
