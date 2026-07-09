@@ -427,19 +427,33 @@ def render_lld_svg(
     draw_vport(985, 472, "et-0/0/48", direction="up")
     draw_lag_oval(970, 410, "ae0")
 
+    def find_remote_port(dev1_pref: str, port1: str, dev2_pref: str, default_val: str = "") -> str:
+        for c in active_links:
+            da, dz = c["device_a"], c["device_z"]
+            pa, pz = c["port_a"], c["port_z"]
+            if dev1_pref in da and dev2_pref in dz and pa == port1:
+                return pz
+            if dev1_pref in dz and dev2_pref in da and pz == port1:
+                return pa
+        return default_val
+
     # 3. fw01 -> agg07
+    p_fw01_53 = find_remote_port("agg07", "et-0/0/53", "fw01", "et-1/0/1")
+    p_fw01_54 = find_remote_port("agg07", "et-0/0/54", "fw01", "et-1/0/0")
     draw_line(435, 316, 435, 480)
     draw_line(465, 316, 465, 480)
-    draw_vport(435, 324, "et-1/0/0", direction="down")
-    draw_vport(465, 324, "et-1/0/1", direction="down")
+    draw_vport(435, 324, p_fw01_53, direction="down")
+    draw_vport(465, 324, p_fw01_54, direction="down")
     draw_vport(435, 472, "et-0/0/53", direction="up")
     draw_vport(465, 472, "et-0/0/54", direction="up")
 
     # 4. fw02 -> agg08
+    p_fw02_53 = find_remote_port("agg08", "et-0/0/53", "fw02", "et-1/0/1")
+    p_fw02_54 = find_remote_port("agg08", "et-0/0/54", "fw02", "et-1/0/0")
     draw_line(865, 316, 865, 480)
     draw_line(895, 316, 895, 480)
-    draw_vport(865, 324, "et-1/0/0", direction="down")
-    draw_vport(895, 324, "et-1/0/1", direction="down")
+    draw_vport(865, 324, p_fw02_53, direction="down")
+    draw_vport(895, 324, p_fw02_54, direction="down")
     draw_vport(865, 472, "et-0/0/53", direction="up")
     draw_vport(895, 472, "et-0/0/54", direction="up")
 
