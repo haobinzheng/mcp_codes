@@ -215,6 +215,7 @@ HTML_TEMPLATE = """<!doctype html>
     .metric-card.total::before { background: var(--accent-purple); }
     .metric-card.upgraded::before { background: var(--accent-indigo); }
     .metric-card.alert::before { background: var(--accent-rose); }
+    .metric-card.capacity::before { background: #06b6d4; }
 
     .metric-title {
       font-size: 13px;
@@ -449,6 +450,7 @@ HTML_TEMPLATE = """<!doctype html>
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('inspector')">Router Inspector</button>
       <button class="tab-btn" onclick="switchTab('overview')">High Utilization (>50%)</button>
+      <button class="tab-btn" onclick="switchTab('upgraded')">400G Upgraded</button>
       <button class="tab-btn" onclick="switchTab('history')">Utilization History</button>
       <button class="tab-btn" onclick="switchTab('p95')">P95 Peak Trend</button>
       <a href="/docs" target="_blank" class="tab-btn" style="text-decoration: none; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: var(--accent-purple); display: inline-flex; align-items: center;">Interactive API Docs ⚡</a>
@@ -582,6 +584,40 @@ HTML_TEMPLATE = """<!doctype html>
         <div class="empty-state" style="grid-column: 1/-1;">Select a date range and click Apply Filters above to view daily peak trends.</div>
       </div>
     </div>
+
+    <!-- Section 5: 400G Upgraded Interfaces -->
+    <div id="section-upgraded" class="view-section">
+      <div class="metrics-grid" style="margin-bottom: 24px;">
+        <div class="metric-card upgraded">
+          <div class="metric-title">400G Upgraded Interfaces</div>
+          <div id="upgraded-metric-total" class="metric-value">-</div>
+        </div>
+        <div class="metric-card total">
+          <div class="metric-title">Routers with 400G</div>
+          <div id="upgraded-metric-routers" class="metric-value">-</div>
+        </div>
+        <div class="metric-card alert">
+          <div class="metric-title">High Utilization (>50%)</div>
+          <div id="upgraded-metric-high" class="metric-value">-</div>
+        </div>
+        <div class="metric-card capacity">
+          <div class="metric-title">Total Provisioned Capacity</div>
+          <div id="upgraded-metric-capacity" class="metric-value">-</div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div style="font-size: 18px; font-weight: 600; color: var(--text-main);">400G Upgraded Interface Inventory & Trends</div>
+        <div style="display: flex; gap: 12px;">
+          <button id="upgraded-view-toggle-btn" class="tab-btn" onclick="toggleUpgradedView()" style="padding: 8px 16px; font-size: 13px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: var(--accent-purple);">📊 Show as Table</button>
+          <button id="upgraded-export-btn" class="tab-btn" onclick="exportUpgradedToCSV()" style="display: none; padding: 8px 16px; font-size: 13px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-indigo);">📥 Export to Excel</button>
+        </div>
+      </div>
+
+      <div id="upgraded-util-container" class="high-util-grid">
+        <div class="empty-state" style="grid-column: 1/-1;">Select an audit date to view 400G upgraded interfaces.</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -593,6 +629,8 @@ HTML_TEMPLATE = """<!doctype html>
     let lastHistoryData = null;
     let p95ViewMode = 'cards';
     let lastP95Data = null;
+    let upgradedViewMode = 'cards';
+    let lastUpgradedData = null;
 
     document.addEventListener("DOMContentLoaded", () => {
       loadDates();
@@ -607,10 +645,10 @@ HTML_TEMPLATE = """<!doctype html>
       miniChartInstances.forEach(inst => inst.destroy());
       miniChartInstances = [];
 
-      const buttons = document.querySelectorAll('.tabs button');
+      const targetBtn = document.querySelector(`.tabs .tab-btn[onclick*="'${tab}'"]`);
+      if (targetBtn) targetBtn.classList.add('active');
 
       if (tab === 'inspector') {
-        if (buttons[0]) buttons[0].classList.add('active');
         document.getElementById('section-inspector').classList.add('active');
         document.getElementById('standard-filter-group').style.display = 'flex';
         document.getElementById('router-filter-group').style.display = 'flex';
@@ -618,15 +656,20 @@ HTML_TEMPLATE = """<!doctype html>
         document.getElementById('p95-filter-group').style.display = 'none';
         onRouterChange();
       } else if (tab === 'overview') {
-        if (buttons[1]) buttons[1].classList.add('active');
         document.getElementById('section-overview').classList.add('active');
         document.getElementById('standard-filter-group').style.display = 'flex';
         document.getElementById('router-filter-group').style.display = 'none';
         document.getElementById('history-filter-group').style.display = 'none';
         document.getElementById('p95-filter-group').style.display = 'none';
         loadHighUtilization();
+      } else if (tab === 'upgraded') {
+        document.getElementById('section-upgraded').classList.add('active');
+        document.getElementById('standard-filter-group').style.display = 'flex';
+        document.getElementById('router-filter-group').style.display = 'none';
+        document.getElementById('history-filter-group').style.display = 'none';
+        document.getElementById('p95-filter-group').style.display = 'none';
+        load400GUpgraded();
       } else if (tab === 'history') {
-        if (buttons[2]) buttons[2].classList.add('active');
         document.getElementById('section-history').classList.add('active');
         document.getElementById('standard-filter-group').style.display = 'none';
         document.getElementById('router-filter-group').style.display = 'none';
@@ -634,7 +677,6 @@ HTML_TEMPLATE = """<!doctype html>
         document.getElementById('p95-filter-group').style.display = 'none';
         loadHighUtilizationHistory();
       } else if (tab === 'p95') {
-        if (buttons[3]) buttons[3].classList.add('active');
         document.getElementById('section-p95').classList.add('active');
         document.getElementById('standard-filter-group').style.display = 'none';
         document.getElementById('router-filter-group').style.display = 'none';
@@ -743,8 +785,10 @@ HTML_TEMPLATE = """<!doctype html>
         }
         if (activeTab === 'inspector') {
           await onRouterChange();
-        } else {
+        } else if (activeTab === 'overview') {
           await loadHighUtilization();
+        } else if (activeTab === 'upgraded') {
+          await load400GUpgraded();
         }
       } catch (err) {
         console.error("Failed to load routers", err);
@@ -1623,6 +1667,229 @@ HTML_TEMPLATE = """<!doctype html>
       document.body.removeChild(link);
     }
 
+    async function load400GUpgraded() {
+      const date = document.getElementById('date-select').value;
+      if (!date) return;
+      showLoading(true);
+      try {
+        const resp = await fetch(`/api/upgraded_400g?date=${encodeURIComponent(date)}`);
+        const data = await resp.json();
+        lastUpgradedData = data;
+
+        const items = data.upgraded_interfaces || [];
+        document.getElementById('upgraded-metric-total').textContent = items.length;
+        const routers = new Set(items.map(it => it.router));
+        document.getElementById('upgraded-metric-routers').textContent = routers.size;
+        const highCount = items.filter(it => it.peak_input > 50 || it.peak_output > 50).length;
+        document.getElementById('upgraded-metric-high').textContent = highCount;
+        const totalCapGbps = items.length * 400;
+        document.getElementById('upgraded-metric-capacity').textContent = totalCapGbps >= 1000 ? (totalCapGbps / 1000).toFixed(1) + " Tbps" : totalCapGbps + " Gbps";
+
+        renderUpgradedData();
+      } catch (err) {
+        console.error("Failed to load 400G upgraded data", err);
+      }
+      showLoading(false);
+    }
+
+    function toggleUpgradedView() {
+      upgradedViewMode = upgradedViewMode === 'cards' ? 'table' : 'cards';
+      const btn = document.getElementById('upgraded-view-toggle-btn');
+      const exportBtn = document.getElementById('upgraded-export-btn');
+      if (upgradedViewMode === 'table') {
+        btn.textContent = '🎴 Show as Cards';
+        exportBtn.style.display = 'inline-flex';
+      } else {
+        btn.textContent = '📊 Show as Table';
+        exportBtn.style.display = 'none';
+      }
+      renderUpgradedData();
+    }
+
+    function renderUpgradedData() {
+      if (!lastUpgradedData) return;
+      const container = document.getElementById('upgraded-util-container');
+      container.replaceChildren();
+
+      miniChartInstances.forEach(inst => inst.destroy());
+      miniChartInstances = [];
+
+      const items = lastUpgradedData.upgraded_interfaces || [];
+
+      if (items.length === 0) {
+        const div = document.createElement('div');
+        div.className = 'empty-state';
+        div.style.gridColumn = '1/-1';
+        div.textContent = "No 400G upgraded interfaces found on this audit date.";
+        container.appendChild(div);
+        return;
+      }
+
+      if (upgradedViewMode === 'table') {
+        container.style.display = 'block';
+        const tableContainer = document.createElement('div');
+        tableContainer.className = 'table-container';
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+          <tr>
+            <th>Router</th>
+            <th>Interface</th>
+            <th>Neighbor</th>
+            <th>Speed</th>
+            <th>Peak Input %</th>
+            <th>Peak Output %</th>
+            <th>Upgrade Status</th>
+          </tr>
+        `;
+        const tbody = document.createElement('tbody');
+        items.forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${item.router}</strong></td>
+            <td><code>${item.interface}</code></td>
+            <td>${item.neighbor}</td>
+            <td>${item.speed}</td>
+            <td><strong style="color: ${item.peak_input > 80 ? '#f43f5e' : item.peak_input > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_input)}%</strong></td>
+            <td><strong style="color: ${item.peak_output > 80 ? '#f43f5e' : item.peak_output > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_output)}%</strong></td>
+            <td><span class="badge badge-ok">${item.upgrade_status || '400G upgraded'}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+        table.append(thead, tbody);
+        tableContainer.appendChild(table);
+        container.appendChild(tableContainer);
+      } else {
+        container.style.display = 'grid';
+        items.forEach((item, i) => {
+          const card = document.createElement('div');
+          card.className = 'high-util-card';
+          
+          const header = document.createElement('div');
+          header.className = 'header';
+          
+          const leftSide = document.createElement('div');
+          leftSide.style.display = 'flex';
+          leftSide.style.alignItems = 'center';
+          leftSide.style.gap = '12px';
+          
+          const routerSpan = document.createElement('span');
+          routerSpan.className = 'router-name';
+          routerSpan.textContent = item.router;
+          
+          const intfSpan = document.createElement('span');
+          intfSpan.className = 'intf-name';
+          intfSpan.textContent = item.interface;
+          
+          leftSide.append(routerSpan, intfSpan);
+          
+          const spanUpg = document.createElement('span');
+          spanUpg.className = 'badge badge-ok';
+          spanUpg.textContent = item.upgrade_status || '400G upgraded';
+          
+          header.append(leftSide, spanUpg);
+
+          const details = document.createElement('div');
+          details.className = 'details';
+          const divN = document.createElement('div'); divN.innerHTML = `Neighbor: <strong>${item.neighbor}</strong>`;
+          const divS = document.createElement('div'); divS.innerHTML = `Speed: <strong>${item.speed}</strong>`;
+          const divI = document.createElement('div'); divI.innerHTML = `Peak Input: <strong style="color: ${item.peak_input > 80 ? '#f43f5e' : item.peak_input > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_input)}%</strong>`;
+          const divO = document.createElement('div'); divO.innerHTML = `Peak Output: <strong style="color: ${item.peak_output > 80 ? '#f43f5e' : item.peak_output > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_output)}%</strong>`;
+          details.append(divN, divS, divI, divO);
+
+          const chartWrap = document.createElement('div');
+          chartWrap.className = 'mini-chart-wrapper';
+          const canvas = document.createElement('canvas');
+          canvas.id = `upgraded-mini-chart-${i}`;
+          chartWrap.appendChild(canvas);
+
+          card.append(header, details, chartWrap);
+          container.appendChild(card);
+
+          const ctx = canvas.getContext('2d');
+          const inst = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: item.timestamps,
+              datasets: [
+                {
+                  label: 'Input %',
+                  data: item.series.input,
+                  borderColor: '#06b6d4',
+                  backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                  fill: true,
+                  tension: 0.3,
+                  pointRadius: 3
+                },
+                {
+                  label: 'Output %',
+                  data: item.series.output,
+                  borderColor: '#10b981',
+                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                  fill: true,
+                  tension: 0.3,
+                  pointRadius: 3
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: { max: 100, grid: { color: 'rgba(51,65,85,0.2)' }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
+                x: { grid: { color: 'rgba(51,65,85,0.2)' }, ticks: { font: { size: 10 }, color: '#94a3b8' } }
+              },
+              plugins: {
+                legend: {
+                  display: true,
+                  labels: {
+                    color: '#f8fafc',
+                    font: { family: 'Inter', size: 10, weight: 600 }
+                  }
+                }
+              }
+            }
+          });
+          miniChartInstances.push(inst);
+        });
+      }
+    }
+
+    function exportUpgradedToCSV() {
+      if (!lastUpgradedData || !lastUpgradedData.upgraded_interfaces) return;
+      const escapeCSV = (val) => {
+        if (val === null || val === undefined) return '""';
+        const str = String(val).replace(/"/g, '""');
+        return `"${str}"`;
+      };
+      
+      const csvRows = [];
+      csvRows.push(["Router", "Interface", "Neighbor", "Speed", "Peak Input %", "Peak Output %", "Upgrade Status"].map(escapeCSV).join(","));
+
+      lastUpgradedData.upgraded_interfaces.forEach(item => {
+        csvRows.push([
+          item.router,
+          item.interface,
+          item.neighbor,
+          item.speed,
+          Math.round(item.peak_input) + "%",
+          Math.round(item.peak_output) + "%",
+          item.upgrade_status || "400G upgraded"
+        ].map(escapeCSV).join(","));
+      });
+
+      const csvContent = "\\ufeff" + csvRows.join("\\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `400G_upgraded_interfaces_${new Date().toISOString().slice(0,10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
   </script>
 </body>
 </html>
@@ -2059,6 +2326,109 @@ def route_api_p95_history(
 
     p95_history.sort(key=lambda x: (x["router"], x["interface"]))
     return {"high_interfaces_history": p95_history}
+
+
+@app.get("/api/upgraded_400g")
+def route_api_upgraded_400g(date: str = Query("", pattern=r"^(\d{4}-\d{2}-\d{2})?$")):
+    if not date:
+        return {"upgraded_interfaces": []}
+
+    try:
+        date_path = get_safe_path(date)
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="Access Denied")
+
+    if not os.path.exists(date_path):
+        return {"upgraded_interfaces": []}
+
+    routers = [r for r in os.listdir(date_path) if os.path.isdir(os.path.join(date_path, r))]
+    routers.sort()
+
+    upgraded_items = []
+
+    for r in routers:
+        router_path = os.path.join(date_path, r)
+        files = glob.glob(os.path.join(router_path, f"{r}_*.json"))
+        files.sort()
+
+        valid_files_data = []
+        for f in files:
+            basename = os.path.basename(f)
+            match = re.search(r"_(\d{4}_\d{2}_\d{2}_\d{2}_\d{2})\.json$", basename)
+            if not match:
+                continue
+            ts_raw = match.group(1)
+            parts = ts_raw.split("_")
+            ts_label = f"{parts[3]}:{parts[4]}" if len(parts) >= 5 else ts_raw
+            
+            try:
+                with open(f, "r") as fh:
+                    data = json.load(fh)
+                valid_files_data.append((ts_label, data))
+            except Exception:
+                continue
+
+        timestamps = [item[0] for item in valid_files_data]
+        r_series = {}
+        r_meta = {}
+
+        for ts_label, data in valid_files_data:
+            present_interfaces = set()
+            for k, v in data.items():
+                if k in ["role", "year", "audit_timestamp"] or not isinstance(v, dict):
+                    continue
+                
+                present_interfaces.add(k)
+                if k not in r_series:
+                    idx = timestamps.index(ts_label)
+                    r_series[k] = {
+                        "input": [None] * idx,
+                        "output": [None] * idx
+                    }
+                
+                in_pct = round(v.get("input_bps_percent", 0), 1)
+                out_pct = round(v.get("output_bps_percent", 0), 1)
+                r_series[k]["input"].append(in_pct)
+                r_series[k]["output"].append(out_pct)
+
+                is_400g = v.get("is_400g_upgraded", False) or v.get("upgrade_status") == "400G upgraded" or "400g" in str(v.get("speed", "")).lower()
+
+                r_meta[k] = {
+                    "neighbor": v.get("neighbor", "Unknown"),
+                    "circuit": v.get("Circuit", "Unknown"),
+                    "speed": v.get("speed", "Unknown"),
+                    "is_400g_upgraded": is_400g,
+                    "upgrade_status": v.get("upgrade_status", "400G upgraded" if is_400g else "Not upgraded")
+                }
+
+            for k in r_series:
+                if k not in present_interfaces:
+                    r_series[k]["input"].append(None)
+                    r_series[k]["output"].append(None)
+
+        for intf, series in r_series.items():
+            meta = r_meta.get(intf, {})
+            if meta.get("is_400g_upgraded", False):
+                valid_in = [val for val in series["input"] if val is not None]
+                valid_out = [val for val in series["output"] if val is not None]
+                peak_in = max(valid_in) if valid_in else 0
+                peak_out = max(valid_out) if valid_out else 0
+
+                upgraded_items.append({
+                    "router": r,
+                    "interface": intf,
+                    "neighbor": meta.get("neighbor", "Unknown"),
+                    "circuit": meta.get("circuit", "Unknown"),
+                    "speed": meta.get("speed", "Unknown"),
+                    "peak_input": peak_in,
+                    "peak_output": peak_out,
+                    "timestamps": timestamps,
+                    "series": series,
+                    "is_400g_upgraded": True,
+                    "upgrade_status": meta.get("upgrade_status", "400G upgraded")
+                })
+
+    return {"upgraded_interfaces": upgraded_items}
 
 
 def main() -> None:

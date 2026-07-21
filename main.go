@@ -260,6 +260,10 @@ type HighUtilizationHistoryResponse struct {
 	HighInterfacesHistory []HighInterfaceResponse `json:"high_interfaces_history"`
 }
 
+type UpgradedUtilizationResponse struct {
+	UpgradedInterfaces []HighInterfaceResponse `json:"upgraded_interfaces"`
+}
+
 // Helper for JSON HTTP responses
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
@@ -1086,6 +1090,177 @@ func main() {
 		})
 
 		writeJSON(w, http.StatusOK, HighUtilizationHistoryResponse{HighInterfacesHistory: p95History})
+	})
+
+	// API: 400G Upgraded Route
+	mux.HandleFunc("GET /api/upgraded_400g", func(w http.ResponseWriter, r *http.Request) {
+		date := r.URL.Query().Get("date")
+		if date == "" || !dateParamRegex.MatchString(date) {
+			writeJSON(w, http.StatusOK, UpgradedUtilizationResponse{UpgradedInterfaces: []HighInterfaceResponse{}})
+			return
+		}
+
+		datePath, err := getSafePath(date)
+		if err != nil {
+			writeError(w, http.StatusForbidden, "Access Denied")
+			return
+		}
+
+		if _, err := os.Stat(datePath); os.IsNotExist(err) {
+			writeJSON(w, http.StatusOK, UpgradedUtilizationResponse{UpgradedInterfaces: []HighInterfaceResponse{}})
+			return
+		}
+
+		routersEntries, err := os.ReadDir(datePath)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to read date directory")
+			return
+		}
+
+		var routers []string
+		for _, entry := range routersEntries {
+			if entry.IsDir() {
+				routers = append(routers, entry.Name())
+			}
+		}
+		sort.Strings(routers)
+
+		var upgradedItems []HighInterfaceResponse
+
+		for _, router := range routers {
+			routerPath := filepath.Join(datePath, router)
+			entries, err := os.ReadDir(routerPath)
+			if err != nil {
+				continue
+			}
+
+			type FileData struct {
+				TimestampLabel string
+				FilePath       string
+			}
+
+			var validFiles []FileData
+			for _, entry := range entries {
+				if entry.IsDir() {
+					continue
+				}
+				name := entry.Name()
+				if strings.HasPrefix(name, router+"_") && strings.HasSuffix(name, ".json") {
+					matches := fileRegex.FindStringSubmatch(name)
+					if len(matches) >= 6 {
+						tsLabel := fmt.Sprintf("%s:%s", matches[4], matches[5])
+						validFiles = append(validFiles, FileData{
+							TimestampLabel: tsLabel,
+							FilePath:       filepath.Join(routerPath, name),
+						})
+					}
+				}
+			}
+
+			sort.Slice(validFiles, func(i, j int) bool {
+				return validFiles[i].FilePath < validFiles[j].FilePath
+			})
+
+			var timestamps []string
+			for _, vf := range validFiles {
+				timestamps = append(timestamps, vf.TimestampLabel)
+			}
+
+			rSeries := make(map[string]SeriesResponse)
+			type IntfMetadata struct {
+				Neighbor       string
+				Speed          string
+				Is400GUpgraded bool
+				UpgradeStatus  string
+			}
+			rMeta := make(map[string]IntfMetadata)
+
+			// Concurrent file parsing
+			filePaths := make([]string, len(validFiles))
+			for i, vf := range validFiles {
+				filePaths[i] = vf.FilePath
+			}
+
+			resultsMap, err := parseFilesConcurrently(filePaths)
+			if err != nil {
+				continue
+			}
+
+			for fileIdx := range validFiles {
+				content := resultsMap[fileIdx]
+				if content == nil {
+					continue
+				}
+
+				presentInterfaces := make(map[string]bool)
+				for k, v := range content.Interfaces {
+					presentInterfaces[k] = true
+
+					if _, exists := rSeries[k]; !exists {
+						inputs := make([]*float64, fileIdx)
+						outputs := make([]*float64, fileIdx)
+						rSeries[k] = SeriesResponse{Input: inputs, Output: outputs}
+					}
+
+					inVal := v.InputPercent
+					outVal := v.OutputPercent
+
+					series := rSeries[k]
+					series.Input = append(series.Input, &inVal)
+					series.Output = append(series.Output, &outVal)
+					rSeries[k] = series
+
+					is400G := v.Is400GUpgraded || v.UpgradeStatus == "400G upgraded" || strings.Contains(strings.ToLower(v.Speed), "400g")
+
+					rMeta[k] = IntfMetadata{
+						Neighbor:       v.Neighbor,
+						Speed:          v.Speed,
+						Is400GUpgraded: is400G,
+						UpgradeStatus:  v.UpgradeStatus,
+					}
+				}
+
+				for k, series := range rSeries {
+					if !presentInterfaces[k] {
+						series.Input = append(series.Input, nil)
+						series.Output = append(series.Output, nil)
+						rSeries[k] = series
+					}
+				}
+			}
+
+			for intf, series := range rSeries {
+				meta := rMeta[intf]
+				if meta.Is400GUpgraded {
+					var peakIn, peakOut float64
+					for _, val := range series.Input {
+						if val != nil && *val > peakIn {
+							peakIn = *val
+						}
+					}
+					for _, val := range series.Output {
+						if val != nil && *val > peakOut {
+							peakOut = *val
+						}
+					}
+
+					upgradedItems = append(upgradedItems, HighInterfaceResponse{
+						Router:         router,
+						Interface:      intf,
+						Neighbor:       meta.Neighbor,
+						Speed:          meta.Speed,
+						PeakInput:      peakIn,
+						PeakOutput:     peakOut,
+						Timestamps:     timestamps,
+						Series:         series,
+						Is400GUpgraded: true,
+						UpgradeStatus:  meta.UpgradeStatus,
+					})
+				}
+			}
+		}
+
+		writeJSON(w, http.StatusOK, UpgradedUtilizationResponse{UpgradedInterfaces: upgradedItems})
 	})
 
 	// Wrap http.Handler with robust Logging and Recoverer Middlewares
