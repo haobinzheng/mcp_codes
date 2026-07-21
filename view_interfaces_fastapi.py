@@ -24,7 +24,7 @@ def get_safe_path(*subpaths: str) -> str:
         raise PermissionError("Security Violation: Path traversal detected.")
     return target
 
-HTML_TEMPLATE = """<!doctype html>
+HTML_TEMPLATE = r"""<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -2104,7 +2104,7 @@ def route_api_router_data(date: str = Query(...), router: str = Query(...)):
             series_map[k]["input"].append(in_pct)
             series_map[k]["output"].append(out_pct)
             
-            is_upg, num_400g, speed_gbps = is_400g_upgraded_interface(r, v.get("neighbor", ""), v)
+            is_upg, num_400g, speed_gbps = is_400g_upgraded_interface(router, v.get("neighbor", ""), v)
             latest_intfs[k] = {
                 "neighbor": v.get("neighbor", "Unknown"),
                 "circuit": v.get("Circuit", "Unknown"),
