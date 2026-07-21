@@ -583,7 +583,7 @@
         <div style="font-size: 18px; font-weight: 600; color: var(--text-main);">400G Upgraded Interface Inventory & Trends</div>
         <div style="display: flex; gap: 12px;">
           <button id="upgraded-view-toggle-btn" class="tab-btn" onclick="toggleUpgradedView()" style="padding: 8px 16px; font-size: 13px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: var(--accent-purple);">📊 Show as Table</button>
-          <button id="upgraded-export-btn" class="tab-btn" onclick="exportUpgradedToCSV()" style="display: none; padding: 8px 16px; font-size: 13px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-indigo);">📥 Export to Excel</button>
+          <button id="upgraded-export-btn" class="tab-btn" onclick="exportUpgradedToCSV()" style="display: inline-flex; padding: 8px 16px; font-size: 13px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-indigo);">📥 Export to Excel</button>
         </div>
       </div>
 
@@ -604,6 +604,26 @@
     let lastP95Data = null;
     let upgradedViewMode = 'cards';
     let lastUpgradedData = null;
+
+    function parseSpeedToGbps(speedStr) {
+      if (!speedStr) return 0;
+      const s = String(speedStr).toLowerCase().trim();
+      const match = s.match(/(\d+(?:\.\d+)?)\s*(t|g)/);
+      if (match) {
+        const val = parseFloat(match[1]);
+        const unit = match[2];
+        return unit === 't' ? Math.round(val * 1000) : Math.round(val);
+      }
+      return 0;
+    }
+
+    function parseSpeedTo400GPorts(speedStr, is400G = true) {
+      const gbps = parseSpeedToGbps(speedStr);
+      if (gbps >= 400) {
+        return Math.max(1, Math.floor(gbps / 400));
+      }
+      return is400G ? 1 : 0;
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
       loadDates();
@@ -801,7 +821,10 @@
         const pIn = s.input.length > 0 ? Math.max(...s.input) : info.input_percent;
         const pOut = s.output.length > 0 ? Math.max(...s.output) : info.output_percent;
 
-        if (info.is_400g_upgraded) upgraded++;
+        if (info.is_400g_upgraded) {
+          const ports = info.num_400g_ports || parseSpeedTo400GPorts(info.speed);
+          upgraded += ports;
+        }
         if (pIn > 50 || pOut > 50) highUtil++;
       });
       document.getElementById('metric-total').textContent = keys.length;
@@ -1651,12 +1674,23 @@
         lastUpgradedData = data;
 
         const items = data.upgraded_interfaces || [];
-        document.getElementById('upgraded-metric-total').textContent = items.length;
-        const routers = new Set(items.map(it => it.router));
+
+        // Total 400G Ports installed across all upgraded links
+        const total400GPorts = items.reduce((sum, it) => {
+          if (it.num_400g_ports != null && it.num_400g_ports > 0) return sum + it.num_400g_ports;
+          return sum + parseSpeedTo400GPorts(it.speed);
+        }, 0);
+        document.getElementById('upgraded-metric-total').textContent = total400GPorts;
+
+        // Unique routers (case-insensitive, trimmed)
+        const routers = new Set(items.map(it => (it.router || '').toLowerCase().trim()).filter(Boolean));
         document.getElementById('upgraded-metric-routers').textContent = routers.size;
+
         const highCount = items.filter(it => it.peak_input > 50 || it.peak_output > 50).length;
         document.getElementById('upgraded-metric-high').textContent = highCount;
-        const totalCapGbps = items.length * 400;
+
+        // Total Provisioned Capacity = (Total 400G Ports / 2) * 400 Gbps
+        const totalCapGbps = (total400GPorts / 2) * 400;
         document.getElementById('upgraded-metric-capacity').textContent = totalCapGbps >= 1000 ? (totalCapGbps / 1000).toFixed(1) + " Tbps" : totalCapGbps + " Gbps";
 
         renderUpgradedData();
@@ -1669,13 +1703,10 @@
     function toggleUpgradedView() {
       upgradedViewMode = upgradedViewMode === 'cards' ? 'table' : 'cards';
       const btn = document.getElementById('upgraded-view-toggle-btn');
-      const exportBtn = document.getElementById('upgraded-export-btn');
       if (upgradedViewMode === 'table') {
         btn.textContent = '🎴 Show as Cards';
-        exportBtn.style.display = 'inline-flex';
       } else {
         btn.textContent = '📊 Show as Table';
-        exportBtn.style.display = 'none';
       }
       renderUpgradedData();
     }
@@ -1710,6 +1741,7 @@
             <th>Router</th>
             <th>Interface</th>
             <th>Neighbor</th>
+            <th>Circuit</th>
             <th>Speed</th>
             <th>Peak Input %</th>
             <th>Peak Output %</th>
@@ -1718,12 +1750,15 @@
         `;
         const tbody = document.createElement('tbody');
         items.forEach(item => {
+          const ports = item.num_400g_ports || parseSpeedTo400GPorts(item.speed);
+          const portLabel = ports > 1 ? ` (${ports}x 400G)` : (ports === 1 ? ` (1x 400G)` : '');
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td><strong>${item.router}</strong></td>
             <td><code>${item.interface}</code></td>
             <td>${item.neighbor}</td>
-            <td>${item.speed}</td>
+            <td>${item.circuit || 'Unknown'}</td>
+            <td>${item.speed}${portLabel}</td>
             <td><strong style="color: ${item.peak_input > 80 ? '#f43f5e' : item.peak_input > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_input)}%</strong></td>
             <td><strong style="color: ${item.peak_output > 80 ? '#f43f5e' : item.peak_output > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_output)}%</strong></td>
             <td><span class="badge badge-ok">${item.upgrade_status || '400G upgraded'}</span></td>
@@ -1763,13 +1798,17 @@
           
           header.append(leftSide, spanUpg);
 
+          const ports = item.num_400g_ports || parseSpeedTo400GPorts(item.speed);
+          const portLabel = ports > 1 ? ` (${ports}x 400G)` : (ports === 1 ? ` (1x 400G)` : '');
+
           const details = document.createElement('div');
           details.className = 'details';
           const divN = document.createElement('div'); divN.innerHTML = `Neighbor: <strong>${item.neighbor}</strong>`;
-          const divS = document.createElement('div'); divS.innerHTML = `Speed: <strong>${item.speed}</strong>`;
+          const divC = document.createElement('div'); divC.innerHTML = `Circuit: <strong>${item.circuit || 'Unknown'}</strong>`;
+          const divS = document.createElement('div'); divS.innerHTML = `Speed: <strong>${item.speed}${portLabel}</strong>`;
           const divI = document.createElement('div'); divI.innerHTML = `Peak Input: <strong style="color: ${item.peak_input > 80 ? '#f43f5e' : item.peak_input > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_input)}%</strong>`;
           const divO = document.createElement('div'); divO.innerHTML = `Peak Output: <strong style="color: ${item.peak_output > 80 ? '#f43f5e' : item.peak_output > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_output)}%</strong>`;
-          details.append(divN, divS, divI, divO);
+          details.append(divN, divC, divS, divI, divO);
 
           const chartWrap = document.createElement('div');
           chartWrap.className = 'mini-chart-wrapper';
@@ -1838,14 +1877,17 @@
       };
       
       const csvRows = [];
-      csvRows.push(["Router", "Interface", "Neighbor", "Speed", "Peak Input %", "Peak Output %", "Upgrade Status"].map(escapeCSV).join(","));
+      csvRows.push(["Router", "Interface", "Neighbor", "Circuit", "Speed", "400G Ports", "Peak Input %", "Peak Output %", "Upgrade Status"].map(escapeCSV).join(","));
 
       lastUpgradedData.upgraded_interfaces.forEach(item => {
+        const ports = item.num_400g_ports || parseSpeedTo400GPorts(item.speed);
         csvRows.push([
           item.router,
           item.interface,
           item.neighbor,
+          item.circuit || "Unknown",
           item.speed,
+          ports,
           Math.round(item.peak_input) + "%",
           Math.round(item.peak_output) + "%",
           item.upgrade_status || "400G upgraded"

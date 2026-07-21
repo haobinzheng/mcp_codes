@@ -92,20 +92,21 @@ type AuditFileContent struct {
 }
 
 type ParsedInterfaceDetail struct {
-	Neighbor       string   `json:"neighbor"`
-	Circuit        string   `json:"Circuit"`
-	Description    string   `json:"description"`
-	Speed          string   `json:"speed"`
-	SpeedHuman     float64  `json:"speed_human"`
-	InputBps       float64  `json:"input_bps"`
-	InputPercent   float64  `json:"input_bps_percent"`
-	OutputBps      float64  `json:"output_bps"`
-	OutputPercent  float64  `json:"output_bps_percent"`
-	InputPps       float64  `json:"input_pps"`
-	OutputPps      float64  `json:"output_pps"`
-	AEList         []string `json:"ae_list"`
-	Is400GUpgraded bool     `json:"is_400g_upgraded"`
-	UpgradeStatus  string   `json:"upgrade_status"`
+	Neighbor       string            `json:"neighbor"`
+	Circuit        string            `json:"Circuit"`
+	Description    string            `json:"description"`
+	Speed          string            `json:"speed"`
+	SpeedHuman     float64           `json:"speed_human"`
+	InputBps       float64           `json:"input_bps"`
+	InputPercent   float64           `json:"input_bps_percent"`
+	OutputBps      float64           `json:"output_bps"`
+	OutputPercent  float64           `json:"output_bps_percent"`
+	InputPps       float64           `json:"input_pps"`
+	OutputPps      float64           `json:"output_pps"`
+	AEList         []string          `json:"ae_list"`
+	MemberSpeeds   map[string]string `json:"member_speeds"`
+	Is400GUpgraded bool              `json:"is_400g_upgraded"`
+	UpgradeStatus  string            `json:"upgrade_status"`
 }
 
 // Parses dynamic interface dictionary keys from Juniper audit JSON outputs
@@ -222,6 +223,8 @@ type InterfaceInfoResponse struct {
 	Neighbor       string  `json:"neighbor"`
 	Circuit        string  `json:"circuit"`
 	Speed          string  `json:"speed"`
+	Num400GPorts   int     `json:"num_400g_ports"`
+	SpeedGbps      int     `json:"speed_gbps"`
 	InputPercent   float64 `json:"input_percent"`
 	OutputPercent  float64 `json:"output_percent"`
 	Is400GUpgraded bool    `json:"is_400g_upgraded"`
@@ -243,13 +246,91 @@ type HighInterfaceResponse struct {
 	Router         string         `json:"router"`
 	Interface      string         `json:"interface"`
 	Neighbor       string         `json:"neighbor"`
+	Circuit        string         `json:"circuit"`
 	Speed          string         `json:"speed"`
+	Num400GPorts   int            `json:"num_400g_ports"`
+	SpeedGbps      int            `json:"speed_gbps"`
 	PeakInput      float64        `json:"peak_input"`
 	PeakOutput     float64        `json:"peak_output"`
 	Timestamps     []string       `json:"timestamps"`
 	Series         SeriesResponse `json:"series"`
 	Is400GUpgraded bool           `json:"is_400g_upgraded"`
 	UpgradeStatus  string         `json:"upgrade_status"`
+}
+
+func parseSpeedGbps(speedStr string) int {
+	if speedStr == "" {
+		return 0
+	}
+	s := strings.ToLower(strings.TrimSpace(speedStr))
+	re := regexp.MustCompile(`(\d+(?:\.\d+)?)\s*(t|g)`)
+	matches := re.FindStringSubmatch(s)
+	if len(matches) >= 3 {
+		val, err := strconv.ParseFloat(matches[1], 64)
+		if err == nil {
+			if matches[2] == "t" {
+				return int(val * 1000)
+			}
+			return int(val)
+		}
+	}
+	return 0
+}
+
+func calculate400GPorts(speedStr string, is400G bool, memberSpeeds map[string]string, aeList []string) (int, int) {
+	if len(memberSpeeds) > 0 {
+		mPorts := 0
+		for _, sp := range memberSpeeds {
+			if strings.Contains(strings.ToLower(sp), "400g") {
+				mPorts++
+			}
+		}
+		if mPorts > 0 {
+			return mPorts, mPorts * 400
+		}
+	}
+
+	speedGbps := parseSpeedGbps(speedStr)
+	numMembers := len(aeList)
+
+	if speedGbps >= 400 {
+		if numMembers > 0 {
+			perMember := float64(speedGbps) / float64(numMembers)
+			if perMember >= 399.0 && perMember <= 401.0 {
+				return numMembers, speedGbps
+			} else {
+				return 0, speedGbps
+			}
+		} else {
+			if speedGbps%400 == 0 {
+				return speedGbps / 400, speedGbps
+			}
+		}
+	}
+
+	return 0, speedGbps
+}
+
+var prBngMprRegex = regexp.MustCompile("(?i)\\b(re\\d+-)?(pr|bng|mpr)\\d*")
+
+func is400GUpgradedInterface(router string, neighbor string, v ParsedInterfaceDetail) (bool, int, int) {
+	r := strings.ToLower(strings.TrimSpace(router))
+	neigh := strings.ToLower(strings.TrimSpace(neighbor))
+
+	if strings.HasPrefix(r, "bng") || strings.HasPrefix(r, "pr") || strings.HasPrefix(r, "mpr") {
+		return false, 0, 0
+	}
+
+	if prBngMprRegex.MatchString(neigh) {
+		return false, 0, 0
+	}
+
+	num400G, speedGbps := calculate400GPorts(v.Speed, v.Is400GUpgraded || v.UpgradeStatus == "400G upgraded", v.MemberSpeeds, v.AEList)
+	is400G := v.Is400GUpgraded || v.UpgradeStatus == "400G upgraded" || num400G > 0
+	if is400G {
+		return true, num400G, speedGbps
+	}
+	return false, 0, speedGbps
 }
 
 type HighUtilizationResponse struct {
@@ -501,14 +582,22 @@ func main() {
 				series.Output = append(series.Output, &outVal)
 				seriesMap[k] = series
 
+				isUpg, num400G, speedGbps := is400GUpgradedInterface(router, v.Neighbor, v)
+				upgStatus := "400G upgraded"
+				if !isUpg {
+					upgStatus = "Not upgraded"
+				}
+
 				latestIntfs[k] = InterfaceInfoResponse{
 					Neighbor:       v.Neighbor,
 					Circuit:        v.Circuit,
 					Speed:          v.Speed,
+					Num400GPorts:   num400G,
+					SpeedGbps:      speedGbps,
 					InputPercent:   inVal,
 					OutputPercent:  outVal,
-					Is400GUpgraded: v.Is400GUpgraded,
-					UpgradeStatus:  v.UpgradeStatus,
+					Is400GUpgraded: isUpg,
+					UpgradeStatus:  upgStatus,
 				}
 			}
 
@@ -605,7 +694,10 @@ func main() {
 			rSeries := make(map[string]SeriesResponse)
 			type IntfMetadata struct {
 				Neighbor       string
+				Circuit        string
 				Speed          string
+				Num400GPorts   int
+				SpeedGbps      int
 				Is400GUpgraded bool
 				UpgradeStatus  string
 			}
@@ -646,11 +738,25 @@ func main() {
 					series.Output = append(series.Output, &outVal)
 					rSeries[k] = series
 
+					num400G, speedGbps := calculate400GPorts(v.Speed, v.Is400GUpgraded, v.MemberSpeeds, v.AEList)
+					is400G := v.Is400GUpgraded || num400G > 0
+					upgStatus := v.UpgradeStatus
+					if upgStatus == "" {
+						if is400G {
+							upgStatus = "400G upgraded"
+						} else {
+							upgStatus = "Not upgraded"
+						}
+					}
+
 					rMeta[k] = IntfMetadata{
 						Neighbor:       v.Neighbor,
+						Circuit:        v.Circuit,
 						Speed:          v.Speed,
-						Is400GUpgraded: v.Is400GUpgraded,
-						UpgradeStatus:  v.UpgradeStatus,
+						Num400GPorts:   num400G,
+						SpeedGbps:      speedGbps,
+						Is400GUpgraded: is400G,
+						UpgradeStatus:  upgStatus,
 					}
 				}
 
@@ -682,6 +788,7 @@ func main() {
 						Router:         router,
 						Interface:      intf,
 						Neighbor:       meta.Neighbor,
+						Circuit:        meta.Circuit,
 						Speed:          meta.Speed,
 						PeakInput:      peakIn,
 						PeakOutput:     peakOut,
@@ -818,6 +925,7 @@ func main() {
 								Router:     router,
 								Interface:  k,
 								Neighbor:   v.Neighbor,
+								Circuit:    v.Circuit,
 								Speed:      v.Speed,
 								Timestamps: []string{},
 								Series:     SeriesResponse{Input: []*float64{}, Output: []*float64{}},
@@ -828,12 +936,27 @@ func main() {
 							keyOrder = append(keyOrder, key)
 						}
 
+						num400G, speedGbps := calculate400GPorts(v.Speed, v.Is400GUpgraded, v.MemberSpeeds, v.AEList)
+						is400G := v.Is400GUpgraded || num400G > 0
+						upgStatus := v.UpgradeStatus
+						if upgStatus == "" {
+							if is400G {
+								upgStatus = "400G upgraded"
+							} else {
+								upgStatus = "Not upgraded"
+							}
+						}
+
 						item := interfaceMap[key]
 						item.Timestamps = append(item.Timestamps, vf.TimestampLabel)
 						item.Series.Input = append(item.Series.Input, &inVal)
 						item.Series.Output = append(item.Series.Output, &outVal)
-						item.Is400GUpgraded = v.Is400GUpgraded
-						item.UpgradeStatus = v.UpgradeStatus
+						if is400G {
+							item.Is400GUpgraded = true
+							item.UpgradeStatus = "400G upgraded"
+							item.Num400GPorts = num400G
+							item.SpeedGbps = speedGbps
+						}
 
 						if inVal > item.PeakInput {
 							item.PeakInput = inVal
@@ -924,6 +1047,8 @@ func main() {
 			Interface      string
 			Neighbor       string
 			Speed          string
+			Num400GPorts   int
+			SpeedGbps      int
 			Is400GUpgraded bool
 			UpgradeStatus  string
 			PeaksPerDate   map[string]DatePeak
@@ -1011,9 +1136,24 @@ func main() {
 							keyOrder = append(keyOrder, key)
 						}
 
+						num400G, speedGbps := calculate400GPorts(v.Speed, v.Is400GUpgraded, v.MemberSpeeds, v.AEList)
+						is400G := v.Is400GUpgraded || num400G > 0
+						upgStatus := v.UpgradeStatus
+						if upgStatus == "" {
+							if is400G {
+								upgStatus = "400G upgraded"
+							} else {
+								upgStatus = "Not upgraded"
+							}
+						}
+
 						item := interfaceMap[key]
-						item.Is400GUpgraded = v.Is400GUpgraded
-						item.UpgradeStatus = v.UpgradeStatus
+						if is400G {
+							item.Is400GUpgraded = true
+							item.UpgradeStatus = "400G upgraded"
+							item.Num400GPorts = num400G
+							item.SpeedGbps = speedGbps
+						}
 
 						dp := item.PeaksPerDate[d]
 						if !dp.Exists {
@@ -1072,6 +1212,8 @@ func main() {
 					Interface:      info.Interface,
 					Neighbor:       info.Neighbor,
 					Speed:          info.Speed,
+					Num400GPorts:   info.Num400GPorts,
+					SpeedGbps:      info.SpeedGbps,
 					PeakInput:      overallPeakInput,
 					PeakOutput:     overallPeakOutput,
 					Timestamps:     dateFolders,
@@ -1169,7 +1311,10 @@ func main() {
 			rSeries := make(map[string]SeriesResponse)
 			type IntfMetadata struct {
 				Neighbor       string
+				Circuit        string
 				Speed          string
+				Num400GPorts   int
+				SpeedGbps      int
 				Is400GUpgraded bool
 				UpgradeStatus  string
 			}
@@ -1210,13 +1355,20 @@ func main() {
 					series.Output = append(series.Output, &outVal)
 					rSeries[k] = series
 
-					is400G := v.Is400GUpgraded || v.UpgradeStatus == "400G upgraded" || strings.Contains(strings.ToLower(v.Speed), "400g")
+					isUpg, num400G, speedGbps := is400GUpgradedInterface(router, v.Neighbor, v)
+					upgStatus := "400G upgraded"
+					if !isUpg {
+						upgStatus = "Not upgraded"
+					}
 
 					rMeta[k] = IntfMetadata{
 						Neighbor:       v.Neighbor,
+						Circuit:        v.Circuit,
 						Speed:          v.Speed,
-						Is400GUpgraded: is400G,
-						UpgradeStatus:  v.UpgradeStatus,
+						Num400GPorts:   num400G,
+						SpeedGbps:      speedGbps,
+						Is400GUpgraded: isUpg,
+						UpgradeStatus:  upgStatus,
 					}
 				}
 
@@ -1248,7 +1400,10 @@ func main() {
 						Router:         router,
 						Interface:      intf,
 						Neighbor:       meta.Neighbor,
+						Circuit:        meta.Circuit,
 						Speed:          meta.Speed,
+						Num400GPorts:   meta.Num400GPorts,
+						SpeedGbps:      meta.SpeedGbps,
 						PeakInput:      peakIn,
 						PeakOutput:     peakOut,
 						Timestamps:     timestamps,

@@ -92,3 +92,199 @@ def mcp_stdio_read_timeout_seconds() -> float:
         return max(5.0, float(raw))
     except ValueError:
         return 900.0
+
+
+# --- Model Rotation & Fallback Patching ---
+import functools
+import logging
+from google.genai.models import Models, AsyncModels
+from google.genai.errors import APIError
+
+rotation_logger = logging.getLogger("gfiber.adk.model_rotation")
+
+# A mapping of models to their fallback models when busy (429/503/etc)
+MODEL_FALLBACK_MAP = {
+    "gemini-2.5-pro": "gemini-2.5-flash",
+    "gemini-2.0-pro-exp-02-05": "gemini-2.5-flash",
+    "gemini-1.5-pro": "gemini-1.5-flash",
+}
+
+def _get_fallback_model(model_name: str) -> str | None:
+    # Normalize model name to check fallback
+    for key, fallback in MODEL_FALLBACK_MAP.items():
+        if key in model_name:
+            return fallback
+    # Default fallback if not matched but is a pro model
+    if "pro" in model_name:
+        return "gemini-2.5-flash"
+    return None
+
+def _patch_sync_method(original_method):
+    @functools.wraps(original_method)
+    def wrapper(self, *args, **kwargs):
+        model_val = None
+        args_list = list(args)
+        if len(args_list) > 0:
+            model_val = args_list[0]
+        elif "model" in kwargs:
+            model_val = kwargs["model"]
+            
+        try:
+            return original_method(self, *args, **kwargs)
+        except APIError as e:
+            if e.code in (429, 503, 504) and model_val:
+                fallback = _get_fallback_model(model_val)
+                if fallback:
+                    rotation_logger.warning(
+                        f"Model '{model_val}' is busy/rate-limited (Error {e.code}). "
+                        f"Rotating/falling back to '{fallback}'..."
+                    )
+                    print(
+                        f"\n[Model Rotation] Warning: '{model_val}' is busy (Error {e.code}). "
+                        f"Falling back to '{fallback}'...",
+                        flush=True
+                    )
+                    if len(args_list) > 0:
+                        args_list[0] = fallback
+                        return original_method(self, *args_list, **kwargs)
+                    else:
+                        kwargs["model"] = fallback
+                        return original_method(self, *args, **kwargs)
+            raise e
+    return wrapper
+
+def _patch_sync_generator_method(original_method):
+    @functools.wraps(original_method)
+    def wrapper(self, *args, **kwargs):
+        model_val = None
+        args_list = list(args)
+        if len(args_list) > 0:
+            model_val = args_list[0]
+        elif "model" in kwargs:
+            model_val = kwargs["model"]
+
+        fallback_used = False
+
+        def generator_wrapper():
+            nonlocal fallback_used
+            try:
+                gen = original_method(self, *args, **kwargs)
+                for chunk in gen:
+                    yield chunk
+            except APIError as e:
+                if e.code in (429, 503, 504) and model_val and not fallback_used:
+                    fallback = _get_fallback_model(model_val)
+                    if fallback:
+                        rotation_logger.warning(
+                            f"Model '{model_val}' is busy/rate-limited (Error {e.code}) during stream. "
+                            f"Rotating/falling back to '{fallback}'..."
+                        )
+                        print(
+                            f"\n[Model Rotation] Warning: '{model_val}' is busy (Error {e.code}) during stream. "
+                            f"Falling back to '{fallback}'...",
+                            flush=True
+                        )
+                        fallback_used = True
+                        if len(args_list) > 0:
+                            args_list[0] = fallback
+                            new_gen = original_method(self, *args_list, **kwargs)
+                        else:
+                            kwargs["model"] = fallback
+                            new_gen = original_method(self, *args, **kwargs)
+                        for chunk in new_gen:
+                            yield chunk
+                        return
+                raise e
+
+        return generator_wrapper()
+    return wrapper
+
+def _patch_async_method(original_method):
+    @functools.wraps(original_method)
+    async def wrapper(self, *args, **kwargs):
+        model_val = None
+        args_list = list(args)
+        if len(args_list) > 0:
+            model_val = args_list[0]
+        elif "model" in kwargs:
+            model_val = kwargs["model"]
+            
+        try:
+            return await original_method(self, *args, **kwargs)
+        except APIError as e:
+            if e.code in (429, 503, 504) and model_val:
+                fallback = _get_fallback_model(model_val)
+                if fallback:
+                    rotation_logger.warning(
+                        f"Model '{model_val}' is busy/rate-limited (Error {e.code}). "
+                        f"Rotating/falling back to '{fallback}'..."
+                    )
+                    print(
+                        f"\n[Model Rotation] Warning: '{model_val}' is busy (Error {e.code}). "
+                        f"Falling back to '{fallback}'...",
+                        flush=True
+                    )
+                    if len(args_list) > 0:
+                        args_list[0] = fallback
+                        return await original_method(self, *args_list, **kwargs)
+                    else:
+                        kwargs["model"] = fallback
+                        return await original_method(self, *args, **kwargs)
+            raise e
+    return wrapper
+
+def _patch_async_generator_method(original_method):
+    @functools.wraps(original_method)
+    async def wrapper(self, *args, **kwargs):
+        model_val = None
+        args_list = list(args)
+        if len(args_list) > 0:
+            model_val = args_list[0]
+        elif "model" in kwargs:
+            model_val = kwargs["model"]
+
+        fallback_used = False
+
+        async def generator_wrapper():
+            nonlocal fallback_used
+            try:
+                gen = await original_method(self, *args, **kwargs)
+                async for chunk in gen:
+                    yield chunk
+            except APIError as e:
+                if e.code in (429, 503, 504) and model_val and not fallback_used:
+                    fallback = _get_fallback_model(model_val)
+                    if fallback:
+                        rotation_logger.warning(
+                            f"Model '{model_val}' is busy/rate-limited (Error {e.code}) during stream. "
+                            f"Rotating/falling back to '{fallback}'..."
+                        )
+                        print(
+                            f"\n[Model Rotation] Warning: '{model_val}' is busy (Error {e.code}) during stream. "
+                            f"Falling back to '{fallback}'...",
+                            flush=True
+                        )
+                        fallback_used = True
+                        if len(args_list) > 0:
+                            args_list[0] = fallback
+                            new_gen = await original_method(self, *args_list, **kwargs)
+                        else:
+                            kwargs["model"] = fallback
+                            new_gen = await original_method(self, *args, **kwargs)
+                        async for chunk in new_gen:
+                            yield chunk
+                        return
+                raise e
+
+        return generator_wrapper()
+    return wrapper
+
+try:
+    Models.generate_content = _patch_sync_method(Models.generate_content)
+    Models.generate_content_stream = _patch_sync_generator_method(Models.generate_content_stream)
+    AsyncModels.generate_content = _patch_async_method(AsyncModels.generate_content)
+    AsyncModels.generate_content_stream = _patch_async_generator_method(AsyncModels.generate_content_stream)
+    rotation_logger.info("Successfully patched google-genai Models and AsyncModels for model rotation/fallback.")
+except Exception as patch_err:
+    rotation_logger.error(f"Failed to patch google-genai models for rotation: {patch_err}")
+

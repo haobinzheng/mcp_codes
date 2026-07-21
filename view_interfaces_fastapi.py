@@ -36,18 +36,18 @@ HTML_TEMPLATE = """<!doctype html>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     :root {
-      --bg: #0b0f19;
-      --surface: #1e1b4b;
-      --surface-card: rgba(30, 27, 75, 0.7);
-      --surface-hover: rgba(49, 46, 129, 0.8);
-      --border: #312e81;
-      --text-main: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent-purple: #a855f7;
-      --accent-indigo: #6366f1;
+      --bg: #09090b;
+      --surface: #18181b;
+      --surface-card: rgba(24, 24, 27, 0.75);
+      --surface-hover: rgba(234, 179, 8, 0.15);
+      --border: rgba(234, 179, 8, 0.25);
+      --text-main: #fafafa;
+      --text-muted: #a1a1aa;
+      --accent-purple: #eab308; /* Neon Cyber-Gold */
+      --accent-indigo: #06b6d4; /* Electric Cyan */
       --accent-amber: #f59e0b;
-      --accent-rose: #f43f5e;
-      --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      --accent-rose: #ef4444;
+      --card-shadow: 0 15px 40px -15px rgba(0, 0, 0, 0.8);
     }
 
     body {
@@ -55,8 +55,8 @@ HTML_TEMPLATE = """<!doctype html>
       font-family: 'Inter', sans-serif;
       background-color: var(--bg);
       background-image: 
-        radial-gradient(circle at 0% 0%, rgba(168, 85, 247, 0.16), transparent 40%),
-        radial-gradient(circle at 100% 100%, rgba(99, 102, 241, 0.12), transparent 40%);
+        radial-gradient(circle at 0% 0%, rgba(234, 179, 8, 0.15), transparent 45%),
+        radial-gradient(circle at 100% 100%, rgba(6, 182, 212, 0.1), transparent 45%);
       background-attachment: fixed;
       color: var(--text-main);
       min-height: 100vh;
@@ -65,7 +65,7 @@ HTML_TEMPLATE = """<!doctype html>
     }
 
     header {
-      background: rgba(11, 15, 25, 0.85);
+      background: rgba(3, 7, 18, 0.85);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
@@ -127,7 +127,7 @@ HTML_TEMPLATE = """<!doctype html>
     .tab-btn.active {
       color: white;
       background: linear-gradient(135deg, var(--accent-purple), var(--accent-indigo));
-      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+      box-shadow: 0 4px 12px rgba(234, 179, 8, 0.35);
     }
 
     .container {
@@ -316,7 +316,7 @@ HTML_TEMPLATE = """<!doctype html>
     }
 
     tr.selected {
-      background-color: rgba(168, 85, 247, 0.12);
+      background-color: rgba(234, 179, 8, 0.12);
       border-left: 4px solid var(--accent-purple);
     }
 
@@ -445,7 +445,7 @@ HTML_TEMPLATE = """<!doctype html>
   <header>
     <div class="logo">
       <div class="logo-dot"></div>
-      <span>GFiber Network Auditor</span>
+      <span>GFiber Network Auditor (FastAPI)</span>
     </div>
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('inspector')">Router Inspector</button>
@@ -453,7 +453,7 @@ HTML_TEMPLATE = """<!doctype html>
       <button class="tab-btn" onclick="switchTab('upgraded')">400G Upgraded</button>
       <button class="tab-btn" onclick="switchTab('history')">Utilization History</button>
       <button class="tab-btn" onclick="switchTab('p95')">P95 Peak Trend</button>
-      <a href="/docs" target="_blank" class="tab-btn" style="text-decoration: none; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: var(--accent-purple); display: inline-flex; align-items: center;">Interactive API Docs ⚡</a>
+      <a href="/docs" target="_blank" class="tab-btn" style="text-decoration: none; background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.4); color: var(--accent-purple); display: inline-flex; align-items: center;">Interactive API Docs ⚡</a>
     </div>
   </header>
 
@@ -483,7 +483,7 @@ HTML_TEMPLATE = """<!doctype html>
           <option value="upgraded">400G Upgraded Only</option>
         </select>
         <button class="tab-btn active" onclick="loadHighUtilizationHistory()" style="padding: 10px 20px; font-size: 14px;">Apply Filters</button>
-        <button id="history-view-toggle-btn" class="tab-btn" onclick="toggleHistoryView()" style="padding: 10px 20px; font-size: 14px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: var(--accent-purple);">📊 Show as Table</button>
+        <button id="history-view-toggle-btn" class="tab-btn" onclick="toggleHistoryView()" style="padding: 10px 20px; font-size: 14px; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); color: var(--accent-purple);">📊 Show as Table</button>
         <button id="history-export-btn" class="tab-btn" onclick="exportHistoryToCSV()" style="display: none; padding: 10px 20px; font-size: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-indigo);">📥 Export to Excel</button>
       </div>
 
@@ -501,7 +501,7 @@ HTML_TEMPLATE = """<!doctype html>
           <option value="upgraded">400G Upgraded Only</option>
         </select>
         <button class="tab-btn active" onclick="loadP95History()" style="padding: 10px 20px; font-size: 14px;">Apply Filters</button>
-        <button id="p95-view-toggle-btn" class="tab-btn" onclick="toggleP95View()" style="padding: 10px 20px; font-size: 14px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: var(--accent-purple);">📊 Show as Table</button>
+        <button id="p95-view-toggle-btn" class="tab-btn" onclick="toggleP95View()" style="padding: 10px 20px; font-size: 14px; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.3); color: var(--accent-purple);">📊 Show as Table</button>
         <button id="p95-export-btn" class="tab-btn" onclick="exportP95ToCSV()" style="display: none; padding: 10px 20px; font-size: 14px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-indigo);">📥 Export to Excel</button>
       </div>
 
@@ -610,7 +610,7 @@ HTML_TEMPLATE = """<!doctype html>
         <div style="font-size: 18px; font-weight: 600; color: var(--text-main);">400G Upgraded Interface Inventory & Trends</div>
         <div style="display: flex; gap: 12px;">
           <button id="upgraded-view-toggle-btn" class="tab-btn" onclick="toggleUpgradedView()" style="padding: 8px 16px; font-size: 13px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); color: var(--accent-purple);">📊 Show as Table</button>
-          <button id="upgraded-export-btn" class="tab-btn" onclick="exportUpgradedToCSV()" style="display: none; padding: 8px 16px; font-size: 13px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-indigo);">📥 Export to Excel</button>
+          <button id="upgraded-export-btn" class="tab-btn" onclick="exportUpgradedToCSV()" style="display: inline-flex; padding: 8px 16px; font-size: 13px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: var(--accent-indigo);">📥 Export to Excel</button>
         </div>
       </div>
 
@@ -631,6 +631,26 @@ HTML_TEMPLATE = """<!doctype html>
     let lastP95Data = null;
     let upgradedViewMode = 'cards';
     let lastUpgradedData = null;
+
+    function parseSpeedToGbps(speedStr) {
+      if (!speedStr) return 0;
+      const s = String(speedStr).toLowerCase().trim();
+      const match = s.match(/(\d+(?:\.\d+)?)\s*(t|g)/);
+      if (match) {
+        const val = parseFloat(match[1]);
+        const unit = match[2];
+        return unit === 't' ? Math.round(val * 1000) : Math.round(val);
+      }
+      return 0;
+    }
+
+    function parseSpeedTo400GPorts(speedStr, is400G = true) {
+      const gbps = parseSpeedToGbps(speedStr);
+      if (gbps >= 400) {
+        return Math.max(1, Math.floor(gbps / 400));
+      }
+      return is400G ? 1 : 0;
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
       loadDates();
@@ -828,7 +848,10 @@ HTML_TEMPLATE = """<!doctype html>
         const pIn = s.input.length > 0 ? Math.max(...s.input) : info.input_percent;
         const pOut = s.output.length > 0 ? Math.max(...s.output) : info.output_percent;
 
-        if (info.is_400g_upgraded) upgraded++;
+        if (info.is_400g_upgraded) {
+          const ports = info.num_400g_ports || parseSpeedTo400GPorts(info.speed);
+          upgraded += ports;
+        }
         if (pIn > 50 || pOut > 50) highUtil++;
       });
       document.getElementById('metric-total').textContent = keys.length;
@@ -1350,9 +1373,10 @@ HTML_TEMPLATE = """<!doctype html>
             peakTimestamp = times[idx];
           }
         }
+
         const escapeCSV = val => {
           const str = String(val).replace(/"/g, '""');
-          return str.includes(',') || str.includes('\\\\n') || str.includes('"') ? `"${str}"` : str;
+          return str.includes(',') || str.includes('\\n') || str.includes('"') ? `"${str}"` : str;
         };
 
         const row = [
@@ -1368,7 +1392,7 @@ HTML_TEMPLATE = """<!doctype html>
         csvRows.push(row.join(","));
       });
 
-      const csvContent = "\ufeff" + csvRows.join("\\n");
+      const csvContent = "\ufeff" + csvRows.join("\n");
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       
@@ -1622,7 +1646,7 @@ HTML_TEMPLATE = """<!doctype html>
 
           const escapeCSV = val => {
             const str = String(val).replace(/"/g, '""');
-            return str.includes(',') || str.includes('\\n') || str.includes('"') ? `"${str}"` : str;
+            return str.includes(',') || str.includes('\n') || str.includes('"') ? `"${str}"` : str;
           };
 
           let row;
@@ -1654,7 +1678,7 @@ HTML_TEMPLATE = """<!doctype html>
         }
       });
 
-      const csvContent = "\\ufeff" + csvRows.join("\\n");
+      const csvContent = "\ufeff" + csvRows.join("\n");
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       
@@ -1677,12 +1701,23 @@ HTML_TEMPLATE = """<!doctype html>
         lastUpgradedData = data;
 
         const items = data.upgraded_interfaces || [];
-        document.getElementById('upgraded-metric-total').textContent = items.length;
-        const routers = new Set(items.map(it => it.router));
+
+        // Total 400G Ports installed across all upgraded links
+        const total400GPorts = items.reduce((sum, it) => {
+          if (it.num_400g_ports != null && it.num_400g_ports > 0) return sum + it.num_400g_ports;
+          return sum + parseSpeedTo400GPorts(it.speed);
+        }, 0);
+        document.getElementById('upgraded-metric-total').textContent = total400GPorts;
+
+        // Unique routers (case-insensitive, trimmed)
+        const routers = new Set(items.map(it => (it.router || '').toLowerCase().trim()).filter(Boolean));
         document.getElementById('upgraded-metric-routers').textContent = routers.size;
+
         const highCount = items.filter(it => it.peak_input > 50 || it.peak_output > 50).length;
         document.getElementById('upgraded-metric-high').textContent = highCount;
-        const totalCapGbps = items.length * 400;
+
+        // Total Provisioned Capacity = (Total 400G Ports / 2) * 400 Gbps
+        const totalCapGbps = (total400GPorts / 2) * 400;
         document.getElementById('upgraded-metric-capacity').textContent = totalCapGbps >= 1000 ? (totalCapGbps / 1000).toFixed(1) + " Tbps" : totalCapGbps + " Gbps";
 
         renderUpgradedData();
@@ -1695,13 +1730,10 @@ HTML_TEMPLATE = """<!doctype html>
     function toggleUpgradedView() {
       upgradedViewMode = upgradedViewMode === 'cards' ? 'table' : 'cards';
       const btn = document.getElementById('upgraded-view-toggle-btn');
-      const exportBtn = document.getElementById('upgraded-export-btn');
       if (upgradedViewMode === 'table') {
         btn.textContent = '🎴 Show as Cards';
-        exportBtn.style.display = 'inline-flex';
       } else {
         btn.textContent = '📊 Show as Table';
-        exportBtn.style.display = 'none';
       }
       renderUpgradedData();
     }
@@ -1736,6 +1768,7 @@ HTML_TEMPLATE = """<!doctype html>
             <th>Router</th>
             <th>Interface</th>
             <th>Neighbor</th>
+            <th>Circuit</th>
             <th>Speed</th>
             <th>Peak Input %</th>
             <th>Peak Output %</th>
@@ -1744,12 +1777,15 @@ HTML_TEMPLATE = """<!doctype html>
         `;
         const tbody = document.createElement('tbody');
         items.forEach(item => {
+          const ports = item.num_400g_ports || parseSpeedTo400GPorts(item.speed);
+          const portLabel = ports > 1 ? ` (${ports}x 400G)` : (ports === 1 ? ` (1x 400G)` : '');
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td><strong>${item.router}</strong></td>
             <td><code>${item.interface}</code></td>
             <td>${item.neighbor}</td>
-            <td>${item.speed}</td>
+            <td>${item.circuit || 'Unknown'}</td>
+            <td>${item.speed}${portLabel}</td>
             <td><strong style="color: ${item.peak_input > 80 ? '#f43f5e' : item.peak_input > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_input)}%</strong></td>
             <td><strong style="color: ${item.peak_output > 80 ? '#f43f5e' : item.peak_output > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_output)}%</strong></td>
             <td><span class="badge badge-ok">${item.upgrade_status || '400G upgraded'}</span></td>
@@ -1789,13 +1825,17 @@ HTML_TEMPLATE = """<!doctype html>
           
           header.append(leftSide, spanUpg);
 
+          const ports = item.num_400g_ports || parseSpeedTo400GPorts(item.speed);
+          const portLabel = ports > 1 ? ` (${ports}x 400G)` : (ports === 1 ? ` (1x 400G)` : '');
+
           const details = document.createElement('div');
           details.className = 'details';
           const divN = document.createElement('div'); divN.innerHTML = `Neighbor: <strong>${item.neighbor}</strong>`;
-          const divS = document.createElement('div'); divS.innerHTML = `Speed: <strong>${item.speed}</strong>`;
+          const divC = document.createElement('div'); divC.innerHTML = `Circuit: <strong>${item.circuit || 'Unknown'}</strong>`;
+          const divS = document.createElement('div'); divS.innerHTML = `Speed: <strong>${item.speed}${portLabel}</strong>`;
           const divI = document.createElement('div'); divI.innerHTML = `Peak Input: <strong style="color: ${item.peak_input > 80 ? '#f43f5e' : item.peak_input > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_input)}%</strong>`;
           const divO = document.createElement('div'); divO.innerHTML = `Peak Output: <strong style="color: ${item.peak_output > 80 ? '#f43f5e' : item.peak_output > 50 ? '#f59e0b' : '#10b981'}">${Math.round(item.peak_output)}%</strong>`;
-          details.append(divN, divS, divI, divO);
+          details.append(divN, divC, divS, divI, divO);
 
           const chartWrap = document.createElement('div');
           chartWrap.className = 'mini-chart-wrapper';
@@ -1864,21 +1904,24 @@ HTML_TEMPLATE = """<!doctype html>
       };
       
       const csvRows = [];
-      csvRows.push(["Router", "Interface", "Neighbor", "Speed", "Peak Input %", "Peak Output %", "Upgrade Status"].map(escapeCSV).join(","));
+      csvRows.push(["Router", "Interface", "Neighbor", "Circuit", "Speed", "400G Ports", "Peak Input %", "Peak Output %", "Upgrade Status"].map(escapeCSV).join(","));
 
       lastUpgradedData.upgraded_interfaces.forEach(item => {
+        const ports = item.num_400g_ports || parseSpeedTo400GPorts(item.speed);
         csvRows.push([
           item.router,
           item.interface,
           item.neighbor,
+          item.circuit || "Unknown",
           item.speed,
+          ports,
           Math.round(item.peak_input) + "%",
           Math.round(item.peak_output) + "%",
           item.upgrade_status || "400G upgraded"
         ].map(escapeCSV).join(","));
       });
 
-      const csvContent = "\\ufeff" + csvRows.join("\\n");
+      const csvContent = "\ufeff" + csvRows.join("\n");
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -1889,7 +1932,6 @@ HTML_TEMPLATE = """<!doctype html>
       link.click();
       document.body.removeChild(link);
     }
-
   </script>
 </body>
 </html>
@@ -1920,6 +1962,73 @@ def route_api_dates():
     dates = [d for d in entries if os.path.isdir(os.path.join(safe_root, d)) and re.match(r"^\d{4}-\d{2}-\d{2}$", d)]
     dates.sort(reverse=True)
     return {"dates": dates}
+
+PR_BNG_MPR_REGEX = re.compile(r"\b(re\d+-)?(pr|bng|mpr)\d*", re.IGNORECASE)
+
+def calculate_400g_ports(v: dict) -> tuple[int, int]:
+    """Calculate (num_400g_ports, speed_gbps) from interface detail dict v.
+       Rules:
+       1. If member_speeds dictionary contains explicit '400g', count those.
+       2. Check member port count M (len of ae_list) vs total speed S:
+          - If S / M == 400 Gbps (e.g. 400G/1, 800G/2, 1200G/3, 1600G/4): each member is a 400G physical port.
+          - If S / M == 100 Gbps (e.g. 400G/4, 500G/5, 600G/6, 800G/8): member ports are 100G, NOT 400G upgraded.
+    """
+    # 1. Check member_speeds if available
+    member_speeds = v.get("member_speeds")
+    if isinstance(member_speeds, dict) and member_speeds:
+        m_ports = sum(1 for sp in member_speeds.values() if "400g" in str(sp).lower())
+        if m_ports > 0:
+            speed_gbps = m_ports * 400
+            return (m_ports, speed_gbps)
+            
+    # 2. Parse overall speed string & member list
+    speed_str = str(v.get("speed", "")).lower().strip()
+    match = re.search(r"(\d+(?:\.\d+)?)\s*(t|g)", speed_str)
+    speed_gbps = 0
+    if match:
+        val = float(match.group(1))
+        unit = match.group(2)
+        speed_gbps = int(val * 1000) if unit == 't' else int(val)
+
+    ae_list = v.get("ae_list")
+    num_members = len(ae_list) if isinstance(ae_list, list) else 0
+
+    if speed_gbps >= 400:
+        if num_members > 0:
+            per_member = speed_gbps / num_members
+            if abs(per_member - 400) < 1.0:
+                return (num_members, speed_gbps)
+            else:
+                # E.g. 400G / 4 members = 100G per member -> 100G bundle
+                return (0, speed_gbps)
+        else:
+            if speed_gbps % 400 == 0:
+                return (speed_gbps // 400, speed_gbps)
+
+    return (0, speed_gbps)
+
+def is_400g_upgraded_interface(router: str, neighbor: str, v: dict) -> tuple[bool, int, int]:
+    """Determines if an interface is 400G upgraded according to network domain rules:
+       1. BNG routers do NOT have 400G interface upgrades.
+       2. PR routers do NOT have 400G interface upgrades.
+       3. MPR routers do NOT have 400G interface upgrades.
+       4. CR interfaces connected to PR, BNG, or MPR routers are NOT 400G upgraded.
+    """
+    r = router.lower().strip()
+    neigh = str(neighbor).lower().strip()
+
+    if r.startswith("bng") or r.startswith("pr") or r.startswith("mpr"):
+        return (False, 0, 0)
+
+    if PR_BNG_MPR_REGEX.search(neigh):
+        return (False, 0, 0)
+
+    num_400g, speed_gbps = calculate_400g_ports(v)
+    is_400g = v.get("is_400g_upgraded", False) or v.get("upgrade_status") == "400G upgraded" or num_400g > 0
+    if is_400g:
+        return (True, num_400g, speed_gbps)
+
+    return (False, 0, speed_gbps)
 
 @app.get("/api/routers")
 def route_api_routers(date: str = Query("", pattern=r"^\d{4}-\d{2}-\d{2}$")):
@@ -1995,14 +2104,17 @@ def route_api_router_data(date: str = Query(...), router: str = Query(...)):
             series_map[k]["input"].append(in_pct)
             series_map[k]["output"].append(out_pct)
             
+            is_upg, num_400g, speed_gbps = is_400g_upgraded_interface(r, v.get("neighbor", ""), v)
             latest_intfs[k] = {
                 "neighbor": v.get("neighbor", "Unknown"),
                 "circuit": v.get("Circuit", "Unknown"),
                 "speed": v.get("speed", "Unknown"),
                 "input_percent": in_pct,
                 "output_percent": out_pct,
-                "is_400g_upgraded": v.get("is_400g_upgraded", False),
-                "upgrade_status": v.get("upgrade_status", "Not upgraded")
+                "is_400g_upgraded": is_upg,
+                "upgrade_status": "400G upgraded" if is_upg else "Not upgraded",
+                "num_400g_ports": num_400g,
+                "speed_gbps": speed_gbps
             }
 
         for k in series_map:
@@ -2079,11 +2191,17 @@ def route_api_high_utilization(date: str = Query("", pattern=r"^\d{4}-\d{2}-\d{2
                 r_series[k]["input"].append(in_pct)
                 r_series[k]["output"].append(out_pct)
 
+                num_400g, speed_gbps = calculate_400g_ports(v)
+                is_400g = v.get("is_400g_upgraded", False) or v.get("upgrade_status") == "400G upgraded" or num_400g > 0
+                upg_status = v.get("upgrade_status", "400G upgraded" if is_400g else "Not upgraded")
+
                 r_meta[k] = {
                     "neighbor": v.get("neighbor", "Unknown"),
                     "speed": v.get("speed", "Unknown"),
-                    "is_400g_upgraded": v.get("is_400g_upgraded", False),
-                    "upgrade_status": v.get("upgrade_status", "Not upgraded")
+                    "num_400g_ports": num_400g,
+                    "speed_gbps": speed_gbps,
+                    "is_400g_upgraded": is_400g,
+                    "upgrade_status": upg_status
                 }
 
             for k in r_series:
@@ -2173,6 +2291,9 @@ def route_api_high_utilization_history(
                     
                     in_pct = round(v.get("input_bps_percent", 0), 1)
                     out_pct = round(v.get("output_bps_percent", 0), 1)
+                    num_400g, speed_gbps = calculate_400g_ports(v)
+                    is_400g = v.get("is_400g_upgraded", False) or v.get("upgrade_status") == "400G upgraded" or num_400g > 0
+                    upg_status = v.get("upgrade_status", "400G upgraded" if is_400g else "Not upgraded")
 
                     key = (r, k)
                     if key not in interface_map:
@@ -2181,19 +2302,24 @@ def route_api_high_utilization_history(
                             "interface": k,
                             "neighbor": v.get("neighbor", "Unknown"),
                             "speed": v.get("speed", "Unknown"),
+                            "num_400g_ports": num_400g,
+                            "speed_gbps": speed_gbps,
                             "timestamps": [],
                             "series": {"input": [], "output": []},
                             "peak_input": 0,
                             "peak_output": 0,
-                            "is_400g_upgraded": v.get("is_400g_upgraded", False),
-                            "upgrade_status": v.get("upgrade_status", "Not upgraded")
+                            "is_400g_upgraded": is_400g,
+                            "upgrade_status": upg_status
                         }
 
                     interface_map[key]["timestamps"].append(ts_label)
                     interface_map[key]["series"]["input"].append(in_pct)
                     interface_map[key]["series"]["output"].append(out_pct)
-                    interface_map[key]["is_400g_upgraded"] = v.get("is_400g_upgraded", False)
-                    interface_map[key]["upgrade_status"] = v.get("upgrade_status", "Not upgraded")
+                    if is_400g:
+                        interface_map[key]["is_400g_upgraded"] = True
+                        interface_map[key]["upgrade_status"] = "400G upgraded"
+                        interface_map[key]["num_400g_ports"] = num_400g
+                        interface_map[key]["speed_gbps"] = speed_gbps
 
                     if in_pct > interface_map[key]["peak_input"]:
                         interface_map[key]["peak_input"] = in_pct
@@ -2262,6 +2388,9 @@ def route_api_p95_history(
                     
                     in_pct = round(v.get("input_bps_percent", 0), 1)
                     out_pct = round(v.get("output_bps_percent", 0), 1)
+                    num_400g, speed_gbps = calculate_400g_ports(v)
+                    is_400g = v.get("is_400g_upgraded", False) or v.get("upgrade_status") == "400G upgraded" or num_400g > 0
+                    upg_status = v.get("upgrade_status", "400G upgraded" if is_400g else "Not upgraded")
 
                     key = (r, k)
                     if key not in interface_map:
@@ -2270,8 +2399,10 @@ def route_api_p95_history(
                             "interface": k,
                             "neighbor": v.get("neighbor", "Unknown"),
                             "speed": v.get("speed", "Unknown"),
-                            "is_400g_upgraded": v.get("is_400g_upgraded", False),
-                            "upgrade_status": v.get("upgrade_status", "Not upgraded"),
+                            "num_400g_ports": num_400g,
+                            "speed_gbps": speed_gbps,
+                            "is_400g_upgraded": is_400g,
+                            "upgrade_status": upg_status,
                             "peaks_per_date": {}  # date -> (in, out)
                         }
 
@@ -2283,8 +2414,11 @@ def route_api_p95_history(
                             max(current_peak[0], in_pct),
                             max(current_peak[1], out_pct)
                         )
-                    interface_map[key]["is_400g_upgraded"] = v.get("is_400g_upgraded", False)
-                    interface_map[key]["upgrade_status"] = v.get("upgrade_status", "Not upgraded")
+                    if is_400g:
+                        interface_map[key]["is_400g_upgraded"] = True
+                        interface_map[key]["upgrade_status"] = "400G upgraded"
+                        interface_map[key]["num_400g_ports"] = num_400g
+                        interface_map[key]["speed_gbps"] = speed_gbps
 
     p95_history = []
     for key, val in interface_map.items():
@@ -2391,14 +2525,16 @@ def route_api_upgraded_400g(date: str = Query("", pattern=r"^(\d{4}-\d{2}-\d{2})
                 r_series[k]["input"].append(in_pct)
                 r_series[k]["output"].append(out_pct)
 
-                is_400g = v.get("is_400g_upgraded", False) or v.get("upgrade_status") == "400G upgraded" or "400g" in str(v.get("speed", "")).lower()
+                is_upg, num_400g, speed_gbps = is_400g_upgraded_interface(r, v.get("neighbor", ""), v)
 
                 r_meta[k] = {
                     "neighbor": v.get("neighbor", "Unknown"),
-                    "circuit": v.get("Circuit", "Unknown"),
+                    "circuit": v.get("Circuit") or v.get("circuit", "Unknown"),
                     "speed": v.get("speed", "Unknown"),
-                    "is_400g_upgraded": is_400g,
-                    "upgrade_status": v.get("upgrade_status", "400G upgraded" if is_400g else "Not upgraded")
+                    "num_400g_ports": num_400g,
+                    "speed_gbps": speed_gbps,
+                    "is_400g_upgraded": is_upg,
+                    "upgrade_status": "400G upgraded" if is_upg else "Not upgraded"
                 }
 
             for k in r_series:
@@ -2420,6 +2556,8 @@ def route_api_upgraded_400g(date: str = Query("", pattern=r"^(\d{4}-\d{2}-\d{2})
                     "neighbor": meta.get("neighbor", "Unknown"),
                     "circuit": meta.get("circuit", "Unknown"),
                     "speed": meta.get("speed", "Unknown"),
+                    "num_400g_ports": meta.get("num_400g_ports", 1),
+                    "speed_gbps": meta.get("speed_gbps", 400),
                     "peak_input": peak_in,
                     "peak_output": peak_out,
                     "timestamps": timestamps,
