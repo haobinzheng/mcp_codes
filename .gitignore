@@ -7,6 +7,8 @@ __pycache__/
 # Secrets & local credentials — never commit API keys or auth material
 .env
 .env.*
+env_*.sh
+env_kentik.sh
 !.env.example
 *credentials*.json
 **/application_default_credentials.json
@@ -23,6 +25,11 @@ tunnel_log.txt
 # Generated Audit Data & JSON Output
 *.json
 Audit_interfaces_data/
+Audit_interfaces_data_kentik/
+Audit_lsp_data/
+Audit_lsp_data_consolidated/
+Audit_lsp_data_kentik/
+Audit_lsp_data_kentik_consolidated/
 Json_interfaces_folder/
 Json_core_folder/
 high_utilization_history.json
