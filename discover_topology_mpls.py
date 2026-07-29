@@ -35,14 +35,12 @@ rate_limiters = {}
 
 def get_device_role(hostname):
     name = hostname.lower()
-    if name.startswith("bng"):
-        return "bng"
+    if name.startswith("bng") or name.startswith("rr"):
+        return "bng"  # Excluded role
     elif name.startswith("cr"):
         return "cr"
     elif name.startswith("pr") or name.startswith("mpr"):
         return "pr"
-    elif name.startswith("rr"):
-        return "rr"
     return "unknown"
 
 def convert_speed_human(speed_bps):
@@ -195,18 +193,23 @@ async def discover_mpls_router_topology(host, device_log_file):
                     "system_name": system_name
                 })
 
-        # 3. Filter neighbors (exclude management, dr, and bng neighbors)
+        # 3. Filter neighbors: strictly allow internal GFiber Core (cr) and Peering (pr/mpr) routers (exclude BNG and RR)
         filtered_neighbors = []
         for n in neighbors:
             sys_name = n["system_name"].lower()
+            peer_norm = normalize_system_name(n["system_name"]).lower()
             local_int = n["local_interface"].lower()
             parent_int = n["parent_interface"]
 
-            if "mgt" in sys_name or "mgmt" in sys_name or "dr" in sys_name or "bng" in sys_name:
+            if "mgt" in sys_name or "mgmt" in sys_name or "dr" in sys_name or "bng" in sys_name or "rr" in sys_name:
                 continue
             if "mgmt" in local_int or "mgt" in local_int:
                 continue
             if not parent_int or not parent_int.lower().startswith("ae"):
+                continue
+
+            # Must be internal GFiber Core or Peering router (cr, pr, mpr)
+            if not peer_norm.startswith(("cr", "pr", "mpr")):
                 continue
 
             filtered_neighbors.append(n)
@@ -339,18 +342,25 @@ async def main():
             if base.startswith(".") or base.endswith((".md", ".html", ".pdf")):
                 continue
             # EXCLUDE BNG routers
-            if not base.lower().startswith("bng"):
+            if not base.lower().startswith(("bng", "rr")):
                 all_devices.append(base)
 
     if not all_devices:
-        sample_file = os.path.join(os.path.dirname(__file__), "rancid_samples", "juniper", "ls_output_sample.txt")
-        if os.path.isfile(sample_file):
-            print(f"Rancid unreachable; falling back to sample inventory: {sample_file}")
-            with open(sample_file, "r", encoding="utf-8") as f:
-                for line in f:
-                    item = line.strip()
-                    if item and not item.startswith("#") and not item.lower().startswith("bng"):
-                        all_devices.append(item)
+        inventory_files = [
+            os.path.join(os.path.dirname(__file__), "juniper_devices.txt"),
+            os.path.join(os.path.dirname(__file__), "rancid_samples", "juniper", "ls_output_sample.txt")
+        ]
+        for inv_file in inventory_files:
+            if os.path.isfile(inv_file):
+                print(f"Rancid unreachable; falling back to device inventory: {inv_file}")
+                with open(inv_file, "r", encoding="utf-8") as f:
+                    for line in f:
+                        for item in line.strip().split():
+                            item = item.strip()
+                            if item and not item.startswith("#") and not item.lower().startswith(("bng", "rr")):
+                                all_devices.append(item)
+                if all_devices:
+                    break
         else:
             print("Error: No non-BNG devices found.")
             exit(-1)
@@ -365,11 +375,11 @@ async def main():
         prefixes = tuple(p.strip().lower() for p in cleaned.split(",") if p.strip())
         device_list = [
             d for d in all_devices
-            if (d.lower().startswith(prefixes) or d.lower() in prefixes) and not d.lower().startswith("bng")
+            if (d.lower().startswith(prefixes) or d.lower() in prefixes) and not d.lower().startswith(("bng", "rr"))
         ]
     else:
-        # Exclude BNG routers: only select CR, PR, RR routers
-        device_list = [d for d in all_devices if d.lower().startswith(("cr", "pr", "rr", "mpr")) and not d.lower().startswith("bng")]
+        # Exclude BNG and RR routers: only select CR, PR, MPR core/peering routers
+        device_list = [d for d in all_devices if d.lower().startswith(("cr", "pr", "mpr")) and not d.lower().startswith(("bng", "rr"))]
 
     if not device_list:
         print("No non-BNG devices matched your filters.")
