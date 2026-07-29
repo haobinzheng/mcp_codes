@@ -205,8 +205,6 @@ async def discover_mpls_router_topology(host, device_log_file):
                 continue
             if "mgmt" in local_int or "mgt" in local_int:
                 continue
-            if not parent_int or not parent_int.lower().startswith("ae"):
-                continue
 
             # Must be internal GFiber Core or Peering router (cr, pr, mpr)
             if not peer_norm.startswith(("cr", "pr", "mpr")):
@@ -214,20 +212,25 @@ async def discover_mpls_router_topology(host, device_log_file):
 
             filtered_neighbors.append(n)
 
-        # Group by parent interface (ae bundle) and peer system
+        # Group by effective interface (parent ae bundle or standalone local interface)
         bundle_peers = {}
         for n in filtered_neighbors:
             parent = n["parent_interface"]
-            peer = normalize_system_name(n["system_name"])
-            bundle_peers.setdefault(parent, {"peer": peer, "members": []})
-            bundle_peers[parent]["members"].append(n["local_interface"])
+            if parent and parent.lower().startswith("ae"):
+                effective_intf = parent.lower()
+            else:
+                effective_intf = n["local_interface"].lower()
 
-        # 4. Fetch interface speed & details for each bundle
+            peer = normalize_system_name(n["system_name"])
+            bundle_peers.setdefault(effective_intf, {"peer": peer, "members": []})
+            bundle_peers[effective_intf]["members"].append(n["local_interface"])
+
+        # 4. Fetch interface speed & details for each bundle / interface
         topology_data = {}
-        for bundle, info in bundle_peers.items():
-            intf_output = await rate_limited_gnetch_command(f"show interfaces {bundle}", host)
+        for intf_name, info in bundle_peers.items():
+            intf_output = await rate_limited_gnetch_command(f"show interfaces {intf_name}", host)
             with open(device_log_file, 'a') as log_file:
-                log_file.write(f"\n--- show interfaces {bundle} ---\n")
+                log_file.write(f"\n--- show interfaces {intf_name} ---\n")
                 log_file.write("\n".join(intf_output) + "\n")
 
             speed_bps = 0
@@ -243,11 +246,11 @@ async def discover_mpls_router_topology(host, device_log_file):
                             speed_bps = val * 1_000_000
                     break
 
-            local_ip = interface_ips.get(bundle, interface_ips.get(f"{bundle}.0", ""))
+            local_ip = interface_ips.get(intf_name, interface_ips.get(f"{intf_name}.0", ""))
             remote_ip = derive_peer_ip_point_to_point(local_ip)
 
-            topology_data[bundle] = {
-                "local_interface": bundle,
+            topology_data[intf_name] = {
+                "local_interface": intf_name,
                 "local_ip": local_ip,
                 "remote_device": info["peer"],
                 "remote_ip": remote_ip,
@@ -292,31 +295,62 @@ def get_pacific_timestamp() -> str:
 def resolve_cross_device_remote_ips(topology_report):
     """
     Cross-references discovered devices to resolve exact remote_interface and remote_ip
-    between peer routers.
+    between peer routers, supporting multiple connections and IP subnet matching.
     """
-    device_ip_map = {}
-    for dev, node_data in topology_report.items():
-        if not node_data or "interfaces" not in node_data:
-            continue
-        for intf_name, details in node_data["interfaces"].items():
-            local_ip = details.get("local_ip", "")
-            if local_ip:
-                device_ip_map[(dev, intf_name)] = local_ip
-
     for dev, node_data in topology_report.items():
         if not node_data or "interfaces" not in node_data:
             continue
         for intf_name, details in node_data["interfaces"].items():
             remote_dev = details.get("remote_device", "")
-            if not details.get("remote_ip") and remote_dev in topology_report:
-                remote_node = topology_report[remote_dev]
-                remote_intfs = remote_node.get("interfaces", {})
+            if not remote_dev or remote_dev not in topology_report:
+                continue
+
+            local_ip = details.get("local_ip", "")
+            clean_local_ip = defCleanIP(local_ip)
+            clean_remote_ip = defCleanIP(details.get("remote_ip", ""))
+
+            remote_node = topology_report[remote_dev]
+            remote_intfs = remote_node.get("interfaces", {})
+
+            matched_r_intf = None
+            matched_r_details = None
+
+            # 1. Match by exact IP address or peer IP (/31 or /30)
+            for r_intf, r_details in remote_intfs.items():
+                r_local_ip = defCleanIP(r_details.get("local_ip", ""))
+                r_remote_ip = defCleanIP(r_details.get("remote_ip", ""))
+
+                if clean_remote_ip and r_local_ip == clean_remote_ip:
+                    matched_r_intf = r_intf
+                    matched_r_details = r_details
+                    break
+                if clean_local_ip and r_remote_ip == clean_local_ip:
+                    matched_r_intf = r_intf
+                    matched_r_details = r_details
+                    break
+
+            # 2. Fallback: match by member interface name or exact interface match
+            if not matched_r_intf:
                 for r_intf, r_details in remote_intfs.items():
                     if r_details.get("remote_device") == dev:
-                        details["remote_interface"] = r_intf
-                        if r_details.get("local_ip"):
-                            details["remote_ip"] = r_details.get("local_ip")
-                        break
+                        if r_intf == intf_name:
+                            matched_r_intf = r_intf
+                            matched_r_details = r_details
+                            break
+
+            # 3. Fallback: match if only one peer link exists to this dev
+            if not matched_r_intf:
+                matching_peer_intfs = [
+                    (r_intf, r_details) for r_intf, r_details in remote_intfs.items()
+                    if r_details.get("remote_device") == dev
+                ]
+                if len(matching_peer_intfs) == 1:
+                    matched_r_intf, matched_r_details = matching_peer_intfs[0]
+
+            if matched_r_intf and matched_r_details:
+                details["remote_interface"] = matched_r_intf
+                if not details.get("remote_ip") and matched_r_details.get("local_ip"):
+                    details["remote_ip"] = matched_r_details.get("local_ip")
 
 async def main():
     parser = argparse.ArgumentParser(description="Discover MPLS network topology excluding BNG routers.")

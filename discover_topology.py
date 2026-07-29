@@ -110,36 +110,38 @@ async def discover_cr_topology(host, device_log_file):
                     "system_name": system_name
                 })
 
-        # Filter out management and dr neighbors, and require parent interface (ae bundle)
+        # Filter out management and dr neighbors
         filtered_neighbors = []
         for n in neighbors:
             sys_name = n["system_name"].lower()
             local_int = n["local_interface"].lower()
-            parent_int = n["parent_interface"]
             
             if "mgt" in sys_name or "mgmt" in sys_name or "dr" in sys_name:
                 continue
             if "mgmt" in local_int or "mgt" in local_int:
                 continue
-            if not parent_int or not parent_int.lower().startswith("ae"):
-                continue
                 
             filtered_neighbors.append(n)
 
-        # Group by parent interface and peer system
+        # Group by effective interface (parent ae bundle or standalone local interface)
         bundle_peers = {}
         for n in filtered_neighbors:
             parent = n["parent_interface"]
-            peer = normalize_system_name(n["system_name"])
-            bundle_peers.setdefault(parent, {"peer": peer, "members": []})
-            bundle_peers[parent]["members"].append(n["local_interface"])
+            if parent and parent.lower().startswith("ae"):
+                effective_intf = parent.lower()
+            else:
+                effective_intf = n["local_interface"].lower()
 
-        # Now fetch speeds for each bundle
+            peer = normalize_system_name(n["system_name"])
+            bundle_peers.setdefault(effective_intf, {"peer": peer, "members": []})
+            bundle_peers[effective_intf]["members"].append(n["local_interface"])
+
+        # Now fetch speeds for each bundle / interface
         topology_data = {}
-        for bundle, info in bundle_peers.items():
-            intf_output = await rate_limited_gnetch_command(f"show interfaces {bundle}", host)
+        for intf_name, info in bundle_peers.items():
+            intf_output = await rate_limited_gnetch_command(f"show interfaces {intf_name}", host)
             with open(device_log_file, 'a') as log_file:
-                log_file.write(f"\n--- show interfaces {bundle} ---\n")
+                log_file.write(f"\n--- show interfaces {intf_name} ---\n")
                 log_file.write("\n".join(intf_output) + "\n")
 
             speed_bps = 0
@@ -155,8 +157,8 @@ async def discover_cr_topology(host, device_log_file):
                             speed_bps = val * 1_000_000
                     break
 
-            topology_data[bundle] = {
-                "local_interface": bundle,
+            topology_data[intf_name] = {
+                "local_interface": intf_name,
                 "remote_device": info["peer"],
                 "capacity_bps": speed_bps,
                 "capacity_human": convert_speed_human(speed_bps),

@@ -2166,10 +2166,10 @@ const htmlContent = `<!doctype html>
         metroBubbles.innerHTML = bubblesHTML;
         metroLabels.innerHTML = labelsHTML;
 
-        // 3. Draw Links between devices (De-duplicate symmetric links)
+        // Render Links (supporting multiple parallel links per router pair)
         const linksGroup = document.getElementById('topology-links');
         let linksHTML = '';
-        const drawnLinks = new Set();
+        const linkGroups = {};
 
         Object.keys(topologyData).forEach(localDev => {
           const intfs = topologyData[localDev];
@@ -2179,37 +2179,99 @@ const htmlContent = `<!doctype html>
 
             if (!remoteDev || remoteDev === "unknown") return;
 
-            const linkKey = [localDev, remoteDev].sort().join('---');
-            if (drawnLinks.has(linkKey)) return;
-            drawnLinks.add(linkKey);
+            const devPairKey = [localDev.toLowerCase(), remoteDev.toLowerCase()].sort().join('---');
+
+            if (!linkGroups[devPairKey]) {
+              linkGroups[devPairKey] = [];
+            }
+
+            const exists = linkGroups[devPairKey].some(l => 
+              (l.localDev.toLowerCase() === localDev.toLowerCase() && l.intf === intf) ||
+              (l.localDev.toLowerCase() === remoteDev.toLowerCase() && l.remoteIntf === intf)
+            );
+
+            if (!exists) {
+              linkGroups[devPairKey].push({
+                localDev: localDev,
+                remoteDev: remoteDev,
+                intf: intf,
+                remoteIntf: linkDetail.remote_interface || '',
+                detail: linkDetail
+              });
+            }
+          });
+        });
+
+        Object.keys(linkGroups).forEach(devPairKey => {
+          const links = linkGroups[devPairKey];
+          const totalLinks = links.length;
+
+          links.forEach((linkItem, idx) => {
+            const localDev = linkItem.localDev;
+            const remoteDev = linkItem.remoteDev;
+            const intf = linkItem.intf;
+            const linkDetail = linkItem.detail;
+            const subKey = devPairKey + '-' + idx;
 
             const start = deviceCoords[localDev];
             let end = deviceCoords[remoteDev];
-            
+
             if (!end) {
               const remoteMetro = getMetroOfDevice(remoteDev);
               const base = metroCoordinates[remoteMetro] || { x: 500, y: 300 };
               end = { x: base.x, y: base.y };
             }
 
-            const capBps = linkDetail.capacity_bps || 100000000000;
-            const color = getCapacityColor(capBps);
-
-            const roleLocal = getDeviceRole(localDev);
-            const roleRemote = getDeviceRole(remoteDev);
-            const isCoreLocal = (roleLocal === "cr-backbone" || roleLocal === "cr-metro" || roleLocal === "rr");
-            const isCoreRemote = (roleRemote === "cr-backbone" || roleRemote === "cr-metro" || roleRemote === "rr");
-            const isCoreLink = isCoreLocal && isCoreRemote;
-
-            if (isCoreLink) {
+            if (start && end) {
+              const capBps = linkDetail.capacity_bps || 100000000000;
+              const color = getCapacityColor(capBps);
               const width = getCapacityWidth(capBps);
-              linksHTML += '<line class="topology-link" id="link-' + linkKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="' + color + '" stroke-width="' + width + '" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" />';
-              linksHTML += '<line class="topology-flow" id="flow-' + linkKey + '" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="rgba(255, 255, 255, 0.5)" stroke-width="' + Math.max(1.0, width * 0.25) + '" stroke-dasharray="6, 10" style="animation: flow-anim 1.5s linear infinite; pointer-events: none;" />';
-            } else {
-              linksHTML += '<line class="topology-link edge-link" id="link-' + linkKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" opacity="0.45" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" />';
+
+              const roleLocal = getDeviceRole(localDev);
+              const roleRemote = getDeviceRole(remoteDev);
+              const isCoreLocal = (roleLocal === "cr-backbone" || roleLocal === "cr-metro" || roleLocal === "rr");
+              const isCoreRemote = (roleRemote === "cr-backbone" || roleRemote === "cr-metro" || roleRemote === "rr");
+              const isCoreLink = isCoreLocal && isCoreRemote;
+
+              let x1 = start.x, y1 = start.y, x2 = end.x, y2 = end.y;
+              let pathD = "";
+
+              if (totalLinks > 1) {
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const nx = -dy / len;
+                const ny = dx / len;
+
+                const offsetStep = 12;
+                const offset = (idx - (totalLinks - 1) / 2) * offsetStep;
+
+                const cx = (x1 + x2) / 2 + nx * offset * 2.5;
+                const cy = (y1 + y2) / 2 + ny * offset * 2.5;
+
+                pathD = 'M ' + x1 + ' ' + y1 + ' Q ' + cx + ' ' + cy + ' ' + x2 + ' ' + y2;
+              }
+
+              if (isCoreLink) {
+                if (pathD) {
+                  linksHTML += '<path class="topology-link" id="link-' + subKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" d="' + pathD + '" stroke="' + color + '" stroke-width="' + width + '" fill="none" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" />';
+                  linksHTML += '<path class="topology-flow" id="flow-' + subKey + '" d="' + pathD + '" stroke="rgba(255, 255, 255, 0.5)" stroke-width="' + Math.max(1.0, width * 0.25) + '" stroke-dasharray="6, 10" fill="none" style="animation: flow-anim 1.5s linear infinite; pointer-events: none;" />';
+                  linksHTML += '<path class="topology-hover-helper" id="hover-link-' + subKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" d="' + pathD + '" stroke="transparent" stroke-width="15" fill="none" style="cursor: pointer;" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\'); highlightLinkLine(\'' + subKey + '\')" onmouseleave="hideTooltip(); unhighlightLinkLine(\'' + subKey + '\')" />';
+                } else {
+                  linksHTML += '<line class="topology-link" id="link-' + subKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="' + width + '" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" />';
+                  linksHTML += '<line class="topology-flow" id="flow-' + subKey + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="rgba(255, 255, 255, 0.5)" stroke-width="' + Math.max(1.0, width * 0.25) + '" stroke-dasharray="6, 10" style="animation: flow-anim 1.5s linear infinite; pointer-events: none;" />';
+                  linksHTML += '<line class="topology-hover-helper" id="hover-link-' + subKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="transparent" stroke-width="15" style="cursor: pointer;" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\'); highlightLinkLine(\'' + subKey + '\')" onmouseleave="hideTooltip(); unhighlightLinkLine(\'' + subKey + '\')" />';
+                }
+              } else {
+                if (pathD) {
+                  linksHTML += '<path class="topology-link edge-link" id="link-' + subKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" d="' + pathD + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" fill="none" opacity="0.45" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" />';
+                  linksHTML += '<path class="topology-hover-helper" id="hover-link-' + subKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" d="' + pathD + '" stroke="transparent" stroke-width="15" fill="none" style="cursor: pointer;" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\'); highlightLinkLine(\'' + subKey + '\')" onmouseleave="hideTooltip(); unhighlightLinkLine(\'' + subKey + '\')" />';
+                } else {
+                  linksHTML += '<line class="topology-link edge-link" id="link-' + subKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" opacity="0.45" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" />';
+                  linksHTML += '<line class="topology-hover-helper" id="hover-link-' + subKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="transparent" stroke-width="15" style="cursor: pointer;" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\'); highlightLinkLine(\'' + subKey + '\')" onmouseleave="hideTooltip(); unhighlightLinkLine(\'' + subKey + '\')" />';
+                }
+              }
             }
-            // Invisible thick hover helper (makes line hovering extremely responsive and sensitive)
-            linksHTML += '<line class="topology-hover-helper" id="hover-link-' + linkKey + '" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="transparent" stroke-width="15" style="cursor: pointer;" onclick="selectLink(\'' + localDev + '\', \'' + intf + '\')" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\'); highlightLinkLine(\'' + linkKey + '\')" onmouseleave="hideTooltip(); unhighlightLinkLine(\'' + linkKey + '\')" />';
           });
         });
         linksGroup.innerHTML = linksHTML;
@@ -2303,14 +2365,66 @@ const htmlContent = `<!doctype html>
     }
 
     function getRemoteInterface(localDev, remoteDev, localIntf) {
+      const localDetail = topologyData[localDev] ? topologyData[localDev][localIntf] : null;
+      if (localDetail && localDetail.remote_interface && localDetail.remote_interface !== 'N/A') {
+        return localDetail.remote_interface;
+      }
+
       const remoteDevData = topologyData[remoteDev];
       if (!remoteDevData) return null;
-      for (const remoteIntf of Object.keys(remoteDevData)) {
-        const remoteLink = remoteDevData[remoteIntf];
-        if (remoteLink.remote_device === localDev) {
-          return remoteIntf;
+
+      const cleanRemoteIp = (localDetail && localDetail.remote_ip) ? localDetail.remote_ip.split('/')[0] : '';
+      const cleanLocalIp = (localDetail && localDetail.local_ip) ? localDetail.local_ip.split('/')[0] : '';
+      const localMembers = (localDetail && localDetail.members) ? localDetail.members : [];
+
+      // 1. IP match
+      for (const rKey in remoteDevData) {
+        const rDetail = remoteDevData[rKey];
+        if (rDetail.remote_device === localDev) {
+          const rLocalIp = rDetail.local_ip ? rDetail.local_ip.split('/')[0] : '';
+          const rRemoteIp = rDetail.remote_ip ? rDetail.remote_ip.split('/')[0] : '';
+          if ((cleanRemoteIp && rLocalIp === cleanRemoteIp) || (cleanLocalIp && rRemoteIp === cleanLocalIp)) {
+            return rKey;
+          }
         }
       }
+
+      // 2. Physical Member Interface Overlap Match
+      if (localMembers.length > 0) {
+        const localMemSet = new Set(localMembers.map(m => m.toLowerCase().split('.')[0]));
+        for (const rKey in remoteDevData) {
+          const rDetail = remoteDevData[rKey];
+          if (rDetail.remote_device === localDev && rDetail.members) {
+            for (const rm of rDetail.members) {
+              if (localMemSet.has(rm.toLowerCase().split('.')[0])) {
+                return rKey;
+              }
+            }
+          }
+        }
+      }
+
+      // 3. Exact interface name match (e.g. ae6 <-> ae6)
+      for (const rKey in remoteDevData) {
+        const rDetail = remoteDevData[rKey];
+        if (rDetail.remote_device === localDev && rKey === localIntf) {
+          return rKey;
+        }
+      }
+
+      // 4. Index Order Fallback: match i-th link from local to i-th link from remote
+      const localPeerLinks = Object.keys(topologyData[localDev]).filter(k => topologyData[localDev][k].remote_device === remoteDev);
+      const remotePeerLinks = Object.keys(remoteDevData).filter(k => remoteDevData[k].remote_device === localDev);
+      
+      const localIdx = localPeerLinks.indexOf(localIntf);
+      if (localIdx !== -1 && localIdx < remotePeerLinks.length) {
+        return remotePeerLinks[localIdx];
+      }
+
+      if (remotePeerLinks.length > 0) {
+        return remotePeerLinks[0];
+      }
+
       return null;
     }
 

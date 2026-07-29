@@ -1679,10 +1679,10 @@ const htmlTemplate = `<!DOCTYPE html>
         metroBubbles.innerHTML = bubblesHTML;
         metroLabels.innerHTML = labelsHTML;
 
-        // Render Links
+        // Render Links (supporting multiple parallel links per router pair)
         const linksGroup = document.getElementById('topology-links');
         let linksHTML = '';
-        const drawnLinks = new Set();
+        const linkGroups = {};
 
         Object.keys(topologyData).forEach(localDev => {
           const intfs = topologyData[localDev];
@@ -1692,9 +1692,38 @@ const htmlTemplate = `<!DOCTYPE html>
 
             if (!remoteDev || remoteDev === "unknown") return;
 
-            const linkKey = [localDev.toLowerCase(), remoteDev.toLowerCase()].sort().join('---');
-            if (drawnLinks.has(linkKey)) return;
-            drawnLinks.add(linkKey);
+            const devPairKey = [localDev.toLowerCase(), remoteDev.toLowerCase()].sort().join('---');
+
+            if (!linkGroups[devPairKey]) {
+              linkGroups[devPairKey] = [];
+            }
+
+            const exists = linkGroups[devPairKey].some(l => 
+              (l.localDev.toLowerCase() === localDev.toLowerCase() && l.intf === intf) ||
+              (l.localDev.toLowerCase() === remoteDev.toLowerCase() && l.remoteIntf === intf)
+            );
+
+            if (!exists) {
+              linkGroups[devPairKey].push({
+                localDev: localDev,
+                remoteDev: remoteDev,
+                intf: intf,
+                remoteIntf: linkDetail.remote_interface || '',
+                detail: linkDetail
+              });
+            }
+          });
+        });
+
+        Object.keys(linkGroups).forEach(devPairKey => {
+          const links = linkGroups[devPairKey];
+          const totalLinks = links.length;
+
+          links.forEach((linkItem, idx) => {
+            const localDev = linkItem.localDev;
+            const remoteDev = linkItem.remoteDev;
+            const intf = linkItem.intf;
+            const linkDetail = linkItem.detail;
 
             const start = resolveDeviceCoords(localDev);
             let end = resolveDeviceCoords(remoteDev);
@@ -1718,11 +1747,39 @@ const htmlTemplate = `<!DOCTYPE html>
               const isCoreRemote = (roleRemote === "cr-backbone" || roleRemote === "cr-metro" || roleRemote === "rr");
               const isCoreLink = isCoreLocal && isCoreRemote;
 
+              let x1 = start.x, y1 = start.y, x2 = end.x, y2 = end.y;
+              let pathD = "";
+
+              if (totalLinks > 1) {
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const nx = -dy / len;
+                const ny = dx / len;
+
+                const offsetStep = 12;
+                const offset = (idx - (totalLinks - 1) / 2) * offsetStep;
+
+                const cx = (x1 + x2) / 2 + nx * offset * 2.5;
+                const cy = (y1 + y2) / 2 + ny * offset * 2.5;
+
+                pathD = 'M ' + x1 + ' ' + y1 + ' Q ' + cx + ' ' + cy + ' ' + x2 + ' ' + y2;
+              }
+
               if (isCoreLink) {
-                linksHTML += '<line class="topology-link" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="' + color + '" stroke-width="' + width + '" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
-                linksHTML += '<line class="topology-flow" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="rgba(255, 255, 255, 0.5)" stroke-width="' + Math.max(1.0, width * 0.25) + '" stroke-dasharray="6, 10" style="animation: flow-anim 1.5s linear infinite; pointer-events: none;" />';
+                if (pathD) {
+                  linksHTML += '<path class="topology-link" data-start="' + localDev + '" data-end="' + remoteDev + '" d="' + pathD + '" stroke="' + color + '" stroke-width="' + width + '" fill="none" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
+                  linksHTML += '<path class="topology-flow" d="' + pathD + '" stroke="rgba(255, 255, 255, 0.5)" stroke-width="' + Math.max(1.0, width * 0.25) + '" stroke-dasharray="6, 10" fill="none" style="animation: flow-anim 1.5s linear infinite; pointer-events: none;" />';
+                } else {
+                  linksHTML += '<line class="topology-link" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="' + width + '" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
+                  linksHTML += '<line class="topology-flow" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="rgba(255, 255, 255, 0.5)" stroke-width="' + Math.max(1.0, width * 0.25) + '" stroke-dasharray="6, 10" style="animation: flow-anim 1.5s linear infinite; pointer-events: none;" />';
+                }
               } else {
-                linksHTML += '<line class="topology-link edge-link" x1="' + start.x + '" y1="' + start.y + '" x2="' + end.x + '" y2="' + end.y + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" opacity="0.45" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
+                if (pathD) {
+                  linksHTML += '<path class="topology-link edge-link" data-start="' + localDev + '" data-end="' + remoteDev + '" d="' + pathD + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" fill="none" opacity="0.45" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
+                } else {
+                  linksHTML += '<line class="topology-link edge-link" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" opacity="0.45" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
+                }
               }
             }
           });
@@ -2068,7 +2125,9 @@ const htmlTemplate = `<!DOCTYPE html>
       if ((!remoteIntf || remoteIntf === 'N/A') && topologyData[remoteDev]) {
         const cleanRemoteIp = detail.remote_ip ? detail.remote_ip.split('/')[0] : '';
         const cleanLocalIp = detail.local_ip ? detail.local_ip.split('/')[0] : '';
+        const localMembers = detail.members || [];
 
+        // 1. IP match
         for (const rKey in topologyData[remoteDev]) {
           const rDetail = topologyData[remoteDev][rKey];
           const rLocalIp = rDetail.local_ip ? rDetail.local_ip.split('/')[0] : '';
@@ -2078,6 +2137,50 @@ const htmlTemplate = `<!DOCTYPE html>
             remoteIntf = rKey;
             detail.remote_interface = rKey;
             break;
+          }
+        }
+
+        // 2. Member Overlap match
+        if (!remoteIntf && localMembers.length > 0) {
+          const localMemSet = new Set(localMembers.map(m => m.toLowerCase().split('.')[0]));
+          for (const rKey in topologyData[remoteDev]) {
+            const rDetail = topologyData[remoteDev][rKey];
+            if (rDetail.remote_device === dev && rDetail.members) {
+              for (const rm of rDetail.members) {
+                if (localMemSet.has(rm.toLowerCase().split('.')[0])) {
+                  remoteIntf = rKey;
+                  detail.remote_interface = rKey;
+                  break;
+                }
+              }
+            }
+            if (remoteIntf) break;
+          }
+        }
+
+        // 3. Exact interface name match
+        if (!remoteIntf) {
+          for (const rKey in topologyData[remoteDev]) {
+            const rDetail = topologyData[remoteDev][rKey];
+            if (rDetail.remote_device === dev && rKey === intf) {
+              remoteIntf = rKey;
+              detail.remote_interface = rKey;
+              break;
+            }
+          }
+        }
+
+        // 4. Index Order Fallback
+        if (!remoteIntf) {
+          const localPeerLinks = Object.keys(topologyData[dev]).filter(k => topologyData[dev][k].remote_device === remoteDev);
+          const remotePeerLinks = Object.keys(topologyData[remoteDev]).filter(k => topologyData[remoteDev][k].remote_device === dev);
+          const localIdx = localPeerLinks.indexOf(intf);
+          if (localIdx !== -1 && localIdx < remotePeerLinks.length) {
+            remoteIntf = remotePeerLinks[localIdx];
+            detail.remote_interface = remoteIntf;
+          } else if (remotePeerLinks.length > 0) {
+            remoteIntf = remotePeerLinks[0];
+            detail.remote_interface = remoteIntf;
           }
         }
       }

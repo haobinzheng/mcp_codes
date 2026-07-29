@@ -1,21 +1,25 @@
-#import telnetlib
+import sys
+import os
+GFIBER_PATH = "/usr/local/google/home/mikezh/Coding/gfiber"
+if GFIBER_PATH not in sys.path and os.path.exists(GFIBER_PATH):
+    sys.path.append(GFIBER_PATH)
+
 import ipaddress
 import socket
-import sys
 import argparse
 import time
 import logging
 import traceback
 import pprint
-#import paramiko
-import time
 from time import sleep
 import re
-import os
 import json
 from datetime import datetime
 import xlsxwriter
-from excel import *
+try:
+    from excel import *
+except ImportError:
+    pass
 #from ixia_ngfp_lib import *
 import settings
 from console_util  import  *
