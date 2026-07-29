@@ -262,13 +262,27 @@ func loadLspDataForDate(targetDate string) ([]LspSummary, error) {
 				}
 			}
 
+			ingressHost := strings.TrimSpace(entry.IngressRouter)
+			if fullDev, ok := ipMap[defCleanIP(entry.From)]; ok {
+				ingressHost = strings.ToLower(fullDev)
+			} else if len(lspHops) > 0 {
+				ingressHost = lspHops[0]
+			}
+
+			egressHost := strings.TrimSpace(entry.EgressRouter)
+			if fullDev, ok := ipMap[defCleanIP(entry.To)]; ok {
+				egressHost = strings.ToLower(fullDev)
+			} else if len(lspHops) > 0 {
+				egressHost = lspHops[len(lspHops)-1]
+			}
+
 			summary := LspSummary{
 				ID:             lspName,
 				Name:           lspName,
 				From:           entry.From,
 				To:             entry.To,
-				IngressRouter:  entry.IngressRouter,
-				EgressRouter:   entry.EgressRouter,
+				IngressRouter:  ingressHost,
+				EgressRouter:   egressHost,
 				LspNumber:      entry.LspNumber,
 				BwStr:          bwStr,
 				BwGbps:         bwGbps,
@@ -771,19 +785,60 @@ const htmlTemplate = `<!DOCTYPE html>
       cursor: pointer;
     }
 
-    .lsp-path-line {
-      stroke: var(--cyan);
-      stroke-width: 4.0;
+    .lsp-path-base {
+      stroke: #00f2fe;
+      stroke-width: 5.5px;
       stroke-linecap: round;
-      filter: drop-shadow(0 0 8px var(--cyan-glow));
+      filter: drop-shadow(0 0 12px rgba(0, 242, 254, 0.9));
     }
 
-    .traceroute-path-line {
-      stroke: var(--orange);
-      stroke-width: 3.5;
-      stroke-dasharray: 6, 6;
+    .lsp-path-flow {
+      stroke: #ffffff;
+      stroke-width: 2.5px;
       stroke-linecap: round;
-      filter: drop-shadow(0 0 8px var(--orange-glow));
+      stroke-dasharray: 6, 12;
+      pointer-events: none;
+    }
+
+    .traceroute-path-base {
+      stroke: #ff7a00;
+      stroke-width: 5px;
+      stroke-dasharray: 10, 8;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 12px rgba(255, 122, 0, 0.9));
+    }
+
+    .traceroute-path-flow {
+      stroke: #fff7ed;
+      stroke-width: 2.2px;
+      stroke-linecap: round;
+      stroke-dasharray: 4, 10;
+      pointer-events: none;
+    }
+
+    .path-step-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 800;
+      fill: #ffffff;
+      pointer-events: none;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    }
+
+    .device-node-group.dimmed {
+      opacity: 0.22 !important;
+      transition: opacity 0.3s;
+    }
+
+    .device-node-group.path-highlighted {
+      opacity: 1.0 !important;
+      filter: drop-shadow(0 0 18px rgba(0, 242, 254, 0.85)) !important;
+      transition: opacity 0.3s, filter 0.3s;
+    }
+
+    .topology-link.dimmed {
+      opacity: 0.10 !important;
+      transition: opacity 0.3s;
     }
 
     /* Map Legend Overlay */
@@ -1610,9 +1665,48 @@ const htmlTemplate = `<!DOCTYPE html>
       const pathLayer = document.getElementById('path-layer');
       pathLayer.innerHTML = '';
 
+      // Reset spotlight dimming on all nodes and links
+      document.querySelectorAll('.device-node-group').forEach(el => {
+        el.classList.remove('dimmed', 'path-highlighted');
+      });
+      document.querySelectorAll('.topology-link').forEach(el => {
+        el.classList.remove('dimmed');
+      });
+
       if (!lsp) return;
 
-      // Render LSP Path (Cyan)
+      const pathNodes = new Set();
+      if (lsp.lsp_hops) {
+        lsp.lsp_hops.forEach(h => pathNodes.add(h.toLowerCase()));
+      }
+      if (lsp.traceroute_hops) {
+        lsp.traceroute_hops.forEach(h => pathNodes.add(h.toLowerCase()));
+      }
+
+      // Dim uninvolved router nodes
+      document.querySelectorAll('.device-node-group').forEach(el => {
+        const id = el.id.replace('node-group-', '').toLowerCase();
+        if (pathNodes.has(id)) {
+          el.classList.add('path-highlighted');
+        } else {
+          el.classList.add('dimmed');
+        }
+      });
+
+      // Dim uninvolved topology links
+      document.querySelectorAll('.topology-link').forEach(el => {
+        const start = (el.getAttribute('data-start') || '').toLowerCase();
+        const end = (el.getAttribute('data-end') || '').toLowerCase();
+        if (pathNodes.has(start) && pathNodes.has(end)) {
+          el.classList.remove('dimmed');
+        } else {
+          el.classList.add('dimmed');
+        }
+      });
+
+      let overlayHTML = '';
+
+      // 1. Render LSP Path (Electric Cyan Glow + White Particle Flow)
       if (lsp.lsp_hops && lsp.lsp_hops.length > 1) {
         for (let i = 0; i < lsp.lsp_hops.length - 1; i++) {
           const srcName = lsp.lsp_hops[i];
@@ -1630,15 +1724,17 @@ const htmlTemplate = `<!DOCTYPE html>
               const dy = offset.end.y - offset.start.y;
               const cx = (offset.start.x + offset.end.x) / 2 - dy * 0.15;
               const cy = (offset.start.y + offset.end.y) / 2 + dx * 0.15;
-              pathLayer.innerHTML += '<path class="lsp-path-line" d="M ' + offset.start.x + ' ' + offset.start.y + ' Q ' + cx + ' ' + cy + ' ' + offset.end.x + ' ' + offset.end.y + '" stroke="#00f2fe" stroke-width="4" fill="none" marker-end="url(#arrow-cyan)" />';
+              overlayHTML += '<path class="lsp-path-base" d="M ' + offset.start.x + ' ' + offset.start.y + ' Q ' + cx + ' ' + cy + ' ' + offset.end.x + ' ' + offset.end.y + '" fill="none" marker-end="url(#arrow-cyan)" />';
+              overlayHTML += '<path class="lsp-path-flow" d="M ' + offset.start.x + ' ' + offset.start.y + ' Q ' + cx + ' ' + cy + ' ' + offset.end.x + ' ' + offset.end.y + '" fill="none" style="animation: flow-anim 0.8s linear infinite;" />';
             } else {
-              pathLayer.innerHTML += '<line class="lsp-path-line" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" stroke="#00f2fe" stroke-width="4" marker-end="url(#arrow-cyan)" />';
+              overlayHTML += '<line class="lsp-path-base" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" marker-end="url(#arrow-cyan)" />';
+              overlayHTML += '<line class="lsp-path-flow" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" style="animation: flow-anim 0.8s linear infinite;" />';
             }
           }
         }
       }
 
-      // Render Traceroute Path (Orange) if non-shortest
+      // 2. Render Traceroute Path (Sunset Orange Glow + Amber Particle Flow)
       if (lsp.traceroute_hops && lsp.traceroute_hops.length > 1) {
         for (let i = 0; i < lsp.traceroute_hops.length - 1; i++) {
           const srcName = lsp.traceroute_hops[i];
@@ -1656,13 +1752,32 @@ const htmlTemplate = `<!DOCTYPE html>
               const dy = offset.end.y - offset.start.y;
               const cx = (offset.start.x + offset.end.x) / 2 + dy * 0.15;
               const cy = (offset.start.y + offset.end.y) / 2 - dx * 0.15;
-              pathLayer.innerHTML += '<path class="traceroute-path-line" d="M ' + offset.start.x + ' ' + offset.start.y + ' Q ' + cx + ' ' + cy + ' ' + offset.end.x + ' ' + offset.end.y + '" stroke="#f97316" stroke-width="4" fill="none" marker-end="url(#arrow-orange)" />';
+              overlayHTML += '<path class="traceroute-path-base" d="M ' + offset.start.x + ' ' + offset.start.y + ' Q ' + cx + ' ' + cy + ' ' + offset.end.x + ' ' + offset.end.y + '" fill="none" marker-end="url(#arrow-orange)" />';
+              overlayHTML += '<path class="traceroute-path-flow" d="M ' + offset.start.x + ' ' + offset.start.y + ' Q ' + cx + ' ' + cy + ' ' + offset.end.x + ' ' + offset.end.y + '" fill="none" style="animation: flow-anim 1.0s linear infinite;" />';
             } else {
-              pathLayer.innerHTML += '<line class="traceroute-path-line" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" stroke="#f97316" stroke-width="4" marker-end="url(#arrow-orange)" />';
+              overlayHTML += '<line class="traceroute-path-base" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" marker-end="url(#arrow-orange)" />';
+              overlayHTML += '<line class="traceroute-path-flow" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" style="animation: flow-anim 1.0s linear infinite;" />';
             }
           }
         }
       }
+
+      // 3. Render Hop Step Badges over traversed nodes
+      if (lsp.lsp_hops) {
+        lsp.lsp_hops.forEach((hName, idx) => {
+          const coords = resolveDeviceCoords(hName);
+          if (coords) {
+            const label = (idx === 0) ? "IN" : (idx === lsp.lsp_hops.length - 1 ? "OUT" : "H" + (idx + 1));
+            const badgeColor = (idx === 0) ? "#10b981" : (idx === lsp.lsp_hops.length - 1 ? "#ef4444" : "#00f2fe");
+            overlayHTML += '<g transform="translate(' + coords.x + ', ' + (coords.y - 18) + ')">' +
+              '<rect x="-14" y="-8" width="28" height="15" rx="4" fill="' + badgeColor + '" style="filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8));" />' +
+              '<text class="path-step-badge" x="0" y="3" text-anchor="middle">' + label + '</text>' +
+            '</g>';
+          }
+        });
+      }
+
+      pathLayer.innerHTML = overlayHTML;
     }
 
     function showDiagnosticPanel(lsp) {
@@ -1744,7 +1859,7 @@ const htmlTemplate = `<!DOCTYPE html>
 
     // Dragging Handlers
     container.addEventListener('mousedown', e => {
-      if (e.target.closest('.device-node') || e.target.closest('.metro-bubble')) return;
+      if (e.target.closest('.device-node') || e.target.closest('.metro-bubble') || e.target.closest('#lsp-diag-panel') || e.target.closest('.map-legend') || e.target.closest('.canvas-controls')) return;
       isDragging = true;
       startX = e.clientX - posX;
       startY = e.clientY - posY;
@@ -1799,19 +1914,86 @@ const htmlTemplate = `<!DOCTYPE html>
     function showLinkTooltip(e, dev, intf) {
       const tooltip = document.getElementById('tooltip');
       const detail = topologyData[dev][intf];
+      const remoteDev = detail.remote_device ? detail.remote_device.toLowerCase() : 'unknown';
+      const remoteIntf = detail.remote_interface || 'N/A';
+
       tooltip.style.display = 'block';
       tooltip.style.left = (e.clientX + 15) + 'px';
       tooltip.style.top = (e.clientY + 15) + 'px';
-      tooltip.innerHTML = '<div style="font-weight:700; color:#fff;">' + dev.toUpperCase() + ' ➔ ' + (detail.remote_device ? detail.remote_device.toUpperCase() : 'UNKNOWN') + '</div>' +
-        '<div>Interface: ' + intf + ' (' + (detail.capacity_human || 'N/A') + ')</div>' +
-        '<div>IP: ' + (detail.local_ip || 'N/A') + '</div>';
+
+      tooltip.innerHTML =
+        '<div style="font-weight:800; color:#38bdf8; font-size:12.5px; border-bottom:1px solid rgba(255,255,255,0.15); padding-bottom:4px; margin-bottom:6px;">' + dev.toUpperCase() + ' ➔ ' + remoteDev.toUpperCase() + '</div>' +
+        '<div style="margin-bottom:4px;"><span style="color:#a855f7; font-weight:700;">Local Router:</span> ' + dev.toUpperCase() + ' <span style="color:#38bdf8; font-family:\'JetBrains Mono\', monospace; font-weight:700;">[' + intf + ']</span> ' + (detail.local_ip ? '(' + detail.local_ip + ')' : '') + '</div>' +
+        '<div style="margin-bottom:4px;"><span style="color:#10b981; font-weight:700;">Remote Router:</span> ' + remoteDev.toUpperCase() + ' <span style="color:#38bdf8; font-family:\'JetBrains Mono\', monospace; font-weight:700;">[' + remoteIntf + ']</span> ' + (detail.remote_ip ? '(' + detail.remote_ip + ')' : '') + '</div>' +
+        '<div><span style="color:#cbd5e1; font-weight:700;">Capacity:</span> ' + (detail.capacity_human || 'N/A') + '</div>';
     }
 
     function hideTooltip() {
       document.getElementById('tooltip').style.display = 'none';
     }
 
-    window.onload = initApp;
+    function closeDiagPanel() {
+      const panel = document.getElementById('lsp-diag-panel');
+      panel.style.display = 'none';
+      selectedLsp = null;
+      document.getElementById('path-layer').innerHTML = '';
+      document.querySelectorAll('.device-node-group').forEach(el => {
+        el.classList.remove('dimmed', 'path-highlighted');
+      });
+      document.querySelectorAll('.topology-link').forEach(el => {
+        el.classList.remove('dimmed');
+      });
+      renderLspCards();
+    }
+
+    function toggleDiagPanelCollapse() {
+      const body = document.getElementById('diag-panel-body');
+      if (body.style.display === 'none') {
+        body.style.display = 'block';
+      } else {
+        body.style.display = 'none';
+      }
+    }
+
+    function initDraggableDiagPanel() {
+      const panel = document.getElementById('lsp-diag-panel');
+      const header = document.getElementById('diag-panel-header');
+      if (!panel || !header) return;
+
+      let isDraggingPanel = false;
+      let pStartX = 0, pStartY = 0;
+
+      panel.addEventListener('mousedown', e => {
+        e.stopPropagation();
+      });
+
+      header.addEventListener('mousedown', e => {
+        if (e.target.tagName === 'BUTTON') return;
+        e.stopPropagation();
+        e.preventDefault();
+        isDraggingPanel = true;
+        pStartX = e.clientX - panel.offsetLeft;
+        pStartY = e.clientY - panel.offsetTop;
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+      });
+
+      window.addEventListener('mousemove', e => {
+        if (isDraggingPanel) {
+          panel.style.left = (e.clientX - pStartX) + 'px';
+          panel.style.top = (e.clientY - pStartY) + 'px';
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDraggingPanel = false;
+      });
+    }
+
+    window.onload = () => {
+      initApp();
+      initDraggableDiagPanel();
+    };
   </script>
 </body>
 </html>
