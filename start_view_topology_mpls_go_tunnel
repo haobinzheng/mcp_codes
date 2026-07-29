@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-# Local port forward: access the GFiber Topology Map (Go) from your Mac browser.
+# Local port forward: access the GFiber MPLS Topology Map (Go) from your Mac browser.
 SSH_USER="${SSH_USER:-mikezh}"
 SSH_HOST="${SSH_HOST:-mikezh.c.googlers.com}"
 
@@ -17,11 +17,11 @@ if [[ "${REMOTE_TARGET}" == "your-ssh-user@your-remote-host" ]]; then
   exit 1
 fi
 
-LOCAL_PORT="${LOCAL_PORT:-9002}"
+LOCAL_PORT="${LOCAL_PORT:-9005}"
 REMOTE_HOST="${REMOTE_HOST:-127.0.0.1}"
-REMOTE_PORT="${REMOTE_PORT:-9002}"
+REMOTE_PORT="${REMOTE_PORT:-9005}"
 
-echo "Opening SSH tunnel to ${REMOTE_TARGET} for Gfiber Core Network Topology"
+echo "Opening SSH tunnel to ${REMOTE_TARGET} for Gfiber MPLS Core Network Topology"
 echo "Keep this terminal open. Open this URL in your Mac browser:"
 echo "http://127.0.0.1:${LOCAL_PORT}"
 

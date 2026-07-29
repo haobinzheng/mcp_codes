@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export WEB_HOST="${WEB_HOST:-127.0.0.1}"
+export WEB_PORT="${WEB_PORT:-9005}"
+export ANTIGRAVITY_SIDECAR_WEB_PORT="${ANTIGRAVITY_SIDECAR_WEB_PORT:-$WEB_PORT}"
+
+cd "${SCRIPT_DIR}"
+
+# Find and kill any running view_topology_mpls process before starting
+echo "Checking for running view_topology_mpls processes..."
+PIDS=$(pgrep -x "view_topology_mpls" || true)
+if [ -n "${PIDS}" ]; then
+  echo "Found running view_topology_mpls process with PID: ${PIDS}. Killing it."
+  kill -9 ${PIDS} || true
+  sleep 1
+else
+  echo "No running view_topology_mpls processes found."
+fi
+
+# Recompile the binary dynamically if 'go' is installed
+if command -v go >/dev/null 2>&1; then
+  echo "Compiling native MPLS topology server binary..."
+  go build -o view_topology_mpls view_topology_mpls.go
+elif [ ! -f "view_topology_mpls" ]; then
+  echo "Error: 'go' command not found, and no pre-compiled 'view_topology_mpls' binary exists."
+  echo "Please install Go or compile view_topology_mpls.go manually."
+  exit 1
+fi
+
+echo "Starting Gfiber MPLS Core Network Topology on ${WEB_HOST}:${ANTIGRAVITY_SIDECAR_WEB_PORT}."
+echo "Browse to: http://${WEB_HOST}:${ANTIGRAVITY_SIDECAR_WEB_PORT}"
+
+exec ./view_topology_mpls -port "${ANTIGRAVITY_SIDECAR_WEB_PORT}"

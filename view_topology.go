@@ -100,36 +100,15 @@ func loadValidTopologyNodes(logger *slog.Logger) {
 	logger.Info("Loaded valid topology nodes for validation", "count", len(validNodes))
 }
 
-func scanHighUtilization(logger *slog.Logger) {
-	logger.Info("Starting high utilization scan...")
-	today := time.Now().Format("2006-01-02")
-	auditDir := filepath.Join("Audit_interfaces_data", today)
+var (
+	highUtilDateCache   = make(map[string][]HighUtilFlow)
+	highUtilDateCacheMu sync.RWMutex
+)
 
-	// For safety/testing fallback, if today's directory doesn't exist or has no files,
-	// we can check the most recent date folder in Audit_interfaces_data
-	if _, err := os.Stat(auditDir); os.IsNotExist(err) {
-		logger.Warn("Today's audit directory not found, finding most recent date directory...", "path", auditDir)
-		files, err := ioutil.ReadDir("Audit_interfaces_data")
-		if err == nil && len(files) > 0 {
-			var mostRecent string
-			for _, f := range files {
-				if f.IsDir() && len(f.Name()) == 10 && strings.Count(f.Name(), "-") == 2 {
-					if f.Name() > mostRecent {
-						mostRecent = f.Name()
-					}
-				}
-			}
-			if mostRecent != "" {
-				auditDir = filepath.Join("Audit_interfaces_data", mostRecent)
-				logger.Info("Using most recent date directory instead", "path", auditDir)
-			}
-		}
-	}
-
+func computeHighUtilizationForDirectory(auditDir string) []HighUtilFlow {
 	deviceDirs, err := ioutil.ReadDir(auditDir)
 	if err != nil {
-		logger.Error("Failed to read audit directory", "dir", auditDir, "error", err)
-		return
+		return nil
 	}
 
 	var newFlows []HighUtilFlow
@@ -146,7 +125,6 @@ func scanHighUtilization(logger *slog.Logger) {
 			continue
 		}
 
-		// Track peak utilization for each neighbor from all files today
 		type neighborPeaks struct {
 			outPeak float64
 			inPeak  float64
@@ -252,7 +230,6 @@ func scanHighUtilization(logger *slog.Logger) {
 
 			remoteDev := normalizeHostname(neighbor)
 
-			// Validate that both devName and remoteDev exist in the topology
 			validTopologyNodesMu.RLock()
 			isSourceValid := validTopologyNodes[devName]
 			isTargetValid := validTopologyNodes[remoteDev]
@@ -298,7 +275,6 @@ func scanHighUtilization(logger *slog.Logger) {
 		}
 	}
 
-	// Deduplicate flows based on Source -> Target
 	uniqueFlows := make(map[string]HighUtilFlow)
 	for _, flow := range newFlows {
 		key := flow.Source + "-->" + flow.Target
@@ -316,11 +292,89 @@ func scanHighUtilization(logger *slog.Logger) {
 		finalFlows = append(finalFlows, flow)
 	}
 
+	return finalFlows
+}
+
+func getHighUtilizationForDate(targetDate string, logger *slog.Logger) ([]HighUtilFlow, string, error) {
+	targetDate = strings.TrimSpace(targetDate)
+
+	// Handle slash formatted dates like 7/2/2026 or 07/02/2026
+	if strings.Contains(targetDate, "/") {
+		parts := strings.Split(targetDate, "/")
+		if len(parts) == 3 {
+			m, d, y := parts[0], parts[1], parts[2]
+			if len(m) == 1 {
+				m = "0" + m
+			}
+			if len(d) == 1 {
+				d = "0" + d
+			}
+			targetDate = fmt.Sprintf("%s-%s-%s", y, m, d)
+		}
+	}
+
+	if targetDate == "" || targetDate == "latest" {
+		today := time.Now().Format("2006-01-02")
+		todayDir := filepath.Join("Audit_interfaces_data", today)
+		if _, err := os.Stat(todayDir); err == nil {
+			targetDate = today
+		} else {
+			entries, err := ioutil.ReadDir("Audit_interfaces_data")
+			if err == nil && len(entries) > 0 {
+				var mostRecent string
+				for _, entry := range entries {
+					if entry.IsDir() && len(entry.Name()) == 10 && strings.Count(entry.Name(), "-") == 2 {
+						if entry.Name() > mostRecent {
+							mostRecent = entry.Name()
+						}
+					}
+				}
+				if mostRecent != "" {
+					targetDate = mostRecent
+				}
+			}
+		}
+	}
+
+	if targetDate == "" {
+		return nil, "", fmt.Errorf("no audit data directory found")
+	}
+
+	highUtilDateCacheMu.RLock()
+	cachedFlows, exists := highUtilDateCache[targetDate]
+	highUtilDateCacheMu.RUnlock()
+
+	if exists {
+		return cachedFlows, targetDate, nil
+	}
+
+	auditDir := filepath.Join("Audit_interfaces_data", targetDate)
+	if _, err := os.Stat(auditDir); os.IsNotExist(err) {
+		return nil, targetDate, fmt.Errorf("audit directory not found for date %s", targetDate)
+	}
+
+	flows := computeHighUtilizationForDirectory(auditDir)
+
+	highUtilDateCacheMu.Lock()
+	highUtilDateCache[targetDate] = flows
+	highUtilDateCacheMu.Unlock()
+
+	return flows, targetDate, nil
+}
+
+func scanHighUtilization(logger *slog.Logger) {
+	logger.Info("Starting periodic high utilization scan...")
+	flows, resolvedDate, err := getHighUtilizationForDate("", logger)
+	if err != nil {
+		logger.Error("Failed periodic high utilization scan", "error", err)
+		return
+	}
+
 	highUtilFlowsMu.Lock()
-	highUtilFlows = finalFlows
+	highUtilFlows = flows
 	highUtilFlowsMu.Unlock()
 
-	logger.Info("Completed high utilization scan", "found_flows", len(finalFlows))
+	logger.Info("Completed periodic high utilization scan", "date", resolvedDate, "found_flows", len(flows))
 }
 
 type HistoricalPeakFlow struct {
@@ -553,15 +607,22 @@ func main() {
 		_, _ = w.Write(data)
 	})
 
-	// Endpoint to serve high utilization directed flows
+	// Endpoint to serve high utilization directed flows (supports ?date=YYYY-MM-DD)
 	mux.HandleFunc("GET /api/high_utilization", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
-		highUtilFlowsMu.RLock()
-		data, err := json.Marshal(highUtilFlows)
-		highUtilFlowsMu.RUnlock()
+		reqDate := r.URL.Query().Get("date")
+		flows, resolvedDate, err := getHighUtilizationForDate(reqDate, logger)
+		if err != nil {
+			slog.Error("Failed to get high utilization flows", "date", reqDate, "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`[]`))
+			return
+		}
 
+		w.Header().Set("X-Data-Date", resolvedDate)
+		data, err := json.Marshal(flows)
 		if err != nil {
 			slog.Error("Failed to marshal high utilization flows", "error", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -580,7 +641,7 @@ func main() {
 		_, _ = w.Write([]byte(htmlContent))
 	})
 
-	slog.Info("GFiber Topology Map running", "url", fmt.Sprintf("http://localhost:%s", port))
+	slog.Info("Gfiber Core Network Topology running", "url", fmt.Sprintf("http://localhost:%s", port))
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		slog.Error("Server failed to start", "error", err)
 		os.Exit(1)
@@ -592,7 +653,7 @@ const htmlContent = `<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>My Metro Topology</title>
+  <title>Gfiber Core Network Topology</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -1105,7 +1166,7 @@ const htmlContent = `<!doctype html>
     <div class="sidebar-header">
       <h1 class="sidebar-title">
         <div class="logo-dot"></div>
-        <span>My Metro Topology</span>
+        <span>Gfiber Core Network Topology</span>
       </h1>
     </div>
     <div class="sidebar-content">
@@ -1130,6 +1191,19 @@ const htmlContent = `<!doctype html>
       <!-- Control Panel Section -->
       <div>
         <div class="section-title">Topology Controls</div>
+        <div class="control-card" style="margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label for="topology-data-date-select" style="font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Topology Data Date</label>
+            <span id="active-data-date-badge" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: #06b6d4; background: rgba(6, 182, 212, 0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(6, 182, 212, 0.3);">Latest</span>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <select id="topology-data-date-select" style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; color: var(--text-main); font-size: 12px; font-weight: 500; outline: none; cursor: pointer;" onchange="onTopologyDataDateChange(this.value)">
+              <option value="">Loading dates...</option>
+            </select>
+            <button id="apply-date-btn" onclick="applyTopologyDataDate()" style="padding: 6px 14px; font-size: 12px; font-weight: 600; background: rgba(6, 182, 212, 0.2); border: 1px solid rgba(6, 182, 212, 0.4); color: #06b6d4; border-radius: 6px; cursor: pointer; white-space: nowrap; transition: all 0.2s;">Apply</button>
+          </div>
+        </div>
+
         <div class="control-card">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em;">Alarm Threshold</span>
@@ -1250,6 +1324,10 @@ const htmlContent = `<!doctype html>
           <div class="info-field">
             <div class="info-label">Device Role</div>
             <div id="info-role" class="info-value">-</div>
+          </div>
+          <div class="info-field">
+            <div class="info-label">Active Audit Data Date</div>
+            <div id="info-audit-date" class="info-value" style="color: #06b6d4;">-</div>
           </div>
           <div class="info-field">
             <div class="info-label">Core Adjacency Interfaces</div>
@@ -1408,13 +1486,42 @@ const htmlContent = `<!doctype html>
         valEl.style.color = '#3b82f6';
       }
       
+      if (peakFilterApplied) {
+        peakFilterApplied = false;
+        peakFlows = [];
+      }
+
       renderFlows(currentFlows);
     }
 
-    async function loadHighUtilizationFlows() {
+    let selectedDataDate = '';
+
+    function formatDateHuman(isoDateStr) {
+      if (!isoDateStr || isoDateStr.length !== 10) return isoDateStr;
+      const parts = isoDateStr.split('-');
+      if (parts.length === 3) {
+        const year = parts[0];
+        const month = parseInt(parts[1], 10);
+        const day = parseInt(parts[2], 10);
+        return month + '/' + day + '/' + year;
+      }
+      return isoDateStr;
+    }
+
+    async function loadHighUtilizationFlows(dateStr) {
       try {
-        const resp = await fetch('/api/high_utilization');
+        const targetDate = dateStr !== undefined ? dateStr : selectedDataDate;
+        const url = targetDate ? '/api/high_utilization?date=' + encodeURIComponent(targetDate) : '/api/high_utilization';
+        const resp = await fetch(url);
         currentFlows = await resp.json();
+        
+        const badge = document.getElementById('active-data-date-badge');
+        const select = document.getElementById('topology-data-date-select');
+        const activeDate = targetDate || (select ? select.value : '');
+        if (badge && activeDate) {
+          badge.textContent = formatDateHuman(activeDate);
+        }
+
         renderFlows(currentFlows);
       } catch (err) {
         console.error("Failed to load high utilization flows", err);
@@ -1426,7 +1533,7 @@ const htmlContent = `<!doctype html>
       if (!container) return;
 
       let html = '';
-      const filteredFlows = flows.filter(flow => flow.util >= alarmThreshold);
+      const filteredFlows = flows.filter(flow => Math.max(flow.util, flow.peak) >= alarmThreshold);
 
       if (!peakFilterApplied) {
         filteredFlows.forEach(flow => {
@@ -1449,25 +1556,52 @@ const htmlContent = `<!doctype html>
         const alarmsList = document.getElementById('alarms-list');
 
         if (alarmsPanel && alarmsList) {
+          const dateStr = formatDateHuman(selectedDataDate);
+          const isToday = (selectedDataDate === new Date().toISOString().slice(0, 10));
+          alarmsPanel.style.display = 'block';
+
+          const alarmsTitleSpan = alarmsPanel.querySelector('.section-title span:last-child');
+          if (alarmsTitleSpan) {
+            alarmsTitleSpan.textContent = isToday ? 'High Utilization Alarms (Real-Time)' : 'Historical Alarms (' + dateStr + ')';
+          }
+
+          const alarmDot = alarmsPanel.querySelector('.alarm-dot-flashing');
+          if (alarmDot) {
+            alarmDot.style.background = isToday ? '#ef4444' : '#06b6d4';
+            alarmDot.style.animation = isToday ? 'pulse 1.5s infinite' : 'none';
+          }
+
           if (filteredFlows.length > 0) {
-            alarmsPanel.style.display = 'block';
             let alarmsHTML = '';
 
             filteredFlows.forEach(flow => {
+              const effUtil = Math.max(flow.util, flow.peak);
               alarmsHTML += '<div class="alarm-card" onclick="selectNode(\'' + flow.source + '\')">' +
                 '<div>' +
                   '<span style="font-weight:600; color:#fafafa;">' + flow.source + '</span>' +
                   '<span class="alarm-arrow">➔</span>' +
                   '<span style="font-weight:600; color:#fafafa;">' + flow.target + '</span>' +
                 '</div>' +
-                '<span class="alarm-pct">' + Math.round(flow.util) + '%</span>' +
+                '<span class="alarm-pct">' + Math.round(effUtil) + '%</span>' +
               '</div>';
             });
 
             alarmsList.innerHTML = alarmsHTML;
           } else {
-            alarmsPanel.style.display = 'none';
-            alarmsList.innerHTML = '';
+            let maxFlow = null;
+            flows.forEach(f => {
+              const eff = Math.max(f.util, f.peak);
+              if (!maxFlow || eff > Math.max(maxFlow.util, maxFlow.peak)) maxFlow = f;
+            });
+
+            let msg = 'No links crossed the ' + alarmThreshold + '% threshold on ' + dateStr + '.';
+            if (maxFlow) {
+              const maxEff = Math.max(maxFlow.util, maxFlow.peak);
+              if (maxEff > 0) {
+                msg += ' Highest link utilization: ' + Math.round(maxEff) + '% (' + maxFlow.source + ' ➔ ' + maxFlow.target + '). Lower threshold to view.';
+              }
+            }
+            alarmsList.innerHTML = '<div style="padding:10px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(239, 68, 68, 0.3); border-radius:6px; text-align:center; font-size:11px; color:var(--text-muted);">' + msg + '</div>';
           }
         }
       }
@@ -2130,9 +2264,9 @@ const htmlContent = `<!doctype html>
         });
         nodesGroup.innerHTML = nodesHTML;
 
-        // Load directed high utilization overlays (>= 70%)
-        await loadHighUtilizationFlows();
+        // Load available dates first, then fetch directed high utilization overlays matching selected date
         await loadPeakFilterDates();
+        await loadHighUtilizationFlows(selectedDataDate);
 
       } catch (err) {
         console.error("Failed to load topology", err);
@@ -2216,8 +2350,9 @@ const htmlContent = `<!doctype html>
         <span style="color:#fafafa">${remoteDev}${remoteIntfStr}</span><br/>
         <span style="color:#eab308; font-weight: 600; margin-top: 4px; display: inline-block;">Capacity: ${link.capacity_human}</span><br/>
         <div style="border-top: 1px solid rgba(234, 179, 8, 0.2); margin-top: 6px; padding-top: 6px; font-size: 11px;">
+          <span style="color:#06b6d4; font-weight: 600;">Data Date: ${formatDateHuman(selectedDataDate)}</span><br/>
           <span style="color:#a1a1aa; font-weight: 600;">Utilization (${localDev}):</span><br/>
-          <span style="color:#fafafa;">Current: TX: ${outStr} | RX: ${inStr}</span><br/>
+          <span style="color:#fafafa;">Latest Snapshot: TX: ${outStr} | RX: ${inStr}</span><br/>
           <span style="color:#fafafa;">Daily Peak: TX: ${outPeakStr} | RX: ${inPeakStr}</span>
         </div>
       ` + "`" + `;
@@ -2301,6 +2436,7 @@ const htmlContent = `<!doctype html>
       document.getElementById('info-hostname').textContent = device;
       document.getElementById('info-site').textContent = metroCoordinates[metro.toLowerCase()]?.name || metro;
       document.getElementById('info-role').textContent = role;
+      document.getElementById('info-audit-date').textContent = formatDateHuman(selectedDataDate);
 
       const connectedDevices = new Set();
       let intfsStr = '';
@@ -2477,7 +2613,9 @@ const htmlContent = `<!doctype html>
       }
 
       // Poll high utilization flows every 30 seconds to keep map state reactive
-      setInterval(loadHighUtilizationFlows, 30000);
+      setInterval(() => {
+        loadHighUtilizationFlows(selectedDataDate);
+      }, 30000);
     });
 
     let peakFilterApplied = false;
@@ -2485,36 +2623,100 @@ const htmlContent = `<!doctype html>
     let peakThreshold = 50;
     let peakMode = 'input';
 
+    async function applyTopologyDataDate() {
+      const select = document.getElementById('topology-data-date-select');
+      const btn = document.getElementById('apply-date-btn');
+      if (!select) return;
+
+      const newDate = select.value;
+      selectedDataDate = newDate;
+
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        btn.style.opacity = '0.6';
+      }
+
+      try {
+        await loadHighUtilizationFlows(selectedDataDate);
+        if (btn) {
+          btn.textContent = 'Applied ✓';
+          setTimeout(() => {
+            if (btn) {
+              btn.disabled = false;
+              btn.textContent = 'Apply';
+              btn.style.opacity = '';
+            }
+          }, 1200);
+        }
+      } catch (err) {
+        console.error("Failed applying topology data date", err);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Apply';
+          btn.style.opacity = '';
+        }
+      }
+    }
+
+    function onTopologyDataDateChange(newDate) {
+      applyTopologyDataDate();
+    }
+
     async function loadPeakFilterDates() {
       try {
         const resp = await fetch('/api/dates');
         const data = await resp.json();
         const startSelect = document.getElementById('peak-start-date');
         const endSelect = document.getElementById('peak-end-date');
+        const dataDateSelect = document.getElementById('topology-data-date-select');
         
-        if (startSelect && endSelect && data.dates) {
-          startSelect.innerHTML = '';
-          endSelect.innerHTML = '';
-          
-          data.dates.forEach(date => {
-            const opt1 = document.createElement('option');
-            opt1.value = date;
-            opt1.textContent = date;
-            startSelect.appendChild(opt1);
+        if (data.dates && data.dates.length > 0) {
+          // Sort dates descending (newest first) for data selector
+          const sortedDesc = [...data.dates].sort().reverse();
+
+          if (dataDateSelect) {
+            dataDateSelect.innerHTML = '';
+            sortedDesc.forEach(date => {
+              const opt = document.createElement('option');
+              opt.value = date;
+              opt.textContent = formatDateHuman(date) + ' (' + date + ')';
+              dataDateSelect.appendChild(opt);
+            });
             
-            const opt2 = document.createElement('option');
-            opt2.value = date;
-            opt2.textContent = date;
-            endSelect.appendChild(opt2);
-          });
-          
-          if (data.dates.length > 0) {
+            if (!selectedDataDate) {
+              selectedDataDate = sortedDesc[0];
+            }
+            dataDateSelect.value = selectedDataDate;
+
+            const badge = document.getElementById('active-data-date-badge');
+            if (badge) {
+              badge.textContent = formatDateHuman(selectedDataDate);
+            }
+          }
+
+          if (startSelect && endSelect) {
+            startSelect.innerHTML = '';
+            endSelect.innerHTML = '';
+            
+            data.dates.forEach(date => {
+              const opt1 = document.createElement('option');
+              opt1.value = date;
+              opt1.textContent = formatDateHuman(date) + ' (' + date + ')';
+              startSelect.appendChild(opt1);
+              
+              const opt2 = document.createElement('option');
+              opt2.value = date;
+              opt2.textContent = formatDateHuman(date) + ' (' + date + ')';
+              endSelect.appendChild(opt2);
+            });
+            
             startSelect.value = data.dates[0];
             endSelect.value = data.dates[data.dates.length - 1];
           }
         }
       } catch (err) {
-        console.error("Failed to load peak filter dates", err);
+        console.error("Failed to load available dates", err);
       }
     }
 
