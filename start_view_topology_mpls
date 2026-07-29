@@ -9,16 +9,11 @@ export ANTIGRAVITY_SIDECAR_WEB_PORT="${ANTIGRAVITY_SIDECAR_WEB_PORT:-$WEB_PORT}"
 
 cd "${SCRIPT_DIR}"
 
-# Find and kill any running view_topology_mpls process before starting
+# Find and kill any running view_topology_mpls server process before starting
 echo "Checking for running view_topology_mpls processes..."
-PIDS=$(pgrep -x "view_topology_mpls" || true)
-if [ -n "${PIDS}" ]; then
-  echo "Found running view_topology_mpls process with PID: ${PIDS}. Killing it."
-  kill -9 ${PIDS} || true
-  sleep 1
-else
-  echo "No running view_topology_mpls processes found."
-fi
+fuser -k -9 "${ANTIGRAVITY_SIDECAR_WEB_PORT}/tcp" >/dev/null 2>&1 || true
+pkill -9 -f "^./view_topology_mpls" >/dev/null 2>&1 || true
+sleep 1
 
 # Recompile the binary dynamically if 'go' is installed
 if command -v go >/dev/null 2>&1; then
