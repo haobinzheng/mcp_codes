@@ -351,6 +351,52 @@ func getAvailableLspDates() []string {
 	return dates
 }
 
+func enrichRemoteInterfaces(report MplsTopologyReport) {
+	ipToIntfMap := make(map[string]string)
+
+	for devName, node := range report {
+		cleanDev := strings.ToLower(strings.TrimSpace(devName))
+		for intfKey, intf := range node {
+			if intf.LocalIP != "" {
+				cleanIp := defCleanIP(intf.LocalIP)
+				key := fmt.Sprintf("%s|%s", cleanDev, cleanIp)
+				ipToIntfMap[key] = intfKey
+			}
+		}
+	}
+
+	for _, node := range report {
+		for intfKey, intf := range node {
+			if intf.RemoteDevice != "" && (intf.RemoteInterface == "" || intf.RemoteInterface == "N/A") {
+				cleanRemoteDev := strings.ToLower(strings.TrimSpace(intf.RemoteDevice))
+				cleanRemoteIp := defCleanIP(intf.RemoteIP)
+
+				key := fmt.Sprintf("%s|%s", cleanRemoteDev, cleanRemoteIp)
+				if rIntf, found := ipToIntfMap[key]; found {
+					intf.RemoteInterface = rIntf
+					node[intfKey] = intf
+				} else {
+					for remoteDevKey, remoteNode := range report {
+						if strings.ToLower(strings.TrimSpace(remoteDevKey)) == cleanRemoteDev {
+							for rKey, rDetails := range remoteNode {
+								if defCleanIP(rDetails.LocalIP) == cleanRemoteIp || (intf.LocalIP != "" && defCleanIP(rDetails.RemoteIP) == defCleanIP(intf.LocalIP)) {
+									intf.RemoteInterface = rKey
+									node[intfKey] = intf
+									break
+								}
+							}
+						}
+					}
+				}
+				if intf.RemoteInterface == "" {
+					intf.RemoteInterface = "N/A"
+					node[intfKey] = intf
+				}
+			}
+		}
+	}
+}
+
 func loadMplsTopology() error {
 	jsonPath := "topology_discovery_mpls.json"
 	if _, err := os.Stat(jsonPath); os.IsNotExist(err) {
@@ -366,6 +412,8 @@ func loadMplsTopology() error {
 	if err := json.Unmarshal(data, &report); err != nil {
 		return fmt.Errorf("failed to parse %s: %w", jsonPath, err)
 	}
+
+	enrichRemoteInterfaces(report)
 
 	mplsTopologyDataMu.Lock()
 	mplsTopologyData = report
@@ -679,13 +727,19 @@ const htmlTemplate = `<!DOCTYPE html>
       justify-content: space-between;
       align-items: center;
       margin-bottom: 6px;
+      gap: 8px;
     }
 
     .lsp-name {
-      font-size: 12px;
+      font-size: 11.5px;
       font-weight: 700;
       color: #fafafa;
       font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+      min-width: 0;
     }
 
     .bw-tag {
@@ -696,6 +750,8 @@ const htmlTemplate = `<!DOCTYPE html>
       background: rgba(56, 189, 248, 0.15);
       padding: 2px 6px;
       border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
 
     .card-path-info {
@@ -987,12 +1043,19 @@ const htmlTemplate = `<!DOCTYPE html>
         </div>
 
         <div id="bw-slider-box">
-          <div class="control-row" style="margin-top: 10px;">
+          <div class="control-row" style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between;">
             <span class="control-label">Min Bandwidth</span>
-            <span class="val-badge" id="bw-val-display">1.0 Gbps</span>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <input type="number" id="bw-number-input" class="search-box" style="width: 60px; padding: 2px 4px; font-size: 11px; text-align: right; font-family: 'JetBrains Mono', monospace;" value="1.0" min="0" step="any" oninput="onBwNumberInput(this.value)">
+              <select id="bw-unit-select" class="search-box" style="padding: 2px 4px; font-size: 11px; font-family: 'JetBrains Mono', monospace;" onchange="onBwUnitChange(this.value)">
+                <option value="Gbps" selected>Gbps</option>
+                <option value="Mbps">Mbps</option>
+              </select>
+              <button class="canvas-btn" style="padding: 3px 8px; font-size: 11px; margin-left: 2px;" onclick="applyBwFilter()" title="Apply Filter">Apply</button>
+            </div>
           </div>
-          <div class="slider-container">
-            <input type="range" id="bw-threshold-slider" min="0" max="80" step="0.5" value="1.0" oninput="onBwSliderChange(this.value)">
+          <div class="slider-container" style="margin-top: 6px;">
+            <input type="range" id="bw-threshold-slider" min="0" max="100" step="1" value="50" oninput="onBwSliderChange(this.value)">
           </div>
         </div>
 
@@ -1065,25 +1128,37 @@ const htmlTemplate = `<!DOCTYPE html>
         </g>
       </svg>
 
-      <!-- Diagnostic Panel -->
+      <!-- Diagnostic Panel (Draggable, Minimizable, Closeable) -->
       <div id="lsp-diag-panel">
-        <div class="diag-title">
-          <span id="diag-lsp-name">LSP Details</span>
-          <span class="status-badge" id="diag-status-badge"></span>
-        </div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">
-          Bandwidth: <span style="color: #38bdf8; font-weight:700;" id="diag-bw-val"></span> | 
-          Ingress: <span style="color:#fff;" id="diag-ingress"></span> ➔ Egress: <span style="color:#fff;" id="diag-egress"></span>
+        <div class="diag-header" id="diag-panel-header" style="cursor: move; display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--panel-border); user-select: none;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2">
+              <path d="M5 9l4-4 4 4M5 15l4 4 4-4"/>
+            </svg>
+            <span id="diag-lsp-name" style="font-size: 13px; font-weight: 700; color: var(--text-main); font-family: 'JetBrains Mono', monospace;">LSP Details</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="status-badge" id="diag-status-badge"></span>
+            <button onclick="toggleDiagPanelCollapse()" title="Minimize / Expand" style="background: rgba(255,255,255,0.08); border: 1px solid var(--panel-border); color: #cbd5e1; border-radius: 4px; width: 22px; height: 22px; cursor: pointer; font-size: 12px; font-weight: bold; display: flex; align-items: center; justify-content: center;">_</button>
+            <button onclick="closeDiagPanel()" title="Close Card" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; border-radius: 4px; width: 22px; height: 22px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; justify-content: center;">×</button>
+          </div>
         </div>
 
-        <div style="margin-bottom: 10px;">
-          <div style="font-size: 11px; font-weight:700; color: var(--cyan); margin-bottom: 4px;">LSP Traversed Hops:</div>
-          <div class="hop-pills" id="diag-lsp-hops"></div>
-        </div>
+        <div id="diag-panel-body">
+          <div style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 10px;">
+            Bandwidth: <span style="color: #38bdf8; font-weight:700;" id="diag-bw-val"></span> | 
+            Ingress: <span style="color:#fff;" id="diag-ingress"></span> ➔ Egress: <span style="color:#fff;" id="diag-egress"></span>
+          </div>
 
-        <div id="diag-tr-section">
-          <div style="font-size: 11px; font-weight:700; color: var(--orange); margin-bottom: 4px;">IGP Traceroute Shortest Path Hops:</div>
-          <div class="hop-pills" id="diag-tr-hops"></div>
+          <div style="margin-bottom: 10px;">
+            <div style="font-size: 11px; font-weight:700; color: var(--cyan); margin-bottom: 4px;">LSP Traversed Hops:</div>
+            <div class="hop-pills" id="diag-lsp-hops"></div>
+          </div>
+
+          <div id="diag-tr-section">
+            <div style="font-size: 11px; font-weight:700; color: var(--orange); margin-bottom: 4px;">IGP Traceroute Shortest Path Hops:</div>
+            <div class="hop-pills" id="diag-tr-hops"></div>
+          </div>
         </div>
       </div>
 
@@ -1282,10 +1357,83 @@ const htmlTemplate = `<!DOCTYPE html>
       renderLspCards();
     }
 
-    function onBwSliderChange(val) {
-      minBwGbps = parseFloat(val);
-      document.getElementById('bw-val-display').textContent = minBwGbps.toFixed(1) + ' Gbps';
+    function sliderToBwGbps(val) {
+      const pos = parseFloat(val);
+      if (pos === 0) return 0;
+      if (pos <= 50) {
+        // Sub-1G range (0 to 50): 0.01 Gbps (10M) to 1.0 Gbps (1000M) in 0.02G (20M) steps
+        return Math.round((0.01 + (pos - 1) * 0.02) * 100) / 100;
+      } else if (pos <= 80) {
+        // 1G to 20G range
+        return Math.round((1.0 + (pos - 50) * 0.633) * 10) / 10;
+      } else {
+        // 20G to 150G range
+        return Math.round(20.0 + (pos - 80) * 6.5);
+      }
+    }
+
+    function bwGbpsToSlider(gbps) {
+      if (gbps <= 0) return 0;
+      if (gbps < 1.0) {
+        return Math.round(1 + (gbps - 0.01) / 0.02);
+      } else if (gbps <= 20.0) {
+        return Math.round(50 + (gbps - 1.0) / 0.633);
+      } else {
+        return Math.round(80 + (gbps - 20.0) / 6.5);
+      }
+    }
+
+    function syncBwInputFields(gbps) {
+      const numInput = document.getElementById('bw-number-input');
+      const unitSelect = document.getElementById('bw-unit-select');
+      const slider = document.getElementById('bw-threshold-slider');
+
+      if (slider) slider.value = bwGbpsToSlider(gbps);
+
+      if (numInput && unitSelect) {
+        if (gbps < 1.0 && gbps > 0) {
+          unitSelect.value = 'Mbps';
+          numInput.value = Math.round(gbps * 1000);
+        } else {
+          unitSelect.value = 'Gbps';
+          numInput.value = gbps === 0 ? 0 : gbps.toFixed(1);
+        }
+      }
+    }
+
+    function applyBwFilter() {
+      updateTabCounts();
       renderLspCards();
+    }
+
+    function onBwSliderChange(val) {
+      minBwGbps = sliderToBwGbps(val);
+      syncBwInputFields(minBwGbps);
+      applyBwFilter();
+    }
+
+    function onBwNumberInput(val) {
+      const num = parseFloat(val) || 0;
+      const unit = document.getElementById('bw-unit-select').value;
+      if (unit === 'Mbps') {
+        minBwGbps = num / 1000.0;
+      } else {
+        minBwGbps = num;
+      }
+      const slider = document.getElementById('bw-threshold-slider');
+      if (slider) slider.value = bwGbpsToSlider(minBwGbps);
+      applyBwFilter();
+    }
+
+    function onBwUnitChange(unit) {
+      const numInput = document.getElementById('bw-number-input');
+      const val = parseFloat(numInput.value) || 0;
+      if (unit === 'Mbps') {
+        minBwGbps = val / 1000.0;
+      } else {
+        minBwGbps = val;
+      }
+      applyBwFilter();
     }
 
     function onSearchInput(query) {
@@ -1619,7 +1767,7 @@ const htmlTemplate = `<!DOCTYPE html>
 
         nodesGroup.innerHTML = nodesHTML;
 
-        fitView();
+        resetZoom();
       } catch (err) {
         console.error("Failed to load topology", err);
       }
@@ -1915,7 +2063,25 @@ const htmlTemplate = `<!DOCTYPE html>
       const tooltip = document.getElementById('tooltip');
       const detail = topologyData[dev][intf];
       const remoteDev = detail.remote_device ? detail.remote_device.toLowerCase() : 'unknown';
-      const remoteIntf = detail.remote_interface || 'N/A';
+      let remoteIntf = detail.remote_interface;
+
+      if ((!remoteIntf || remoteIntf === 'N/A') && topologyData[remoteDev]) {
+        const cleanRemoteIp = detail.remote_ip ? detail.remote_ip.split('/')[0] : '';
+        const cleanLocalIp = detail.local_ip ? detail.local_ip.split('/')[0] : '';
+
+        for (const rKey in topologyData[remoteDev]) {
+          const rDetail = topologyData[remoteDev][rKey];
+          const rLocalIp = rDetail.local_ip ? rDetail.local_ip.split('/')[0] : '';
+          const rRemoteIp = rDetail.remote_ip ? rDetail.remote_ip.split('/')[0] : '';
+
+          if ((cleanRemoteIp && rLocalIp === cleanRemoteIp) || (cleanLocalIp && rRemoteIp === cleanLocalIp)) {
+            remoteIntf = rKey;
+            detail.remote_interface = rKey;
+            break;
+          }
+        }
+      }
+      if (!remoteIntf) remoteIntf = 'N/A';
 
       tooltip.style.display = 'block';
       tooltip.style.left = (e.clientX + 15) + 'px';
