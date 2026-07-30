@@ -1168,32 +1168,32 @@ const htmlTemplate = `<!DOCTYPE html>
 
   <script>
     const metroCoordinates = {
-      "sfo": { x: 80, y: 280, name: "San Francisco, CA" },
-      "svl": { x: 80, y: 440, name: "Sunnyvale, CA" },
-      "sjc": { x: 80, y: 600, name: "San Jose, CA" },
-      "lax": { x: 120, y: 780, name: "Los Angeles, CA" },
-      "pih": { x: 300, y: 70, name: "Pocatello, ID" },
-      "lgu": { x: 310, y: 190, name: "Logan, UT" },
-      "slc": { x: 330, y: 330, name: "Salt Lake City, UT" },
-      "las": { x: 230, y: 530, name: "Las Vegas, NV" },
-      "phx": { x: 260, y: 740, name: "Phoenix, AZ" },
-      "den": { x: 520, y: 380, name: "Denver, CO" },
-      "sat": { x: 550, y: 870, name: "San Antonio, TX" },
-      "aus": { x: 720, y: 830, name: "Austin, TX" },
-      "dfw": { x: 700, y: 640, name: "Dallas-Fort Worth, TX" },
-      "oma": { x: 680, y: 180, name: "Omaha, NE" },
-      "cbf": { x: 840, y: 240, name: "Council Bluffs, IA" },
-      "dsm": { x: 980, y: 160, name: "Des Moines, IA" },
-      "mci": { x: 890, y: 440, name: "Kansas City, MO" },
-      "jef": { x: 1080, y: 460, name: "Jefferson City, MO" },
-      "ord": { x: 1180, y: 140, name: "Chicago, IL" },
-      "bna": { x: 980, y: 490, name: "Nashville, TN" },
-      "hsv": { x: 980, y: 860, name: "Huntsville, AL" },
-      "atl": { x: 1280, y: 810, name: "Atlanta, GA" },
-      "clt": { x: 1380, y: 590, name: "Charlotte, NC" },
-      "rdu": { x: 1490, y: 470, name: "Raleigh-Durham, NC" },
-      "iad": { x: 1490, y: 280, name: "Washington D.C." },
-      "ewr": { x: 1560, y: 100, name: "Newark, NJ" }
+      "sfo": { x: 100, y: 150, name: "San Francisco, CA" },
+      "svl": { x: 100, y: 360, name: "Sunnyvale, CA" },
+      "sjc": { x: 100, y: 590, name: "San Jose, CA" },
+      "lax": { x: 140, y: 830, name: "Los Angeles, CA" },
+      "pih": { x: 380, y: 70, name: "Pocatello, ID" },
+      "lgu": { x: 390, y: 200, name: "Logan, UT" },
+      "slc": { x: 450, y: 320, name: "Salt Lake City, UT" },
+      "las": { x: 400, y: 570, name: "Las Vegas, NV" },
+      "phx": { x: 450, y: 830, name: "Phoenix, AZ" },
+      "den": { x: 720, y: 380, name: "Denver, CO" },
+      "sat": { x: 700, y: 870, name: "San Antonio, TX" },
+      "aus": { x: 920, y: 830, name: "Austin, TX" },
+      "dfw": { x: 920, y: 640, name: "Dallas-Fort Worth, TX" },
+      "oma": { x: 880, y: 180, name: "Omaha, NE" },
+      "cbf": { x: 1080, y: 220, name: "Council Bluffs, IA" },
+      "dsm": { x: 1240, y: 160, name: "Des Moines, IA" },
+      "mci": { x: 1120, y: 440, name: "Kansas City, MO" },
+      "jef": { x: 1300, y: 460, name: "Jefferson City, MO" },
+      "ord": { x: 1420, y: 140, name: "Chicago, IL" },
+      "bna": { x: 1220, y: 640, name: "Nashville, TN" },
+      "hsv": { x: 1220, y: 860, name: "Huntsville, AL" },
+      "atl": { x: 1480, y: 810, name: "Atlanta, GA" },
+      "clt": { x: 1580, y: 590, name: "Charlotte, NC" },
+      "rdu": { x: 1700, y: 470, name: "Raleigh-Durham, NC" },
+      "iad": { x: 1700, y: 280, name: "Washington D.C." },
+      "ewr": { x: 1780, y: 100, name: "Newark, NJ" }
     };
 
     let topologyData = {};
@@ -1258,15 +1258,35 @@ const htmlTemplate = `<!DOCTYPE html>
 
     function getMetroOfDevice(device) {
       if (!device) return "mci";
-      const match = device.match(/\.([a-z]+)\d*/i);
+      const cleanDev = device.toLowerCase().trim();
+      const match = cleanDev.match(/\.([a-z]+)\d*/i);
       if (match) return match[1].toLowerCase();
 
-      const match2 = device.match(/^[a-z]+\d*-([a-z]+)/i);
+      const match2 = cleanDev.match(/^[a-z]+\d*-([a-z]+)/i);
       if (match2) return match2[1].toLowerCase();
 
       for (const m of Object.keys(metroCoordinates)) {
-        if (device.toLowerCase().includes(m)) return m;
+        if (cleanDev.includes(m)) return m;
       }
+
+      if (topologyData) {
+        for (const peerDev in topologyData) {
+          const peerClean = peerDev.toLowerCase();
+          if (peerClean !== cleanDev) {
+            const peerMetro = getMetroOfDevice(peerClean);
+            if (peerMetro && peerMetro !== "mci") {
+              const intfs = topologyData[peerDev] || {};
+              for (const intf in intfs) {
+                const rDev = (intfs[intf].remote_device || "").toLowerCase();
+                if (rDev === cleanDev) {
+                  return peerMetro;
+                }
+              }
+            }
+          }
+        }
+      }
+
       return "mci";
     }
 
@@ -1540,7 +1560,9 @@ const htmlTemplate = `<!DOCTYPE html>
             const roleA = getDeviceRole(a);
             const roleB = getDeviceRole(b);
             const order = { "cr-backbone": 1, "cr-metro": 2, "rr": 3, "pr": 4, "unknown": 5 };
-            return (order[roleA] || 99) - (order[roleB] || 99);
+            const diff = (order[roleA] || 99) - (order[roleB] || 99);
+            if (diff !== 0) return diff;
+            return b.localeCompare(a);
           });
 
           let cols = 1;
