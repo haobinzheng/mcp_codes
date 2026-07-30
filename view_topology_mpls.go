@@ -1205,6 +1205,7 @@ const htmlTemplate = `<!DOCTYPE html>
 
     let deviceCoords = {};
     let devicesByMetro = {};
+    let adjustedCoordinates = {};
 
     // Zoom & Drag parameters
     const container = document.getElementById('map-container');
@@ -1567,7 +1568,7 @@ const htmlTemplate = `<!DOCTYPE html>
         });
 
         // Adjusted Coordinates via Physics Solver
-        const adjustedCoordinates = {};
+        adjustedCoordinates = {};
         Object.keys(devicesByMetro).forEach(metro => {
           const base = metroCoordinates[metro] || { x: 500, y: 300 };
           adjustedCoordinates[metro] = { x: base.x, y: base.y };
@@ -1660,7 +1661,7 @@ const htmlTemplate = `<!DOCTYPE html>
           const shadowGlow = isBB ? "rgba(234, 179, 8, 0.25)" : "rgba(148, 163, 184, 0.15)";
 
           bubblesHTML += '<rect class="metro-bubble" id="bubble-' + metro + '" data-metro="' + metro + '" x="' + bx + '" y="' + by + '" width="' + size.width + '" height="' + size.height + '" rx="16" ry="16" fill="' + fill + '" stroke="' + stroke + '" style="filter: drop-shadow(0 4px 12px ' + shadowGlow + ');" onmousedown="startDragMetro(event, \'' + metro + '\')" />';
-          labelsHTML += '<text class="metro-label" id="label-' + metro + '" x="' + base.x + '" y="' + (base.y + size.height / 2 + 14) + '" text-anchor="middle">' + metro.toUpperCase() + '</text>';
+          labelsHTML += '<text class="metro-label" id="label-' + metro + '" x="' + base.x + '" y="' + (base.y + size.height / 2 + 14) + '" text-anchor="middle" style="cursor: move; pointer-events: auto;" onmousedown="startDragMetro(event, \'' + metro + '\')">' + metro.toUpperCase() + '</text>';
 
           const offsetX = -size.gridWidth / 2;
           const offsetY = -size.gridHeight / 2;
@@ -1766,19 +1767,21 @@ const htmlTemplate = `<!DOCTYPE html>
                 pathD = 'M ' + x1 + ' ' + y1 + ' Q ' + cx + ' ' + cy + ' ' + x2 + ' ' + y2;
               }
 
+              const dataAttrs = 'data-start="' + localDev + '" data-end="' + remoteDev + '" data-link-index="' + idx + '" data-total-links="' + totalLinks + '"';
+
               if (isCoreLink) {
                 if (pathD) {
-                  linksHTML += '<path class="topology-link" data-start="' + localDev + '" data-end="' + remoteDev + '" d="' + pathD + '" stroke="' + color + '" stroke-width="' + width + '" fill="none" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
-                  linksHTML += '<path class="topology-flow" d="' + pathD + '" stroke="rgba(255, 255, 255, 0.5)" stroke-width="' + Math.max(1.0, width * 0.25) + '" stroke-dasharray="6, 10" fill="none" style="animation: flow-anim 1.5s linear infinite; pointer-events: none;" />';
+                  linksHTML += '<path class="topology-link" ' + dataAttrs + ' d="' + pathD + '" stroke="' + color + '" stroke-width="' + width + '" fill="none" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
+                  linksHTML += '<path class="topology-flow" ' + dataAttrs + ' d="' + pathD + '" stroke="rgba(255, 255, 255, 0.5)" stroke-width="' + Math.max(1.0, width * 0.25) + '" stroke-dasharray="6, 10" fill="none" style="animation: flow-anim 1.5s linear infinite; pointer-events: none;" />';
                 } else {
-                  linksHTML += '<line class="topology-link" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="' + width + '" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
-                  linksHTML += '<line class="topology-flow" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="rgba(255, 255, 255, 0.5)" stroke-width="' + Math.max(1.0, width * 0.25) + '" stroke-dasharray="6, 10" style="animation: flow-anim 1.5s linear infinite; pointer-events: none;" />';
+                  linksHTML += '<line class="topology-link" ' + dataAttrs + ' x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="' + width + '" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
+                  linksHTML += '<line class="topology-flow" ' + dataAttrs + ' x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="rgba(255, 255, 255, 0.5)" stroke-width="' + Math.max(1.0, width * 0.25) + '" stroke-dasharray="6, 10" style="animation: flow-anim 1.5s linear infinite; pointer-events: none;" />';
                 }
               } else {
                 if (pathD) {
-                  linksHTML += '<path class="topology-link edge-link" data-start="' + localDev + '" data-end="' + remoteDev + '" d="' + pathD + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" fill="none" opacity="0.45" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
+                  linksHTML += '<path class="topology-link edge-link" ' + dataAttrs + ' d="' + pathD + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" fill="none" opacity="0.45" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
                 } else {
-                  linksHTML += '<line class="topology-link edge-link" data-start="' + localDev + '" data-end="' + remoteDev + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" opacity="0.45" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
+                  linksHTML += '<line class="topology-link edge-link" ' + dataAttrs + ' x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="1.2" stroke-dasharray="4, 4" opacity="0.45" onmouseenter="showLinkTooltip(event, \'' + localDev + '\', \'' + intf + '\')" onmouseleave="hideTooltip()" />';
                 }
               }
             }
@@ -2076,14 +2079,67 @@ const htmlTemplate = `<!DOCTYPE html>
         posY = e.clientY - startY;
         updateTransform();
       } else if (draggedNode) {
+        e.preventDefault();
         const coords = getSVGCoords(e);
         const newX = coords.x - dragOffset.x;
         const newY = coords.y - dragOffset.y;
-        deviceCoords[draggedNode].x = newX;
-        deviceCoords[draggedNode].y = newY;
-        const elem = document.getElementById('node-' + draggedNode);
-        if (elem) elem.setAttribute('transform', 'translate(' + newX + ',' + newY + ')');
+        deviceCoords[draggedNode] = { x: newX, y: newY, name: draggedNode };
+
+        const group = document.getElementById('node-group-' + draggedNode);
+        if (group) group.setAttribute('transform', 'translate(' + newX + ', ' + newY + ')');
+
+        updateNodeLinks(draggedNode);
+
         if (selectedLsp) highlightPathsOnMap(selectedLsp);
+      } else if (draggedMetro) {
+        e.preventDefault();
+        const coords = getSVGCoords(e);
+        const dx = coords.x - dragMetroStart.x;
+        const dy = coords.y - dragMetroStart.y;
+
+        if (dx !== 0 || dy !== 0) {
+          dragMetroStart = { x: coords.x, y: coords.y };
+
+          const base = adjustedCoordinates[draggedMetro];
+          if (base) {
+            base.x += dx;
+            base.y += dy;
+          }
+
+          const bubble = document.getElementById('bubble-' + draggedMetro);
+          if (bubble) {
+            const bx = parseFloat(bubble.getAttribute('x')) + dx;
+            const by = parseFloat(bubble.getAttribute('y')) + dy;
+            bubble.setAttribute('x', bx);
+            bubble.setAttribute('y', by);
+          }
+
+          const label = document.getElementById('label-' + draggedMetro);
+          if (label) {
+            const lx = parseFloat(label.getAttribute('x')) + dx;
+            const ly = parseFloat(label.getAttribute('y')) + dy;
+            label.setAttribute('x', lx);
+            label.setAttribute('y', ly);
+          }
+
+          const devices = devicesByMetro[draggedMetro] || [];
+          devices.forEach(devObj => {
+            const dev = (typeof devObj === 'string' ? devObj : devObj.name).toLowerCase();
+            const nodeCoords = deviceCoords[dev];
+            if (nodeCoords) {
+              nodeCoords.x += dx;
+              nodeCoords.y += dy;
+
+              const group = document.getElementById('node-group-' + dev);
+              if (group) {
+                group.setAttribute('transform', 'translate(' + nodeCoords.x + ', ' + nodeCoords.y + ')');
+              }
+              updateNodeLinks(dev);
+            }
+          });
+
+          if (selectedLsp) highlightPathsOnMap(selectedLsp);
+        }
       }
     });
 
@@ -2091,6 +2147,7 @@ const htmlTemplate = `<!DOCTYPE html>
       isDragging = false;
       draggedNode = null;
       draggedMetro = null;
+      container.style.cursor = 'grab';
     });
 
     container.addEventListener('wheel', e => {
@@ -2102,18 +2159,80 @@ const htmlTemplate = `<!DOCTYPE html>
 
     function startDragNode(e, node) {
       e.stopPropagation();
+      e.preventDefault();
       draggedNode = node;
       const coords = getSVGCoords(e);
+      const nodeCoords = deviceCoords[node] || { x: 0, y: 0 };
       dragOffset = {
-        x: coords.x - deviceCoords[node].x,
-        y: coords.y - deviceCoords[node].y
+        x: coords.x - nodeCoords.x,
+        y: coords.y - nodeCoords.y
       };
+      container.style.cursor = 'grabbing';
+    }
+
+    function updateNodeLinks(node) {
+      document.querySelectorAll('#topology-links [data-start="' + node + '"], #topology-links [data-end="' + node + '"]').forEach(elem => {
+        const localDev = elem.getAttribute('data-start');
+        const remoteDev = elem.getAttribute('data-end');
+
+        const start = resolveDeviceCoords(localDev);
+        let end = resolveDeviceCoords(remoteDev);
+
+        if (!end) {
+          const remoteMetro = getMetroOfDevice(remoteDev);
+          if (adjustedCoordinates[remoteMetro]) {
+            const base = adjustedCoordinates[remoteMetro];
+            end = { x: base.x, y: base.y };
+          }
+        }
+
+        if (start && end) {
+          const isLine = elem.tagName.toLowerCase() === 'line';
+          const idx = parseInt(elem.getAttribute('data-link-index')) || 0;
+          const totalLinks = parseInt(elem.getAttribute('data-total-links')) || 1;
+
+          let x1 = start.x, y1 = start.y, x2 = end.x, y2 = end.y;
+
+          if (isLine) {
+            elem.setAttribute('x1', x1);
+            elem.setAttribute('y1', y1);
+            elem.setAttribute('x2', x2);
+            elem.setAttribute('y2', y2);
+          } else {
+            let pathD = "";
+            if (totalLinks > 1) {
+              const dx = x2 - x1;
+              const dy = y2 - y1;
+              const len = Math.sqrt(dx * dx + dy * dy) || 1;
+              const nx = -dy / len;
+              const ny = dx / len;
+
+              const offsetStep = 12;
+              const offset = (idx - (totalLinks - 1) / 2) * offsetStep;
+
+              const cx = (x1 + x2) / 2 + nx * offset * 2.5;
+              const cy = (y1 + y2) / 2 + ny * offset * 2.5;
+
+              pathD = 'M ' + x1 + ' ' + y1 + ' Q ' + cx + ' ' + cy + ' ' + x2 + ' ' + y2;
+            } else {
+              pathD = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
+            }
+            elem.setAttribute('d', pathD);
+          }
+        }
+      });
     }
 
     function startDragMetro(e, metro) {
       e.stopPropagation();
+      e.preventDefault();
       draggedMetro = metro;
-      dragMetroStart = getSVGCoords(e);
+      const coords = getSVGCoords(e);
+      dragMetroStart = {
+        x: coords.x,
+        y: coords.y
+      };
+      container.style.cursor = 'grabbing';
     }
 
     function showLinkTooltip(e, dev, intf) {
