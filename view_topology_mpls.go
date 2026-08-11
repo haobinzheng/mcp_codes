@@ -39,7 +39,8 @@ type RawLspDetails struct {
 	MaxAvgBwUtil    interface{} `json:"max_avg_bw_util"`
 	TraceroutePath  []string    `json:"traceroute_path"`
 	LspInterfaceIPs interface{} `json:"lsp_interface_ips"`
-	IsShortestPath  bool        `json:"is_shortest_path"`
+	LspPathChange   bool        `json:"lsp_path_change"`
+	IsShortestPath  *bool       `json:"is_shortest_path"`
 	PathType        string      `json:"path_type"`
 }
 
@@ -53,21 +54,25 @@ type RawLspEntry struct {
 }
 
 type LspSummary struct {
-	ID             string   `json:"id"`
-	Name           string   `json:"name"`
-	From           string   `json:"from"`
-	To             string   `json:"to"`
-	IngressRouter  string   `json:"ingress_router"`
-	EgressRouter   string   `json:"egress_router"`
-	LspNumber      string   `json:"lsp_number"`
-	BwStr          string   `json:"bw_str"`
-	BwGbps         float64  `json:"bw_gbps"`
-	IsShortestPath bool     `json:"is_shortest_path"`
-	PathType       string   `json:"path_type"`
-	LspIps         []string `json:"lsp_ips"`
-	TracerouteIps  []string `json:"traceroute_ips"`
-	LspHops        []string `json:"lsp_hops"`
-	TracerouteHops []string `json:"traceroute_hops"`
+	ID             string     `json:"id"`
+	Name           string     `json:"name"`
+	From           string     `json:"from"`
+	To             string     `json:"to"`
+	IngressRouter  string     `json:"ingress_router"`
+	EgressRouter   string     `json:"egress_router"`
+	LspNumber      string     `json:"lsp_number"`
+	BwStr          string     `json:"bw_str"`
+	BwGbps         float64    `json:"bw_gbps"`
+	IsShortestPath bool       `json:"is_shortest_path"`
+	LspPathChange  bool       `json:"lsp_path_change"`
+	PathType       string     `json:"path_type"`
+	LspIps         []string   `json:"lsp_ips"`
+	TracerouteIps  []string   `json:"traceroute_ips"`
+	LspHops        []string   `json:"lsp_hops"`
+	AllLspHops     [][]string `json:"all_lsp_hops"`
+	AllLspIpLists  [][]string `json:"all_lsp_ip_lists"`
+	AllLspIntfLists [][]string `json:"all_lsp_intf_lists"`
+	TracerouteHops []string   `json:"traceroute_hops"`
 }
 
 // In-memory Caches & IP Lookup Table
@@ -75,8 +80,9 @@ var (
 	mplsTopologyData   MplsTopologyReport
 	mplsTopologyDataMu sync.RWMutex
 
-	ipToDeviceMap   map[string]string
-	ipToDeviceMapMu sync.RWMutex
+	ipToDeviceMap    map[string]string
+	ipToInterfaceMap map[string]string
+	ipToDeviceMapMu  sync.RWMutex
 
 	lspCache   map[string][]LspSummary
 	lspCacheMu sync.RWMutex
@@ -91,25 +97,36 @@ func defCleanIP(ip string) string {
 	return ip
 }
 
-// Build IP -> Hostname lookup table from topology_discovery_mpls.json
-func buildIpToDeviceMap(topo MplsTopologyReport) map[string]string {
-	m := make(map[string]string)
+// Build IP -> Hostname and IP -> Interface lookup tables from topology_discovery_mpls.json
+func buildIpToDeviceAndIntfMaps(topo MplsTopologyReport) (map[string]string, map[string]string) {
+	dMap := make(map[string]string)
+	iMap := make(map[string]string)
 
 	for devName, node := range topo {
 		normDev := strings.ToLower(strings.TrimSpace(devName))
-		for _, intf := range node {
+		for intfName, intf := range node {
 			if intf.LoopbackIP != "" {
-				m[defCleanIP(intf.LoopbackIP)] = normDev
+				cIp := defCleanIP(intf.LoopbackIP)
+				dMap[cIp] = normDev
+				iMap[cIp] = intfName
 			}
 			if intf.LocalIP != "" {
-				m[defCleanIP(intf.LocalIP)] = normDev
+				cIp := defCleanIP(intf.LocalIP)
+				dMap[cIp] = normDev
+				iMap[cIp] = intfName
 			}
 			if intf.RemoteIP != "" && intf.RemoteDevice != "" {
-				m[defCleanIP(intf.RemoteIP)] = strings.ToLower(strings.TrimSpace(intf.RemoteDevice))
+				cIp := defCleanIP(intf.RemoteIP)
+				dMap[cIp] = strings.ToLower(strings.TrimSpace(intf.RemoteDevice))
+				if intf.RemoteInterface != "" {
+					iMap[cIp] = intf.RemoteInterface
+				} else {
+					iMap[cIp] = intfName
+				}
 			}
 		}
 	}
-	return m
+	return dMap, iMap
 }
 
 func parseBwGbps(bwStr string) float64 {
@@ -136,6 +153,18 @@ func parseBwGbps(bwStr string) float64 {
 	default:
 		return val
 	}
+}
+
+func sliceEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if !strings.EqualFold(a[i], b[i]) {
+			return false
+		}
+	}
+	return true
 }
 
 func mapIpsToHops(ips []string, fromIp string, toIp string, ingressHost string, egressHost string, ipMap map[string]string) []string {
@@ -195,6 +224,7 @@ func loadLspDataForDate(targetDate string) ([]LspSummary, error) {
 
 	ipToDeviceMapMu.RLock()
 	ipMap := ipToDeviceMap
+	intfMap := ipToInterfaceMap
 	ipToDeviceMapMu.RUnlock()
 
 	var summaries []LspSummary
@@ -215,50 +245,124 @@ func loadLspDataForDate(targetDate string) ([]LspSummary, error) {
 		}
 
 		for lspName, entry := range rawDict {
+			// Find LARGEST bandwidth across all runs in max_avg_bw_util list
 			bwStr := ""
+			maxBwGbps := -1.0
+			var bwList []string
+
 			switch v := entry.Details.MaxAvgBwUtil.(type) {
 			case []interface{}:
-				if len(v) > 0 {
-					bwStr = fmt.Sprintf("%v", v[len(v)-1])
+				for _, elem := range v {
+					bwList = append(bwList, fmt.Sprintf("%v", elem))
 				}
 			case string:
-				bwStr = v
+				bwList = []string{v}
 			}
 
+			for _, b := range bwList {
+				gbps := parseBwGbps(b)
+				if gbps > maxBwGbps {
+					maxBwGbps = gbps
+					bwStr = b
+				}
+			}
+			if bwStr == "" && len(bwList) > 0 {
+				bwStr = bwList[len(bwList)-1]
+			}
 			bwGbps := parseBwGbps(bwStr)
 
-			var lspIps []string
+			// Extract all recorded LSP path IP lists
+			var allLspIpLists [][]string
 			switch v := entry.Details.LspInterfaceIPs.(type) {
 			case []interface{}:
-				for _, elem := range v {
-					switch sub := elem.(type) {
-					case []interface{}:
-						for _, ipVal := range sub {
-							lspIps = append(lspIps, fmt.Sprintf("%v", ipVal))
+				if len(v) > 0 {
+					hasSlice := false
+					for _, elem := range v {
+						if _, ok := elem.([]interface{}); ok {
+							hasSlice = true
+							break
 						}
-					case string:
-						lspIps = append(lspIps, sub)
+					}
+					if !hasSlice {
+						var flatList []string
+						for _, elem := range v {
+							flatList = append(flatList, fmt.Sprintf("%v", elem))
+						}
+						if len(flatList) > 0 {
+							allLspIpLists = append(allLspIpLists, flatList)
+						}
+					} else {
+						for _, elem := range v {
+							var subList []string
+							switch sub := elem.(type) {
+							case []interface{}:
+								for _, ipVal := range sub {
+									subList = append(subList, fmt.Sprintf("%v", ipVal))
+								}
+							case string:
+								subList = append(subList, sub)
+							}
+							if len(subList) > 0 {
+								allLspIpLists = append(allLspIpLists, subList)
+							}
+						}
+					}
+				}
+			}
+
+			// Pick the LONGEST LSP path (maximum number of hops)
+			var longestLspIps []string
+			for _, pathIps := range allLspIpLists {
+				if len(pathIps) >= len(longestLspIps) {
+					longestLspIps = pathIps
+				}
+			}
+
+			// Check if path changed across runs
+			pathChanged := entry.Details.LspPathChange
+			if !pathChanged && len(allLspIpLists) > 1 {
+				firstPath := allLspIpLists[0]
+				for _, p := range allLspIpLists[1:] {
+					if !sliceEqual(p, firstPath) {
+						pathChanged = true
+						break
 					}
 				}
 			}
 
 			tracerouteIps := entry.Details.TraceroutePath
 
-			lspHops := mapIpsToHops(lspIps, entry.From, entry.To, entry.IngressRouter, entry.EgressRouter, ipMap)
+			lspHops := mapIpsToHops(longestLspIps, entry.From, entry.To, entry.IngressRouter, entry.EgressRouter, ipMap)
 			tracerouteHops := mapIpsToHops(tracerouteIps, entry.From, entry.To, entry.IngressRouter, entry.EgressRouter, ipMap)
 
 			isShortest := true
 			pathType := entry.Details.PathType
 
-			if len(lspHops) > len(tracerouteHops) && len(tracerouteHops) > 1 {
-				isShortest = false
-				if pathType == "" || pathType == "shortest path" {
-					pathType = "longer path"
-				}
-			} else {
-				isShortest = true
-				if pathType == "" {
+			if len(lspHops) > 0 && len(tracerouteHops) > 0 {
+				if sliceEqual(lspHops, tracerouteHops) {
+					isShortest = true
 					pathType = "shortest path"
+				} else if len(lspHops) < len(tracerouteHops) {
+					isShortest = true
+					pathType = "te optimized"
+				} else if len(lspHops) > len(tracerouteHops) {
+					isShortest = false
+					pathType = "longer path"
+				} else {
+					isShortest = false
+					pathType = "path divergence"
+				}
+			} else if entry.Details.IsShortestPath != nil {
+				isShortest = *entry.Details.IsShortestPath
+			} else if strings.EqualFold(pathType, "longer path") || strings.EqualFold(pathType, "non-shortest path") {
+				isShortest = false
+			}
+
+			if pathType == "" {
+				if isShortest {
+					pathType = "shortest path"
+				} else {
+					pathType = "longer path"
 				}
 			}
 
@@ -276,22 +380,59 @@ func loadLspDataForDate(targetDate string) ([]LspSummary, error) {
 				egressHost = lspHops[len(lspHops)-1]
 			}
 
+			// Map all distinct recorded IP lists to router hops & interface details
+			var allLspHops [][]string
+			var validLspIpLists [][]string
+			var validLspIntfLists [][]string
+			seenPathKeys := make(map[string]bool)
+
+			for _, ipPath := range allLspIpLists {
+				hList := mapIpsToHops(ipPath, entry.From, entry.To, entry.IngressRouter, entry.EgressRouter, ipMap)
+				if len(hList) > 0 {
+					key := strings.Join(hList, "->") + "|" + strings.Join(ipPath, ",")
+					if !seenPathKeys[key] {
+						seenPathKeys[key] = true
+						allLspHops = append(allLspHops, hList)
+						validLspIpLists = append(validLspIpLists, ipPath)
+
+						var iList []string
+						for _, rawIp := range ipPath {
+							clean := defCleanIP(rawIp)
+							if inf, ok := intfMap[clean]; ok && inf != "" {
+								iList = append(iList, fmt.Sprintf("%s (%s)", inf, clean))
+							} else {
+								iList = append(iList, clean)
+							}
+						}
+						validLspIntfLists = append(validLspIntfLists, iList)
+					}
+				}
+			}
+			if len(allLspHops) == 0 && len(lspHops) > 0 {
+				allLspHops = [][]string{lspHops}
+				validLspIpLists = [][]string{longestLspIps}
+			}
+
 			summary := LspSummary{
-				ID:             lspName,
-				Name:           lspName,
-				From:           entry.From,
-				To:             entry.To,
-				IngressRouter:  ingressHost,
-				EgressRouter:   egressHost,
-				LspNumber:      entry.LspNumber,
-				BwStr:          bwStr,
-				BwGbps:         bwGbps,
-				IsShortestPath: isShortest,
-				PathType:       pathType,
-				LspIps:         lspIps,
-				TracerouteIps:  tracerouteIps,
-				LspHops:        lspHops,
-				TracerouteHops: tracerouteHops,
+				ID:              lspName,
+				Name:            lspName,
+				From:            entry.From,
+				To:              entry.To,
+				IngressRouter:   ingressHost,
+				EgressRouter:    egressHost,
+				LspNumber:       entry.LspNumber,
+				BwStr:           bwStr,
+				BwGbps:          bwGbps,
+				IsShortestPath:  isShortest,
+				LspPathChange:   pathChanged,
+				PathType:        pathType,
+				LspIps:          longestLspIps,
+				TracerouteIps:   tracerouteIps,
+				LspHops:         lspHops,
+				AllLspHops:      allLspHops,
+				AllLspIpLists:   validLspIpLists,
+				AllLspIntfLists: validLspIntfLists,
+				TracerouteHops:  tracerouteHops,
 			}
 			summaries = append(summaries, summary)
 		}
@@ -419,9 +560,10 @@ func loadMplsTopology() error {
 	mplsTopologyData = report
 	mplsTopologyDataMu.Unlock()
 
-	ipMap := buildIpToDeviceMap(report)
+	dMap, iMap := buildIpToDeviceAndIntfMaps(report)
 	ipToDeviceMapMu.Lock()
-	ipToDeviceMap = ipMap
+	ipToDeviceMap = dMap
+	ipToInterfaceMap = iMap
 	ipToDeviceMapMu.Unlock()
 
 	return nil
@@ -778,10 +920,24 @@ const htmlTemplate = `<!DOCTYPE html>
       border: 1px solid rgba(16, 185, 129, 0.3);
     }
 
+    .status-badge.te-optimized {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--cyan);
+      border: 1px solid rgba(6, 182, 212, 0.35);
+      box-shadow: 0 0 8px rgba(6, 182, 212, 0.2);
+    }
+
     .status-badge.longer {
       background: rgba(249, 115, 22, 0.15);
       color: var(--orange);
       border: 1px solid rgba(249, 115, 22, 0.3);
+    }
+
+    .status-badge.path-changed {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
     }
 
     /* SVG Canvas Area */
@@ -871,6 +1027,55 @@ const htmlTemplate = `<!DOCTYPE html>
       stroke-dasharray: 4, 10;
       pointer-events: none;
     }
+
+    .lsp-path-alt1-base {
+      stroke: #ec4899;
+      stroke-width: 4.5px;
+      stroke-dasharray: 8, 4;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 12px rgba(236, 72, 153, 0.9));
+      opacity: 0.95;
+    }
+
+    .lsp-path-alt1-flow {
+      stroke: #f472b6;
+      stroke-width: 2.5px;
+      stroke-linecap: round;
+      stroke-dasharray: 4, 10;
+      pointer-events: none;
+    }
+
+    .lsp-path-alt2-base {
+      stroke: #a855f7;
+      stroke-width: 4.5px;
+      stroke-dasharray: 6, 6;
+      stroke-linecap: round;
+      filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.9));
+      opacity: 0.95;
+    }
+
+    .lsp-path-alt2-flow {
+      stroke: #c084fc;
+      stroke-width: 2.5px;
+      stroke-linecap: round;
+      stroke-dasharray: 4, 10;
+      pointer-events: none;
+    }
+
+    .lsp-path-alt3-base { stroke: #10b981; stroke-width: 4.5px; stroke-linecap: round; filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.9)); opacity: 0.95; }
+    .lsp-path-alt3-flow { stroke: #6ee7b7; stroke-width: 2.5px; stroke-linecap: round; stroke-dasharray: 4, 10; pointer-events: none; }
+
+    .lsp-path-alt4-base { stroke: #f59e0b; stroke-width: 4.5px; stroke-linecap: round; filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.9)); opacity: 0.95; }
+    .lsp-path-alt4-flow { stroke: #fde047; stroke-width: 2.5px; stroke-linecap: round; stroke-dasharray: 4, 10; pointer-events: none; }
+
+    .lsp-path-alt5-base { stroke: #3b82f6; stroke-width: 4.5px; stroke-linecap: round; filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.9)); opacity: 0.95; }
+    .lsp-path-alt5-flow { stroke: #93c5fd; stroke-width: 2.5px; stroke-linecap: round; stroke-dasharray: 4, 10; pointer-events: none; }
+
+    .lsp-path-alt6-base { stroke: #f43f5e; stroke-width: 4.5px; stroke-linecap: round; filter: drop-shadow(0 0 12px rgba(244, 63, 94, 0.9)); opacity: 0.95; }
+    .lsp-path-alt6-flow { stroke: #fda4af; stroke-width: 2.5px; stroke-linecap: round; stroke-dasharray: 4, 10; pointer-events: none; }
+
+    .lsp-path-alt7-base { stroke: #14b8a6; stroke-width: 4.5px; stroke-linecap: round; filter: drop-shadow(0 0 12px rgba(20, 184, 166, 0.9)); opacity: 0.95; }
+    .lsp-path-alt7-flow { stroke: #5eead4; stroke-width: 2.5px; stroke-linecap: round; stroke-dasharray: 4, 10; pointer-events: none; }
 
     .path-step-badge {
       font-family: 'JetBrains Mono', monospace;
@@ -992,6 +1197,13 @@ const htmlTemplate = `<!DOCTYPE html>
     }
 
     .hop-pill.lsp-hop { background: rgba(6, 182, 212, 0.15); border-color: rgba(6, 182, 212, 0.3); color: #67e8f9; }
+    .hop-pill.lsp-hop-alt1 { background: rgba(236, 72, 153, 0.15); border-color: rgba(236, 72, 153, 0.3); color: #f472b6; }
+    .hop-pill.lsp-hop-alt2 { background: rgba(168, 85, 247, 0.15); border-color: rgba(168, 85, 247, 0.3); color: #c084fc; }
+    .hop-pill.lsp-hop-alt3 { background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+    .hop-pill.lsp-hop-alt4 { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.3); color: #fde047; }
+    .hop-pill.lsp-hop-alt5 { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.3); color: #93c5fd; }
+    .hop-pill.lsp-hop-alt6 { background: rgba(244, 63, 94, 0.15); border-color: rgba(244, 63, 94, 0.3); color: #fda4af; }
+    .hop-pill.lsp-hop-alt7 { background: rgba(20, 184, 166, 0.15); border-color: rgba(20, 184, 166, 0.3); color: #5eead4; }
     .hop-pill.tr-hop { background: rgba(249, 115, 22, 0.15); border-color: rgba(249, 115, 22, 0.3); color: #fdba74; }
 
     /* Tooltip */
@@ -1098,6 +1310,27 @@ const htmlTemplate = `<!DOCTYPE html>
         <defs>
           <marker id="arrow-cyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
             <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#06b6d4" />
+          </marker>
+          <marker id="arrow-magenta" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#ec4899" />
+          </marker>
+          <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#a855f7" />
+          </marker>
+          <marker id="arrow-emerald" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10b981" />
+          </marker>
+          <marker id="arrow-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f59e0b" />
+          </marker>
+          <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#3b82f6" />
+          </marker>
+          <marker id="arrow-rose" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f43f5e" />
+          </marker>
+          <marker id="arrow-teal" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#14b8a6" />
           </marker>
           <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
             <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#f97316" />
@@ -1502,9 +1735,16 @@ const htmlTemplate = `<!DOCTYPE html>
         const isSelected = selectedLsp && selectedLsp.id === lsp.id;
         card.className = 'lsp-card' + (isSelected ? (lsp.is_shortest_path ? ' selected' : ' selected-longer') : '');
 
-        const statusBadge = lsp.is_shortest_path ? 
-          '<span class="status-badge shortest">✓ Shortest Path</span>' : 
-          '<span class="status-badge longer">⚠️ Non-Shortest</span>';
+        let statusBadge = '';
+        if (lsp.path_type === 'te optimized' || (lsp.lsp_hops && lsp.traceroute_hops && lsp.lsp_hops.length < lsp.traceroute_hops.length)) {
+          statusBadge = '<span class="status-badge te-optimized">⚡ TE Shorter Hops</span>';
+        } else if (lsp.is_shortest_path) {
+          statusBadge = '<span class="status-badge shortest">✓ Shortest Path</span>';
+        } else {
+          statusBadge = '<span class="status-badge longer">⚠️ Non-Shortest</span>';
+        }
+
+        const changeBadge = lsp.lsp_path_change ? '<span class="status-badge path-changed" style="margin-left:4px;" title="LSP path changed across runs">🔄 Path Changed</span>' : '';
 
         card.innerHTML = 
           '<div class="card-top">' +
@@ -1513,7 +1753,7 @@ const htmlTemplate = `<!DOCTYPE html>
           '</div>' +
           '<div class="card-path-info">' +
             '<span>' + lsp.lsp_number + '</span>' +
-            statusBadge +
+            statusBadge + changeBadge +
           '</div>';
 
         card.onclick = () => selectLsp(lsp);
@@ -1905,10 +2145,62 @@ const htmlTemplate = `<!DOCTYPE html>
 
       if (!lsp) return;
 
+      // 1. Gather all distinct LSP paths across this LSP and sister LSPs for the same Ingress/Egress pair
       const pathNodes = new Set();
-      if (lsp.lsp_hops) {
-        lsp.lsp_hops.forEach(h => pathNodes.add(h.toLowerCase()));
+      const allDistinctPaths = [];
+      const seenPathKeys = new Set();
+
+      const sisterLsps = allLsps.filter(l => 
+        l.ingress_router && l.egress_router && lsp.ingress_router && lsp.egress_router &&
+        l.ingress_router.toLowerCase() === lsp.ingress_router.toLowerCase() &&
+        l.egress_router.toLowerCase() === lsp.egress_router.toLowerCase()
+      );
+
+      // Prioritize selected LSP first, then sister LSPs
+      const targetLsps = [lsp, ...sisterLsps.filter(l => l.id !== lsp.id)];
+
+      targetLsps.forEach(targetLsp => {
+        const lspPaths = (targetLsp.all_lsp_hops && targetLsp.all_lsp_hops.length > 0) 
+          ? targetLsp.all_lsp_hops 
+          : (targetLsp.lsp_hops && targetLsp.lsp_hops.length > 0 ? [targetLsp.lsp_hops] : []);
+        
+        const ipLists = targetLsp.all_lsp_ip_lists || [targetLsp.lsp_ips || []];
+        const intfLists = targetLsp.all_lsp_intf_lists || [];
+
+        lspPaths.forEach((hList, pIdx) => {
+          if (hList && hList.length > 1) {
+            const ipPath = ipLists[pIdx] || ipLists[0] || [];
+            const intfPath = intfLists[pIdx] || intfLists[0] || [];
+            const key = hList.map(h => h.toLowerCase()).join('->') + '|' + ipPath.join(',');
+            if (!seenPathKeys.has(key)) {
+              seenPathKeys.add(key);
+              allDistinctPaths.push({
+                hops: hList,
+                ips: ipPath,
+                intfs: intfPath,
+                lspName: targetLsp.name,
+                lspNumber: targetLsp.lsp_number
+              });
+            }
+          }
+        });
+      });
+
+      // Fallback if no path had length > 1
+      if (allDistinctPaths.length === 0 && lsp.lsp_hops && lsp.lsp_hops.length > 1) {
+        allDistinctPaths.push({
+          hops: lsp.lsp_hops,
+          ips: lsp.lsp_ips || [],
+          intfs: [],
+          lspName: lsp.name,
+          lspNumber: lsp.lsp_number
+        });
       }
+
+      // Collect active nodes for dimming calculation
+      allDistinctPaths.forEach(pObj => {
+        pObj.hops.forEach(h => pathNodes.add(h.toLowerCase()));
+      });
       if (lsp.traceroute_hops) {
         lsp.traceroute_hops.forEach(h => pathNodes.add(h.toLowerCase()));
       }
@@ -1936,35 +2228,55 @@ const htmlTemplate = `<!DOCTYPE html>
 
       let overlayHTML = '';
 
-      // 1. Render LSP Path (Electric Cyan Glow + White Particle Flow)
-      if (lsp.lsp_hops && lsp.lsp_hops.length > 1) {
-        for (let i = 0; i < lsp.lsp_hops.length - 1; i++) {
-          const srcName = lsp.lsp_hops[i];
-          const dstName = lsp.lsp_hops[i+1];
+      // Path Config Palette (8 distinct colors & offsets)
+      const pathConfigs = [
+        { baseClass: 'lsp-path-base', flowClass: 'lsp-path-flow', marker: 'arrow-cyan', pillClass: 'lsp-hop', color: '#00f2fe' },
+        { baseClass: 'lsp-path-alt1-base', flowClass: 'lsp-path-alt1-flow', marker: 'arrow-magenta', pillClass: 'lsp-hop-alt1', color: '#ec4899' },
+        { baseClass: 'lsp-path-alt2-base', flowClass: 'lsp-path-alt2-flow', marker: 'arrow-purple', pillClass: 'lsp-hop-alt2', color: '#a855f7' },
+        { baseClass: 'lsp-path-alt3-base', flowClass: 'lsp-path-alt3-flow', marker: 'arrow-emerald', pillClass: 'lsp-hop-alt3', color: '#10b981' },
+        { baseClass: 'lsp-path-alt4-base', flowClass: 'lsp-path-alt4-flow', marker: 'arrow-amber', pillClass: 'lsp-hop-alt4', color: '#f59e0b' },
+        { baseClass: 'lsp-path-alt5-base', flowClass: 'lsp-path-alt5-flow', marker: 'arrow-blue', pillClass: 'lsp-hop-alt5', color: '#3b82f6' },
+        { baseClass: 'lsp-path-alt6-base', flowClass: 'lsp-path-alt6-flow', marker: 'arrow-rose', pillClass: 'lsp-hop-alt6', color: '#f43f5e' },
+        { baseClass: 'lsp-path-alt7-base', flowClass: 'lsp-path-alt7-flow', marker: 'arrow-teal', pillClass: 'lsp-hop-alt7', color: '#14b8a6' }
+      ];
+
+      // 2. Render ALL distinct LSP Paths
+      allDistinctPaths.forEach((pObj, pathIdx) => {
+        const hList = pObj.hops;
+        if (!hList || hList.length < 2) return;
+
+        const colorCfg = pathConfigs[pathIdx % pathConfigs.length];
+        const offVal = (pathIdx === 0) ? -5 : ((pathIdx % 2 === 1) ? (-5 - Math.ceil(pathIdx / 2) * 8) : (5 + Math.floor(pathIdx / 2) * 8));
+
+        for (let i = 0; i < hList.length - 1; i++) {
+          const srcName = hList[i];
+          const dstName = hList[i+1];
           const src = resolveDeviceCoords(srcName);
           const dst = resolveDeviceCoords(dstName);
 
           if (src && dst) {
             const metroSrc = getMetroOfDevice(srcName);
             const metroDst = getMetroOfDevice(dstName);
-            const offset = getOffsetCoords(src, dst, -5, -5);
+            const offset = getOffsetCoords(src, dst, offVal, offVal);
 
             if (metroSrc !== metroDst) {
               const dx = offset.end.x - offset.start.x;
               const dy = offset.end.y - offset.start.y;
-              const cx = (offset.start.x + offset.end.x) / 2 - dy * 0.15;
-              const cy = (offset.start.y + offset.end.y) / 2 + dx * 0.15;
-              overlayHTML += '<path class="lsp-path-base" d="M ' + offset.start.x + ' ' + offset.start.y + ' Q ' + cx + ' ' + cy + ' ' + offset.end.x + ' ' + offset.end.y + '" fill="none" marker-end="url(#arrow-cyan)" />';
-              overlayHTML += '<path class="lsp-path-flow" d="M ' + offset.start.x + ' ' + offset.start.y + ' Q ' + cx + ' ' + cy + ' ' + offset.end.x + ' ' + offset.end.y + '" fill="none" style="animation: flow-anim 0.8s linear infinite;" />';
+              const curveSign = (pathIdx % 2 === 0) ? -1 : 1;
+              const curveFactor = 0.15 + (Math.floor(pathIdx / 2) * 0.08);
+              const cx = (offset.start.x + offset.end.x) / 2 + curveSign * dy * curveFactor;
+              const cy = (offset.start.y + offset.end.y) / 2 - curveSign * dx * curveFactor;
+              overlayHTML += '<path class="' + colorCfg.baseClass + '" d="M ' + offset.start.x + ' ' + offset.start.y + ' Q ' + cx + ' ' + cy + ' ' + offset.end.x + ' ' + offset.end.y + '" fill="none" marker-end="url(#' + colorCfg.marker + ')" />';
+              overlayHTML += '<path class="' + colorCfg.flowClass + '" d="M ' + offset.start.x + ' ' + offset.start.y + ' Q ' + cx + ' ' + cy + ' ' + offset.end.x + ' ' + offset.end.y + '" fill="none" style="animation: flow-anim 0.8s linear infinite;" />';
             } else {
-              overlayHTML += '<line class="lsp-path-base" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" marker-end="url(#arrow-cyan)" />';
-              overlayHTML += '<line class="lsp-path-flow" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" style="animation: flow-anim 0.8s linear infinite;" />';
+              overlayHTML += '<line class="' + colorCfg.baseClass + '" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" marker-end="url(#' + colorCfg.marker + ')" />';
+              overlayHTML += '<line class="' + colorCfg.flowClass + '" x1="' + offset.start.x + '" y1="' + offset.start.y + '" x2="' + offset.end.x + '" y2="' + offset.end.y + '" style="animation: flow-anim 0.8s linear infinite;" />';
             }
           }
         }
-      }
+      });
 
-      // 2. Render Traceroute Path (Sunset Orange Glow + Amber Particle Flow)
+      // 3. Render Traceroute Path (Sunset Orange Glow + Amber Particle Flow)
       if (lsp.traceroute_hops && lsp.traceroute_hops.length > 1) {
         for (let i = 0; i < lsp.traceroute_hops.length - 1; i++) {
           const srcName = lsp.traceroute_hops[i];
@@ -1992,13 +2304,14 @@ const htmlTemplate = `<!DOCTYPE html>
         }
       }
 
-      // 3. Render Hop Step Badges over traversed nodes
-      if (lsp.lsp_hops) {
-        lsp.lsp_hops.forEach((hName, idx) => {
+      // 4. Render Hop Step Badges over traversed nodes (primary path)
+      const primaryPath = (allDistinctPaths.length > 0) ? allDistinctPaths[0].hops : (lsp.lsp_hops || []);
+      if (primaryPath && primaryPath.length > 0) {
+        primaryPath.forEach((hName, idx) => {
           const coords = resolveDeviceCoords(hName);
           if (coords) {
-            const label = (idx === 0) ? "IN" : (idx === lsp.lsp_hops.length - 1 ? "OUT" : "H" + (idx + 1));
-            const badgeColor = (idx === 0) ? "#10b981" : (idx === lsp.lsp_hops.length - 1 ? "#ef4444" : "#00f2fe");
+            const label = (idx === 0) ? "IN" : (idx === primaryPath.length - 1 ? "OUT" : "H" + (idx + 1));
+            const badgeColor = (idx === 0) ? "#10b981" : (idx === primaryPath.length - 1 ? "#ef4444" : "#00f2fe");
             overlayHTML += '<g transform="translate(' + coords.x + ', ' + (coords.y - 18) + ')">' +
               '<rect x="-14" y="-8" width="28" height="15" rx="4" fill="' + badgeColor + '" style="filter: drop-shadow(0 2px 6px rgba(0,0,0,0.8));" />' +
               '<text class="path-step-badge" x="0" y="3" text-anchor="middle">' + label + '</text>' +
@@ -2019,20 +2332,98 @@ const htmlTemplate = `<!DOCTYPE html>
       document.getElementById('diag-ingress').textContent = lsp.ingress_router.toUpperCase();
       document.getElementById('diag-egress').textContent = lsp.egress_router.toUpperCase();
 
+      // Gather distinct paths for diagnostic panel
+      const allDistinctPaths = [];
+      const seenPathKeys = new Set();
+
+      const sisterLsps = allLsps.filter(l => 
+        l.ingress_router && l.egress_router && lsp.ingress_router && lsp.egress_router &&
+        l.ingress_router.toLowerCase() === lsp.ingress_router.toLowerCase() &&
+        l.egress_router.toLowerCase() === lsp.egress_router.toLowerCase()
+      );
+
+      const targetLsps = [lsp, ...sisterLsps.filter(l => l.id !== lsp.id)];
+
+      targetLsps.forEach(targetLsp => {
+        const lspPaths = (targetLsp.all_lsp_hops && targetLsp.all_lsp_hops.length > 0) 
+          ? targetLsp.all_lsp_hops 
+          : (targetLsp.lsp_hops && targetLsp.lsp_hops.length > 0 ? [targetLsp.lsp_hops] : []);
+        
+        const ipLists = targetLsp.all_lsp_ip_lists || [targetLsp.lsp_ips || []];
+        const intfLists = targetLsp.all_lsp_intf_lists || [];
+
+        lspPaths.forEach((hList, pIdx) => {
+          if (hList && hList.length > 1) {
+            const ipPath = ipLists[pIdx] || ipLists[0] || [];
+            const intfPath = intfLists[pIdx] || intfLists[0] || [];
+            const key = hList.map(h => h.toLowerCase()).join('->') + '|' + ipPath.join(',');
+            if (!seenPathKeys.has(key)) {
+              seenPathKeys.add(key);
+              allDistinctPaths.push({
+                hops: hList,
+                ips: ipPath,
+                intfs: intfPath,
+                lspName: targetLsp.name,
+                lspNumber: targetLsp.lsp_number
+              });
+            }
+          }
+        });
+      });
+
       const badge = document.getElementById('diag-status-badge');
-      if (lsp.is_shortest_path) {
+      if (allDistinctPaths.length > 1) {
+        badge.className = 'status-badge te-optimized';
+        badge.textContent = '⚡ ' + allDistinctPaths.length + ' Path Variations (Parallel AE Links Traversed)';
+      } else if (lsp.path_type === 'te optimized' || (lsp.lsp_hops && lsp.traceroute_hops && lsp.lsp_hops.length < lsp.traceroute_hops.length)) {
+        badge.className = 'status-badge te-optimized';
+        badge.textContent = '⚡ TE Optimized (' + lsp.lsp_hops.length + ' hops vs IGP ' + lsp.traceroute_hops.length + ' hops)';
+      } else if (lsp.is_shortest_path) {
         badge.className = 'status-badge shortest';
         badge.textContent = '✓ Optimal Shortest Path';
       } else {
         badge.className = 'status-badge longer';
-        badge.textContent = '⚠️ Non-Shortest Path (' + lsp.lsp_hops.length + ' hops vs IGP ' + lsp.traceroute_hops.length + ' hops)';
+        if (lsp.lsp_hops && lsp.traceroute_hops && lsp.lsp_hops.length > lsp.traceroute_hops.length) {
+          badge.textContent = '⚠️ Non-Shortest Path (' + lsp.lsp_hops.length + ' hops vs IGP ' + lsp.traceroute_hops.length + ' hops)';
+        } else {
+          badge.textContent = '⚠️ Path Divergence (' + (lsp.lsp_hops ? lsp.lsp_hops.length : 0) + ' hops equal)';
+        }
+      }
+      if (lsp.lsp_path_change) {
+        badge.innerHTML += ' <span class="status-badge path-changed" style="margin-left:6px;" title="LSP path changed across multiple audit runs">🔄 Path Changed</span>';
       }
 
       const lspHopsContainer = document.getElementById('diag-lsp-hops');
-      lspHopsContainer.innerHTML = lsp.lsp_hops.map(h => '<span class="hop-pill lsp-hop">' + h.toUpperCase() + '</span>').join(' ➔ ');
+      const pillClasses = ['lsp-hop', 'lsp-hop-alt1', 'lsp-hop-alt2', 'lsp-hop-alt3', 'lsp-hop-alt4', 'lsp-hop-alt5', 'lsp-hop-alt6', 'lsp-hop-alt7'];
+
+      if (allDistinctPaths.length > 1) {
+        let multiHTML = '';
+        allDistinctPaths.forEach((pObj, pIdx) => {
+          const pillClass = pillClasses[pIdx % pillClasses.length];
+          const label = pObj.lspNumber ? ('Path Variation #' + (pIdx + 1) + ' (' + pObj.lspNumber + ')') : ('Path Variation #' + (pIdx + 1));
+          
+          let intfDetailHTML = '';
+          if (pObj.intfs && pObj.intfs.length > 0) {
+            intfDetailHTML = '<div style="font-size:10.5px; color:#94a3b8; margin-top:3px; margin-bottom:6px;">Traversed Interfaces: <span style="color:#f8fafc; font-family:\'JetBrains Mono\',monospace;">' + pObj.intfs.join(' ➔ ') + '</span></div>';
+          }
+
+          multiHTML += '<div style="margin-top:8px; margin-bottom:3px; font-size:11px; font-weight:700; color:#cbd5e1;">' + label + ':</div>' +
+            '<div class="hop-pills">' + pObj.hops.map(h => '<span class="hop-pill ' + pillClass + '">' + h.toUpperCase() + '</span>').join(' ➔ ') + '</div>' +
+            intfDetailHTML;
+        });
+        lspHopsContainer.innerHTML = multiHTML;
+      } else if (lsp.lsp_hops && lsp.lsp_hops.length > 0) {
+        lspHopsContainer.innerHTML = lsp.lsp_hops.map(h => '<span class="hop-pill lsp-hop">' + h.toUpperCase() + '</span>').join(' ➔ ');
+      } else {
+        lspHopsContainer.innerHTML = '<span style="color:var(--text-muted); font-size:11px;">No LSP hop data</span>';
+      }
 
       const trHopsContainer = document.getElementById('diag-tr-hops');
-      trHopsContainer.innerHTML = lsp.traceroute_hops.map(h => '<span class="hop-pill tr-hop">' + h.toUpperCase() + '</span>').join(' ➔ ');
+      if (lsp.traceroute_hops && lsp.traceroute_hops.length > 0) {
+        trHopsContainer.innerHTML = lsp.traceroute_hops.map(h => '<span class="hop-pill tr-hop">' + h.toUpperCase() + '</span>').join(' ➔ ');
+      } else {
+        trHopsContainer.innerHTML = '<span style="color:var(--text-muted); font-size:11px;">No IGP traceroute data</span>';
+      }
     }
 
     // Zoom & Pan Engine

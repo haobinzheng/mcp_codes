@@ -534,23 +534,33 @@ async def get_traceroute_path(host, to_ip, refresh_cache=False, max_retries=3):
 async def collect_lsp_data_v2(device, folder_name, json_folder_name, regex_site, refresh_cache=False):
     """
     Process a single device asynchronously and log outputs to separate log files using live gnetch RPC commands.
+    Updates existing JSON files in-place to append bandwidth & path history across multiple runs.
     """
     host = device.hostname
     local_device_site = host.split(".")[1]
     matched = re.search(regex_site, local_device_site)
     local_site = matched.group(1).strip() if matched else "Unknown"
 
-    bgp_dict = {}
     device_log_file = os.path.join(folder_name, f"{host}_lsp_log.txt")
 
     try:
         print(f"Processing device: {host}\n")
-        ######## configuration for interface lo0
         cmd = "show mpls lsp ingress"
         show_result = await rate_limited_gnetch_command_lsp(cmd, host)
         lsp_dict_audit = parse_show_lsp_ingress(show_result)
         dprint(lsp_dict_audit)
         dprint(f"lsp dicts that need to be audit = {lsp_dict_audit}")
+
+        # Load existing JSON file if present to preserve history
+        existing_file_path = os.path.join(json_folder_name, f"{host}.json")
+        existing_data = {}
+        if os.path.exists(existing_file_path):
+            try:
+                with open(existing_file_path, "r") as f:
+                    existing_data = json.load(f)
+            except Exception as e:
+                print(f"Warning: Could not read existing JSON for {host}: {e}")
+                existing_data = {}
 
         # Synchronously process each LSP one by one without parallelism
         for name, content in lsp_dict_audit.items():
@@ -571,16 +581,51 @@ async def collect_lsp_data_v2(device, folder_name, json_folder_name, regex_site,
                     if not lsp_if_ips and tr_hops:
                         lsp_if_ips = tr_hops
 
-                    is_shortest, path_type = is_shortest_path_match(lsp_if_ips, tr_hops, to_ip)
-                    
-                    bw_util = lsp_details.get("max_avg_bw_util")
-                    if isinstance(bw_util, str):
-                        lsp_details["max_avg_bw_util"] = [bw_util]
-                    elif not isinstance(bw_util, list):
-                        lsp_details["max_avg_bw_util"] = [bw_util] if bw_util is not None else []
+                    bw_util = lsp_details.get("max_avg_bw_util", "0Gbps")
 
+                    # Retrieve previous history if available
+                    existing_entry = existing_data.get(lsp_name, {})
+                    existing_details = existing_entry.get("details", {})
+
+                    prev_bw_list = existing_details.get("max_avg_bw_util", [])
+                    if isinstance(prev_bw_list, str):
+                        prev_bw_list = [prev_bw_list]
+                    elif not isinstance(prev_bw_list, list):
+                        prev_bw_list = []
+
+                    prev_ips_list = existing_details.get("lsp_interface_ips", [])
+                    if not isinstance(prev_ips_list, list):
+                        prev_ips_list = []
+
+                    # Append new run values
+                    updated_bw_list = list(prev_bw_list)
+                    if bw_util:
+                        bw_str_val = bw_util if isinstance(bw_util, str) else (bw_util[0] if isinstance(bw_util, list) and bw_util else str(bw_util))
+                        updated_bw_list.append(bw_str_val)
+
+                    updated_ips_list = list(prev_ips_list)
+                    updated_ips_list.append(lsp_if_ips)
+
+                    # Check if LSP path has changed across runs
+                    lsp_path_changed = False
+                    if len(updated_ips_list) > 1:
+                        first_path = updated_ips_list[0]
+                        for path in updated_ips_list[1:]:
+                            if path != first_path:
+                                lsp_path_changed = True
+                                break
+
+                    # Find the LONGEST LSP path (path with max hops) to compare against traceroute
+                    longest_lsp_path = lsp_if_ips
+                    if updated_ips_list:
+                        longest_lsp_path = max(updated_ips_list, key=lambda p: len(p) if isinstance(p, list) else 0)
+
+                    is_shortest, path_type = is_shortest_path_match(longest_lsp_path, tr_hops, to_ip)
+
+                    lsp_details["max_avg_bw_util"] = updated_bw_list
                     lsp_details["traceroute_path"] = tr_hops
-                    lsp_details["lsp_interface_ips"] = [lsp_if_ips]
+                    lsp_details["lsp_interface_ips"] = updated_ips_list
+                    lsp_details["lsp_path_change"] = lsp_path_changed
                     lsp_details["is_shortest_path"] = is_shortest
                     lsp_details["path_type"] = path_type
 
@@ -589,14 +634,18 @@ async def collect_lsp_data_v2(device, folder_name, json_folder_name, regex_site,
 
                     lsp_dict_audit[lsp_name]["details"] = lsp_details
 
+        # Merge with any existing LSPs that were not seen in this run
+        for old_name, old_info in existing_data.items():
+            if old_name not in lsp_dict_audit:
+                lsp_dict_audit[old_name] = old_info
+
         dump_json_file(json_folder_name, f"{host}.json", lsp_dict_audit)
 
     except Exception as e:
         print(f"\nError processing device {host}: {e}\n")
         with open(device_log_file, 'a') as log_file:
             log_file.write(f"\nError processing device {host}: {e}\n")
-    #print_dict(lsp_dict)
-    return {host:lsp_dict_audit}
+    return {host: lsp_dict_audit}
 
 class CustomArgumentParser(argparse.ArgumentParser):
     def print_help(self):
@@ -617,6 +666,9 @@ async def main():
     parser.add_argument('-a', '--analyze', action='store_true', help='Convert data into excel file')
     parser.add_argument('-o', '--outlier', action='store_true', help='find out outlier lsp at the Json file')
     parser.add_argument('--refresh-cache', '--no-cache', action='store_true', help='Force live traceroute collection and bypass cached results')
+    parser.add_argument('-i', '--interval', type=int, default=30, help='Execution interval in minutes for continuous audit runs (default: 30)')
+    parser.add_argument('-c', '--count', '--runs', type=int, default=None, help='Maximum number of audit iterations to run in loop mode (default: continuous)')
+    parser.add_argument('--loop', '--daemon', action='store_true', help='Run continuously on interval schedule')
     parser.add_argument(
         "-j", "--json_folder",
         nargs="?",  # Makes the argument optional
@@ -667,20 +719,8 @@ async def main():
         else:
             json_folder_name = "Json_lsp_folder"
 
-        # Format date for subdirectory structure: YYYY-MM-DD
-        now = datetime.now()
-        date_folder = now.strftime("%Y-%m-%d")
-        today_json_folder = os.path.join(json_folder_name, date_folder)
-
         folder_name = log_folder
         json_folder_name_consolidated = f"{json_folder_name}_consolidated"
-
-        delete_folder_contents(log_folder)
-        create_or_recreate_folder(today_json_folder)
-        delete_folder_contents(json_folder_name_consolidated)
-
-        # Format date/timestamp for consolidated output file
-        date_string = now.strftime("%Y_%m_%d_%H_%M")
 
         # Filter target devices by configured router_types
         target_devices = [device for device in setup.setupdb.Device_list if any(device.hostname.startswith(t) for t in router_types)]
@@ -692,21 +732,46 @@ async def main():
         else:
             print(f"Auditing {len(target_devices)} devices matching router types {router_types}...")
 
-        async_start = time.time()
-        tasks = [collect_lsp_data_v2(device, log_folder, today_json_folder, regex_site, refresh_cache=args.refresh_cache) for device in target_devices]
-        # Run tasks concurrently
-        results = await asyncio.gather(*tasks)
+        iteration = 0
+        while True:
+            iteration += 1
+            now = datetime.now()
+            date_folder = now.strftime("%Y-%m-%d")
+            today_json_folder = os.path.join(json_folder_name, date_folder)
+            
+            # Ensure folder exists without wiping existing day's run history
+            os.makedirs(today_json_folder, exist_ok=True)
+            os.makedirs(log_folder, exist_ok=True)
+            os.makedirs(json_folder_name_consolidated, exist_ok=True)
 
-        # Aggregate results
-        audit_result = {host: data for device_result in results for host, data in device_result.items()}
-        print(f"Total number of devices: {len(audit_result)}")
+            date_string = now.strftime("%Y_%m_%d_%H_%M")
+            print(f"\n=======================================================")
+            print(f"Starting LSP audit run #{iteration} at {now.strftime('%Y-%m-%d %H:%M:%S')}")
+            print(f"=======================================================\n")
 
-        consolidate_audit = consolidate_lsp_data(audit_result)
-        output_file_all = f'lsp_metro_all_{date_string}.json'
-        
-        dump_json_file(json_folder_name_consolidated,output_file_all,consolidate_audit)
-        async_duration = time.time() - async_start
-        print(f"Asynchronous execution time: {async_duration:.2f} seconds\n")
+            async_start = time.time()
+            tasks = [collect_lsp_data_v2(device, log_folder, today_json_folder, regex_site, refresh_cache=args.refresh_cache) for device in target_devices]
+            results = await asyncio.gather(*tasks)
+
+            audit_result = {host: data for device_result in results for host, data in device_result.items()}
+            print(f"Total number of devices audited: {len(audit_result)}")
+
+            consolidate_audit = consolidate_lsp_data(audit_result)
+            output_file_all = f'lsp_metro_all_{date_string}.json'
+            dump_json_file(json_folder_name_consolidated, output_file_all, consolidate_audit)
+            
+            async_duration = time.time() - async_start
+            print(f"Run #{iteration} completed in {async_duration:.2f} seconds.")
+
+            if not args.loop:
+                break
+
+            if args.count and iteration >= args.count:
+                print(f"\nCompleted specified run limit of {args.count} iteration(s). Exiting.")
+                break
+
+            print(f"\nSleeping for {args.interval} minutes before next run (Press Ctrl+C to exit)...")
+            await asyncio.sleep(args.interval * 60)
 
 
     if args.outlier:
